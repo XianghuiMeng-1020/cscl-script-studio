@@ -1,0 +1,99 @@
+{
+  "script_id": "script_low_data_001",
+  "report_version": "c1-5.v1",
+  "computed_at": "2026-02-05T10:30:00.000000",
+  "spec_hash": null,
+  "config_fingerprint": null,
+  "summary": {
+    "overall_score": 35.83,
+    "status": "insufficient_data"
+  },
+  "dimensions": {
+    "coverage": {
+      "score": 40.0,
+      "status": "insufficient_data",
+      "evidence": {
+        "learning_objective_coverage": 30.0,
+        "rubric_coverage": 80.0,
+        "objectives_count": 2,
+        "scriptlets_count": 2
+      }
+    },
+    "pedagogical_alignment": {
+      "score": 45.0,
+      "status": "insufficient_data",
+      "evidence": {
+        "task_type_alignment": 50.0,
+        "duration_feasibility": 40.0,
+        "role_balance": 0.0,
+        "task_type": "debate",
+        "duration_minutes": 30,
+        "scene_count": 1,
+        "role_count": 0
+      }
+    },
+    "argumentation_support": {
+      "score": 50.0,
+      "status": "needs_attention",
+      "evidence": {
+        "claim_presence": true,
+        "evidence_presence": false,
+        "rebuttal_presence": false,
+        "claim_count": 2,
+        "evidence_count": 0,
+        "rebuttal_count": 0
+      }
+    },
+    "grounding": {
+      "score": 0.0,
+      "status": "insufficient_data",
+      "evidence": {
+        "evidence_coverage": 0.0,
+        "ungrounded_scriptlet_count": 2,
+        "total_scriptlets": 2,
+        "evidence_bindings_count": 0
+      }
+    },
+    "safety_checks": {
+      "score": 100.0,
+      "status": "good",
+      "evidence": {
+        "sensitive_content_flags": [],
+        "missing_citation_warnings": [
+          {
+            "scriptlet_id": "scriptlet_001",
+            "prompt_type": "claim"
+          },
+          {
+            "scriptlet_id": "scriptlet_002",
+            "prompt_type": "claim"
+          }
+        ],
+        "has_sensitive_content": false,
+        "has_missing_citations": true
+      }
+    },
+    "teacher_in_loop": {
+      "score": 50.0,
+      "status": "insufficient_data",
+      "evidence": {
+        "accept_rate": 0.0,
+        "edit_rate": 0.0,
+        "reject_rate": 0.0,
+        "total_decisions": 0,
+        "stage_adoption_rate": {}
+      }
+    }
+  },
+  "warnings": [
+    "Insufficient data for comprehensive quality assessment",
+    "Low evidence coverage - consider uploading course documents",
+    "No teacher decisions recorded - quality assessment limited"
+  ],
+  "data_provenance": {
+    "pipeline_run_ids": [],
+    "revision_ids": ["rev_001"],
+    "decision_ids": [],
+    "evidence_binding_ids": []
+  }
+}

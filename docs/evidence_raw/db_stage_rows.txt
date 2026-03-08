@@ -1,0 +1,8 @@
+        run_id        |     stage_name     | status  | provider |    model    
+----------------------+--------------------+---------+----------+-------------
+ run_3917c5c652824174 | planner            | success | openai   | gpt-4o-mini
+ run_3917c5c652824174 | material_generator | success | openai   | gpt-4o-mini
+ run_3917c5c652824174 | critic             | success | openai   | gpt-4o-mini
+ run_3917c5c652824174 | refiner            | success | openai   | gpt-4o-mini
+(4 rows)
+

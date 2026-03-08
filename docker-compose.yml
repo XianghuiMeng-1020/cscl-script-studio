@@ -1,0 +1,76 @@
+services:
+  web:
+    build: .
+    ports:
+      - "${WEB_PORT:-5001}:5000"
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-prod}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/teacher_in_loop}
+      - USE_DB_STORAGE=${USE_DB_STORAGE:-false}
+      - DATA_DIR=${DATA_DIR:-/app/data}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-}
+      - SPEC_VALIDATE_PUBLIC=${SPEC_VALIDATE_PUBLIC:-false}
+      - QWEN_API_KEY=${QWEN_API_KEY:-}
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
+      - QWEN_BASE_URL=${QWEN_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      - QWEN_MODEL=${QWEN_MODEL:-qwen-plus}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - CSCL_LLM_PROVIDER=${CSCL_LLM_PROVIDER:-openai}
+      - CSCL_LLM_PRIMARY=${CSCL_LLM_PRIMARY:-openai}
+      - CSCL_LLM_FALLBACK=${CSCL_LLM_FALLBACK:-openai}
+      - CSCL_LLM_STRATEGY=${CSCL_LLM_STRATEGY:-single}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - LLM_PROVIDER_PRIMARY=${LLM_PROVIDER_PRIMARY:-openai}
+      - LLM_PROVIDER_FALLBACK=${LLM_PROVIDER_FALLBACK:-openai}
+      - LLM_STRATEGY=${LLM_STRATEGY:-single}
+      - LLM_ALLOW_UNIMPLEMENTED_PRIMARY=${LLM_ALLOW_UNIMPLEMENTED_PRIMARY:-true}
+      - OPENAI_ENABLED=${OPENAI_ENABLED:-true}
+      - OPENAI_IMPLEMENTED=${OPENAI_IMPLEMENTED:-true}
+      - QWEN_ENABLED=${QWEN_ENABLED:-false}
+      - QWEN_IMPLEMENTED=${QWEN_IMPLEMENTED:-false}
+      - MOCK_MODEL=${MOCK_MODEL:-mock-model-v1}
+      - DEBUG=${DEBUG:-false}
+      - DEMO_MODE=${DEMO_MODE:-true}
+      - QUICK_DEMO_PUBLIC=${QUICK_DEMO_PUBLIC:-true}
+      - REQUIRE_LOGIN_FOR_TEACHER=${REQUIRE_LOGIN_FOR_TEACHER:-true}
+      - REQUIRE_LOGIN_FOR_STUDENT=${REQUIRE_LOGIN_FOR_STUDENT:-true}
+      - PIPELINE_REQUIRE_CRITIC_SUCCESS=${PIPELINE_REQUIRE_CRITIC_SUCCESS:-true}
+      - FORCE_CRITIC_FAIL=${FORCE_CRITIC_FAIL:-}
+    volumes:
+      - ./data:/app/data
+      - .:/app  # mount app code for tests and dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-teacher_in_loop}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

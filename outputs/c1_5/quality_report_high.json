@@ -1,0 +1,91 @@
+{
+  "script_id": "script_high_quality_001",
+  "report_version": "c1-5.v1",
+  "computed_at": "2026-02-05T10:30:00.000000",
+  "spec_hash": "abc123def4567890123456789012345678901234567890123456789012345678",
+  "config_fingerprint": "def456abc789012345678901234567890123456789012345678901234567890",
+  "summary": {
+    "overall_score": 82.5,
+    "status": "good"
+  },
+  "dimensions": {
+    "coverage": {
+      "score": 85.0,
+      "status": "good",
+      "evidence": {
+        "learning_objective_coverage": 90.0,
+        "rubric_coverage": 80.0,
+        "objectives_count": 3,
+        "scriptlets_count": 12
+      }
+    },
+    "pedagogical_alignment": {
+      "score": 88.0,
+      "status": "good",
+      "evidence": {
+        "task_type_alignment": 100.0,
+        "duration_feasibility": 85.0,
+        "role_balance": 80.0,
+        "task_type": "debate",
+        "duration_minutes": 60,
+        "scene_count": 4,
+        "role_count": 4
+      }
+    },
+    "argumentation_support": {
+      "score": 100.0,
+      "status": "good",
+      "evidence": {
+        "claim_presence": true,
+        "evidence_presence": true,
+        "rebuttal_presence": true,
+        "claim_count": 4,
+        "evidence_count": 5,
+        "rebuttal_count": 3
+      }
+    },
+    "grounding": {
+      "score": 91.67,
+      "status": "good",
+      "evidence": {
+        "evidence_coverage": 91.67,
+        "ungrounded_scriptlet_count": 1,
+        "total_scriptlets": 12,
+        "evidence_bindings_count": 15
+      }
+    },
+    "safety_checks": {
+      "score": 100.0,
+      "status": "good",
+      "evidence": {
+        "sensitive_content_flags": [],
+        "missing_citation_warnings": [],
+        "has_sensitive_content": false,
+        "has_missing_citations": false
+      }
+    },
+    "teacher_in_loop": {
+      "score": 85.0,
+      "status": "good",
+      "evidence": {
+        "accept_rate": 70.0,
+        "edit_rate": 20.0,
+        "reject_rate": 10.0,
+        "total_decisions": 10,
+        "stage_adoption_rate": {
+          "planner": 0.8,
+          "material_generator": 0.75,
+          "critic": 0.9,
+          "refiner": 0.85
+        }
+      }
+    }
+  },
+  "warnings": [],
+  "data_provenance": {
+    "pipeline_run_ids": ["run_001", "run_002"],
+    "revision_ids": ["rev_001", "rev_002", "rev_003"],
+    "decision_ids": ["dec_001", "dec_002", "dec_003", "dec_004", "dec_005", "dec_006", "dec_007", "dec_008", "dec_009", "dec_010"],
+    "evidence_binding_ids": ["bind_001", "bind_002", "bind_003", "bind_004", "bind_005", "bind_006", "bind_007", "bind_008", "bind_009", "bind_010", "bind_011", "bind_012", "bind_013", "bind_014", "bind_015"]
+  }
+}

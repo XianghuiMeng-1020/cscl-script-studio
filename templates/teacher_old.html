@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructor Dashboard - EduFeedback</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/teacher.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="teacher-page">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo-link">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>EduFeedback</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="submissions">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Pending</span>
+                    <span class="badge" id="pendingBadge">0</span>
+                </a>
+                <a href="#" class="nav-item" data-view="graded">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Graded</span>
+                </a>
+                <a href="#" class="nav-item" data-view="rubrics">
+                    <i class="fas fa-list-check"></i>
+                    <span>Rubrics</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">Prof. Smith</span>
+                        <span class="user-role">Instructor</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <div id="dashboardView" class="view active">
+                <div class="view-header">
+                    <h2><i class="fas fa-home"></i> Instructor Dashboard</h2>
+                    <p class="view-subtitle">Welcome back! Here is your teaching feedback overview</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card gradient-blue">
+                        <div class="stat-icon"><i class="fas fa-book"></i></div>
+                        <div class="stat-content">
+                            <h3 id="statAssignments">0</h3>
+                            <p>Total Assignments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card gradient-orange">
+                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        <div class="stat-content">
+                            <h3 id="statPending">0</h3>
+                            <p>Pending Review</p>
+                        </div>
+                    </div>
+                    <div class="stat-card gradient-green">
+                        <div class="stat-icon"><i class="fas fa-check"></i></div>
+                        <div class="stat-content">
+                            <h3 id="statGraded">0</h3>
+                            <p>Graded</p>
+                        </div>
+                    </div>
+                    <div class="stat-card gradient-purple">
+                        <div class="stat-icon"><i class="fas fa-star"></i></div>
+                        <div class="stat-content">
+                            <h3 id="statAvgScore">--</h3>
+                            <p>Average Score</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="section-card">
+                    <h3 class="section-title"><i class="fas fa-bolt"></i> Quick Actions</h3>
+                    <div class="quick-actions">
+                        <button class="action-btn" onclick="switchView('submissions')">
+                            <i class="fas fa-edit"></i>
+                            <span>Start Grading</span>
+                        </button>
+                        <button class="action-btn" onclick="switchView('rubrics')">
+                            <i class="fas fa-plus"></i>
+                            <span>Create Rubric</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Submissions -->
+                <div class="section-card">
+                    <h3 class="section-title"><i class="fas fa-history"></i> Recent Submissions</h3>
+                    <div id="recentSubmissions" class="submissions-list">
+                        <div class="loading-placeholder">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submissions View -->
+            <div id="submissionsView" class="view">
+                <div class="view-header">
+                    <h2><i class="fas fa-file-alt"></i> Pending Submissions</h2>
+                    <p class="view-subtitle">Select a student submission to grade</p>
+                </div>
+                <div id="pendingSubmissions" class="submissions-grid">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Graded View -->
+            <div id="gradedView" class="view">
+                <div class="view-header">
+                    <h2><i class="fas fa-check-circle"></i> Graded Submissions</h2>
+                    <p class="view-subtitle">View completed graded assignments</p>
+                </div>
+                <div id="gradedSubmissions" class="submissions-grid">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rubrics View -->
+            <div id="rubricsView" class="view">
+                <div class="view-header">
+                    <h2><i class="fas fa-list-check"></i> Rubric Management</h2>
+                    <p class="view-subtitle">Create and manage grading rubrics</p>
+                </div>
+                <div id="rubricsList" class="rubrics-container">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grading View -->
+            <div id="gradingView" class="view">
+                <div class="view-header">
+                    <h2><i class="fas fa-edit"></i> Grade Submission</h2>
+                    <button class="back-btn" onclick="switchView('submissions')">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </button>
+                </div>
+                
+                <div class="grading-container">
+                    <!-- Left Panel: Student Work -->
+                    <div class="grading-panel student-work-panel">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-file-text"></i> Student Work</h3>
+                            <div class="student-info-badge" id="gradingStudentInfo"></div>
+                        </div>
+                        <div class="panel-content">
+                            <div id="studentWorkContent" class="student-work-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Feedback -->
+                    <div class="grading-panel feedback-panel">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-comment-dots"></i> Write Feedback</h3>
+                        </div>
+                        <div class="panel-content">
+                            <!-- Rubric Scoring -->
+                            <div class="scoring-section">
+                                <h4><i class="fas fa-list-check"></i> Rubric Scoring</h4>
+                                <div id="rubricScoring" class="rubric-scoring"></div>
+                            </div>
+
+                            <!-- Feedback Text -->
+                            <div class="feedback-section">
+                                <h4><i class="fas fa-pen"></i> Written Feedback</h4>
+                                <textarea id="feedbackText" placeholder="Enter your feedback for the student's work..."></textarea>
+                                <div class="feedback-tools">
+                                    <button class="tool-btn" onclick="analyzeStudentWork()" title="Analyze student work structure">
+                                        <i class="fas fa-file-alt"></i> Analyze Work
+                                    </button>
+                                    <button class="tool-btn" onclick="suggestScores()" title="AI suggest rubric scores">
+                                        <i class="fas fa-star"></i> Suggest Scores
+                                    </button>
+                                    <button class="tool-btn" onclick="checkFeedbackAlignment()" title="Check if feedback covers all rubric criteria">
+                                        <i class="fas fa-check-double"></i> Alignment Check
+                                    </button>
+                                    <button class="tool-btn" onclick="detailedFeedbackAnalysis()" title="Detailed feedback analysis">
+                                        <i class="fas fa-microscope"></i> Detailed Analysis
+                                    </button>
+                                    <button class="tool-btn" onclick="analyzeFeedbackQuality()" title="Analyze feedback quality">
+                                        <i class="fas fa-chart-line"></i> Quality Analysis
+                                    </button>
+                                    <button class="tool-btn" onclick="improveFeedback()" title="AI improve feedback">
+                                        <i class="fas fa-magic"></i> AI Optimize
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- AI Analysis Results -->
+                            <div id="aiAnalysisResults" class="ai-results hidden">
+                                <div class="ai-results-header">
+                                    <h4><i class="fas fa-robot"></i> AI Analysis Results</h4>
+                                    <button class="close-btn" onclick="hideAIResults()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div id="aiResultsContent"></div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="submit-section">
+                                <button class="submit-feedback-btn" onclick="submitFeedback()">
+                                    <i class="fas fa-paper-plane"></i> Submit Feedback
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>AI Analyzing...</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/teacher.js') }}"></script>
+</body>
+</html>

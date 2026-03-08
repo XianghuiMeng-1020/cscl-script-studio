@@ -1,0 +1,52 @@
+{
+  "results": [
+    {
+      "name": "health",
+      "concurrency": 20,
+      "total": 8160,
+      "2xx": 8160,
+      "5xx_plus_fail": 0,
+      "p5xx_pct": 0.0,
+      "p95_ms": 11
+    },
+    {
+      "name": "health_50",
+      "concurrency": 50,
+      "total": 9800,
+      "2xx": 9800,
+      "5xx_plus_fail": 0,
+      "p5xx_pct": 0.0,
+      "p95_ms": 32
+    },
+    {
+      "name": "home",
+      "concurrency": 20,
+      "total": 10140,
+      "2xx": 10140,
+      "5xx_plus_fail": 0,
+      "p5xx_pct": 0.0,
+      "p95_ms": 3
+    },
+    {
+      "name": "teacher",
+      "concurrency": 20,
+      "total": 9720,
+      "2xx": 9720,
+      "5xx_plus_fail": 0,
+      "p5xx_pct": 0.0,
+      "p95_ms": 5
+    },
+    {
+      "name": "student",
+      "concurrency": 20,
+      "total": 10300,
+      "2xx": 10300,
+      "5xx_plus_fail": 0,
+      "p5xx_pct": 0.0,
+      "p95_ms": 3
+    }
+  ],
+  "overall": "pass",
+  "threshold_5xx_pct": 0.5,
+  "threshold_p95_ms": 1500
+}

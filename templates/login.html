@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSCL Script Studio - Sign In</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}?v={{ static_version }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: var(--bg-primary);
+        }
+        .login-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid var(--border-color);
+        }
+        .login-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .login-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+        .login-lang select {
+            padding: 0.35rem 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .login-lang select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        .login-role-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .login-role-tabs input {
+            position: absolute;
+            opacity: 0;
+        }
+        .login-role-tabs label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            font-weight: 500;
+            min-height: 40px;
+            transition: border-color .2s, background .2s;
+            color: var(--text-secondary);
+        }
+        .login-role-tabs label:hover {
+            border-color: var(--primary-light);
+        }
+        .login-role-tabs input:checked + label {
+            border-color: var(--primary-color);
+            background: rgba(91, 117, 83, 0.08);
+            color: var(--primary-color);
+        }
+        .login-role-tabs label:focus-within {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        .login-form .form-group {
+            margin-bottom: 1.25rem;
+        }
+        .login-form label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .login-form input[type="text"],
+        .login-form input[type="password"] {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            min-height: 40px;
+            box-sizing: border-box;
+            background: var(--bg-surface);
+            color: var(--text-primary);
+        }
+        .login-form input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(91, 117, 83, 0.1);
+        }
+        .login-form input::placeholder {
+            color: var(--text-muted);
+        }
+        .login-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .btn-signin {
+            min-height: 44px;
+            padding: 0.65rem 1.25rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--primary-color);
+            color: var(--text-inverse);
+            transition: background 0.2s;
+        }
+        .btn-signin:hover {
+            background: var(--primary-dark);
+        }
+        .btn-signin:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        .btn-demo-secondary {
+            min-height: 44px;
+            padding: 0.65rem 1.25rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .btn-demo-secondary:hover {
+            border-color: var(--secondary-color);
+            color: var(--secondary-hover);
+        }
+        .btn-demo-secondary:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        .login-error {
+            margin-top: 0.75rem;
+            padding: 0.65rem;
+            border-radius: var(--radius-md);
+            background: var(--error-bg);
+            color: var(--error-color);
+            font-size: 0.9rem;
+            display: none;
+        }
+        .login-error.visible {
+            display: block;
+        }
+        .login-back {
+            margin-top: 1.25rem;
+        }
+        .login-back a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .login-back a:hover {
+            text-decoration: underline;
+        }
+        .login-welcome {
+            margin-bottom: 1.25rem;
+            padding: 0.85rem 1rem;
+            border-radius: var(--radius-md);
+            background: rgba(91, 117, 83, 0.06);
+            border: 1px solid rgba(91, 117, 83, 0.15);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+        .login-welcome i.fa-magic {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body class="login-page">
+    <div class="login-card">
+        <div class="login-header">
+            <h1 data-i18n="login.title">登录</h1>
+            <div class="login-lang">
+                <select id="languageSelect" onchange="switchLanguage(this.value)">
+                    <option value="zh-CN">简体中文</option>
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+        </div>
+        <p class="login-welcome" role="status"><i class="fas fa-magic" aria-hidden="true"></i> <span data-i18n="login.welcome">你好，我是你的协作学习活动生成小助手！可以用我把课程大纲变成结构化的协作学习活动哦～</span></p>
+        <form id="loginForm" class="login-form" method="post" action="#" autocomplete="on">
+            <div class="login-role-tabs" role="group" aria-label="Role">
+                <input type="radio" name="role" id="roleTeacher" value="teacher" checked>
+                <label for="roleTeacher" data-i18n="login.role.teacher">教师</label>
+                <input type="radio" name="role" id="roleStudent" value="student">
+                <label for="roleStudent" data-i18n="login.role.student">学生</label>
+            </div>
+            <div class="form-group">
+                <label for="username" data-i18n="login.username">用户名</label>
+                <input type="text" id="username" name="username" required autocomplete="username" placeholder="">
+            </div>
+            <div class="form-group">
+                <label for="password" data-i18n="login.password">密码</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="">
+            </div>
+            <div id="loginError" class="login-error" role="alert"></div>
+            <div class="login-actions">
+                <button type="submit" class="btn-signin" id="btnSignIn" data-i18n="login.sign_in">登录</button>
+                <a href="/demo" class="btn-demo-secondary" id="btnQuickDemo"><i class="fas fa-bolt"></i> <span data-i18n="login.quick_demo">快速体验 Demo</span></a>
+            </div>
+        </form>
+        <div class="login-back">
+            <a href="/" data-i18n="login.back_home">返回首页</a>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script>
+        function switchLanguage(locale) {
+            setLocale(locale);
+        }
+
+        (function() {
+            var q = window.location.search || '';
+            var roleMatch = q.match(/[?&]role=(teacher|student)/);
+            if (roleMatch) {
+                var r = document.getElementById('role' + roleMatch[1].charAt(0).toUpperCase() + roleMatch[1].slice(1));
+                if (r) r.checked = true;
+            }
+            var next = (typeof window !== 'undefined' && window.location && window.location.search) ? (function() {
+                var m = window.location.search.match(/[?&]next=([^&]+)/);
+                return m ? decodeURIComponent(m[1]) : '';
+            }()) : '';
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                var username = document.getElementById('username').value.trim();
+                var password = document.getElementById('password').value;
+                var role = document.querySelector('input[name="role"]:checked').value;
+                var errEl = document.getElementById('loginError');
+                if (!username || !password) {
+                    errEl.textContent = typeof t === 'function' ? t('login.error.required') : 'Please enter username and password.';
+                    errEl.classList.add('visible');
+                    return;
+                }
+                errEl.classList.remove('visible');
+                fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: username, password: password })
+                }).then(function(r) {
+                    if (r.ok) {
+                        return r.json().then(function(data) {
+                            var redirect = next || (data.user && data.user.role === 'student' ? '/student' : '/teacher');
+                            window.location.href = redirect;
+                        });
+                    }
+                    return r.json().catch(function() { return {}; }).then(function(body) {
+                        errEl.textContent = (body.error && body.code !== 'AUTH_REQUIRED') ? body.error : (typeof t === 'function' ? t('login.error.invalid') : 'Invalid username or password.');
+                        errEl.classList.add('visible');
+                    });
+                }).catch(function() {
+                    errEl.textContent = typeof t === 'function' ? t('common.error.network') : 'Network error.';
+                    errEl.classList.add('visible');
+                });
+            });
+            // Init language
+            var langSelect = document.getElementById('languageSelect');
+            if (langSelect && typeof currentLocale !== 'undefined') langSelect.value = currentLocale;
+            if (typeof applyLocaleToPage === 'function') applyLocaleToPage();
+            document.querySelectorAll('.login-form input, .login-form label').forEach(function(el) {
+                el.addEventListener('focus', function() { document.getElementById('loginError').classList.remove('visible'); });
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Normalized Pedagogical Specification Schema",
+  "description": "Schema for normalized pedagogical specification returned by /api/cscl/spec/validate",
+  "type": "object",
+  "required": ["course_context", "learning_objectives", "task_requirements"],
+  "properties": {
+    "course_context": {
+      "type": "object",
+      "required": ["subject", "topic", "class_size", "mode", "duration"],
+      "properties": {
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Subject area (e.g., Data Science, Learning Sciences, Humanities)"
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Specific topic within the subject"
+        },
+        "class_size": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of students"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["sync", "async"],
+          "description": "Teaching mode"
+        },
+        "duration": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Duration in minutes"
+        }
+      },
+      "additionalProperties": false
+    },
+    "learning_objectives": {
+      "type": "object",
+      "required": ["knowledge", "skills"],
+      "properties": {
+        "knowledge": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "description": "Knowledge objectives"
+        },
+        "skills": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "description": "Skill objectives"
+        },
+        "disposition": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Disposition objectives (optional)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "task_requirements": {
+      "type": "object",
+      "required": ["task_type", "expected_output", "collaboration_form"],
+      "properties": {
+        "task_type": {
+          "type": "string",
+          "enum": ["debate", "collaborative_writing", "peer_review", "jigsaw", "role_play", "case_study"],
+          "description": "Type of task"
+        },
+        "expected_output": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Description of expected output"
+        },
+        "collaboration_form": {
+          "type": "string",
+          "enum": ["group", "pair", "individual_with_sharing", "whole_class"],
+          "description": "Form of collaboration"
+        }
+      },
+      "additionalProperties": false
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Available tools (optional)"
+        },
+        "timebox": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Time constraint in minutes (optional)"
+        },
+        "assessment_constraints": {
+          "type": "string",
+          "description": "Assessment-related constraints (optional)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "rubric_preferences": {
+      "type": "object",
+      "properties": {
+        "criteria": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Criteria names (optional)"
+        },
+        "weight": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Weight mapping (optional)"
+        },
+        "emphasis": {
+          "type": "string",
+          "description": "Emphasis description (optional)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "diversity_considerations": {
+      "type": "string",
+      "description": "Diversity/accessibility notes (optional)"
+    },
+    "accessibility_considerations": {
+      "type": "string",
+      "description": "Accessibility notes (optional)"
+    }
+  },
+  "additionalProperties": false
+}

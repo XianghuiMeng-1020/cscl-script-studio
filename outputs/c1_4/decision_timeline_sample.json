@@ -1,0 +1,172 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-02-05T15:15:37.695141",
+  "script_id": "script001",
+  "timeline": [
+    {
+      "id": "e0abfc5a-82a5-4d06-9da4-634e34a708cd",
+      "script_id": "script001",
+      "revision_id": null,
+      "actor_id": "T001",
+      "decision_type": "accept",
+      "target_type": "scriptlet",
+      "target_id": "scriptlet_0",
+      "before_json": null,
+      "after_json": null,
+      "rationale_text": null,
+      "source_stage": "planner",
+      "confidence": null,
+      "created_at": "2026-02-05T15:15:37.691830"
+    },
+    {
+      "id": "36d28954-be72-4b92-9a5e-5955100729ac",
+      "script_id": "script001",
+      "revision_id": null,
+      "actor_id": "T001",
+      "decision_type": "accept",
+      "target_type": "scene",
+      "target_id": "scene_1",
+      "before_json": null,
+      "after_json": null,
+      "rationale_text": null,
+      "source_stage": "planner",
+      "confidence": null,
+      "created_at": "2026-02-05T15:16:37.691830"
+    },
+    {
+      "id": "e393b2bf-7f75-4254-95c3-e9b318c349f3",
+      "script_id": "script001",
+      "revision_id": null,
+      "actor_id": "T001",
+      "decision_type": "edit",
+      "target_type": "scriptlet",
+      "target_id": "scriptlet_2",
+      "before_json": null,
+      "after_json": null,
+      "rationale_text": null,
+      "source_stage": "manual",
+      "confidence": null,
+      "created_at": "2026-02-05T15:17:37.691830"
+    },
+    {
+      "id": "d974a2f7-4df1-44ac-8d5a-f71f267951ac",
+      "script_id": "script001",
+      "revision_id": null,
+      "actor_id": "T001",
+      "decision_type": "reject",
+      "target_type": "scriptlet",
+      "target_id": "scriptlet_3",
+      "before_json": null,
+      "after_json": null,
+      "rationale_text": null,
+      "source_stage": "planner",
+      "confidence": null,
+      "created_at": "2026-02-05T15:18:37.691830"
+    },
+    {
+      "id": "e67fe534-b142-4fc7-89f4-a5ef9ea07f7c",
+      "script_id": "script001",
+      "revision_id": null,
+      "actor_id": "T001",
+      "decision_type": "add",
+      "target_type": "scriptlet",
+      "target_id": "scriptlet_4",
+      "before_json": null,
+      "after_json": null,
+      "rationale_text": null,
+      "source_stage": "manual",
+      "confidence": null,
+      "created_at": "2026-02-05T15:19:37.691830"
+    },
+    {
+      "id": "e5079c9c-2f7d-4321-bc37-f956739578e9",
+      "script_id": "script001",
+      "revision_id": null,
+      "actor_id": "T001",
+      "decision_type": "edit",
+      "target_type": "scene",
+      "target_id": "scene_5",
+      "before_json": null,
+      "after_json": null,
+      "rationale_text": null,
+      "source_stage": "manual",
+      "confidence": null,
+      "created_at": "2026-02-05T15:20:37.691830"
+    },
+    {
+      "id": "cbb76fd2-4fc0-472f-9eb9-ddbc29d22a27",
+      "script_id": "script001",
+      "revision_id": null,
+      "actor_id": "T001",
+      "decision_type": "accept",
+      "target_type": "role",
+      "target_id": "role_6",
+      "before_json": null,
+      "after_json": null,
+      "rationale_text": null,
+      "source_stage": "planner",
+      "confidence": null,
+      "created_at": "2026-02-05T15:21:37.691830"
+    },
+    {
+      "id": "246aaef3-fe8c-4d83-a05b-de3b0675c9bb",
+      "script_id": "script001",
+      "revision_id": null,
+      "actor_id": "T001",
+      "decision_type": "finalize_note",
+      "target_type": "pipeline_output",
+      "target_id": "pipeline_output_7",
+      "before_json": null,
+      "after_json": null,
+      "rationale_text": null,
+      "source_stage": "manual",
+      "confidence": null,
+      "created_at": "2026-02-05T15:22:37.691830"
+    }
+  ],
+  "summary": {
+    "total_decisions": 8,
+    "accept_rate": 0.375,
+    "reject_rate": 0.125,
+    "edit_rate": 0.25,
+    "stage_adoption_rate": {
+      "planner": {
+        "adoption_rate": 0.75,
+        "total_decisions": 4,
+        "accept_count": 3
+      },
+      "manual": {
+        "adoption_rate": 0.0,
+        "total_decisions": 4,
+        "accept_count": 0
+      }
+    },
+    "avg_time_to_finalize": 7.0,
+    "evidence_linked_edit_rate": 0.0,
+    "top_modified_target_types": [
+      {
+        "target_type": "scriptlet",
+        "count": 4
+      },
+      {
+        "target_type": "scene",
+        "count": 2
+      },
+      {
+        "target_type": "role",
+        "count": 1
+      },
+      {
+        "target_type": "pipeline_output",
+        "count": 1
+      }
+    ],
+    "reproducibility": {
+      "spec_hash": null,
+      "config_fingerprint": null,
+      "provider": null,
+      "model": null,
+      "pipeline_run_id": null
+    }
+  }
+}

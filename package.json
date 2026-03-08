@@ -1,0 +1,23 @@
+{
+  "name": "teacher-in-loop-main",
+  "version": "1.0.0",
+  "description": "This guide is written for first-time users. It explains exactly what to click and what to paste, without revealing any local file paths.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "playwright": "^1.58.1"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.1.0"
+  }
+}

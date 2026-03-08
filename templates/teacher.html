@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - CSCL Script Studio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ static_version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/teacher.css') }}?v={{ static_version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}?v={{ static_version }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="teacher-page">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="logo-link">
+                    <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.75"/>
+                        <circle cx="22" cy="10" r="3" stroke="currentColor" stroke-width="1.75"/>
+                        <circle cx="16" cy="22" r="3" stroke="currentColor" stroke-width="1.75"/>
+                        <line x1="10" y1="10" x2="16" y2="22" stroke="currentColor" stroke-width="1.75"/>
+                        <line x1="22" y1="10" x2="16" y2="22" stroke="currentColor" stroke-width="1.75"/>
+                        <line x1="10" y1="10" x2="22" y2="10" stroke="currentColor" stroke-width="1.75"/>
+                        <path d="M24 28 L28 28 L28 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                    </svg>
+                    <span>CSCL Script Studio</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard" data-i18n-aria-label="teacher.sidebar.dashboard">
+                    <i class="fas fa-home"></i>
+                    <span data-i18n="teacher.sidebar.dashboard">工作台</span>
+                </a>
+                <a href="#" class="nav-item" data-view="scripts" data-i18n-aria-label="teacher.sidebar.scripts">
+                    <i class="fas fa-file-code"></i>
+                    <span data-i18n="teacher.sidebar.scripts">活动项目</span>
+                </a>
+                <a href="#" class="nav-item" data-view="spec-validation" data-i18n-aria-label="teacher.sidebar.spec">
+                    <i class="fas fa-check-circle"></i>
+                    <span data-i18n="teacher.sidebar.spec">教学目标检查</span>
+                </a>
+                <a href="#" class="nav-item" data-view="pipeline-runs" data-i18n-aria-label="teacher.sidebar.pipeline">
+                    <i class="fas fa-project-diagram"></i>
+                    <span data-i18n="teacher.sidebar.pipeline">自动生成过程</span>
+                </a>
+                <a href="#" class="nav-item" data-view="documents" data-i18n-aria-label="teacher.sidebar.documents">
+                    <i class="fas fa-book-open"></i>
+                    <span data-i18n="teacher.sidebar.documents">课程文档</span>
+                </a>
+                <a href="#" class="nav-item" data-view="decisions" data-i18n-aria-label="teacher.sidebar.decisions">
+                    <i class="fas fa-history"></i>
+                    <span data-i18n="teacher.sidebar.decisions">教师调整记录</span>
+                </a>
+                <a href="#" class="nav-item" data-view="quality-reports" data-i18n-aria-label="teacher.sidebar.quality">
+                    <i class="fas fa-chart-line"></i>
+                    <span data-i18n="teacher.sidebar.quality">质量检查结果</span>
+                </a>
+                <a href="#" class="nav-item" data-view="publish" data-i18n-aria-label="teacher.sidebar.publish">
+                    <i class="fas fa-rocket"></i>
+                    <span data-i18n="teacher.sidebar.publish">发布与导出</span>
+                </a>
+                <a href="#" class="nav-item" data-view="settings" data-i18n-aria-label="teacher.sidebar.settings">
+                    <i class="fas fa-cog"></i>
+                    <span data-i18n="teacher.sidebar.settings">设置</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">Instructor</span>
+                        <span class="user-role" data-i18n="teacher.user.role">教师</span>
+                    </div>
+                </div>
+                <div class="language-switcher" style="margin-top: 0.75rem;">
+                    <select id="languageSelect" onchange="switchLanguage(this.value)" style="width: 100%; padding: 0.4rem 0.5rem; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.85rem;">
+                        <option value="zh-CN">简体中文</option>
+                        <option value="zh-TW">繁體中文</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <div id="dashboardView" class="view active">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-chalkboard-teacher"></i> <span data-i18n="teacher.dashboard.title">教师工作台</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.dashboard.step_indicator">你现在在第 <span id="currentStepIndicator">1</span>/4 步</p>
+                    </div>
+                    <button class="btn-primary" onclick="startNewActivity()" data-i18n-aria-label="teacher.dashboard.new_activity">
+                        <i class="fas fa-plus"></i>
+                        <span data-i18n="teacher.dashboard.new_activity">新建活动</span>
+                    </button>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="status-bar">
+                    <div class="status-item">
+                        <span class="status-label" data-i18n="teacher.dashboard.current_status">当前状态：</span>
+                        <span id="currentStatus" class="status-value" data-i18n="teacher.dashboard.ready">准备开始</span>
+                    </div>
+                </div>
+
+                <!-- Four-Step Process Cards -->
+                <div class="process-cards-grid">
+                    <div class="process-card" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-icon"><i class="fas fa-file-upload"></i></div>
+                        <h3 data-i18n="teacher.step1.title">导入课程大纲</h3>
+                        <p class="step-what" data-i18n="teacher.step1.what">这一步做什么：上传或粘贴课程大纲内容</p>
+                        <p class="step-why" data-i18n="teacher.step1.why">为什么要做：系统需要了解课程内容才能生成合适的活动方案</p>
+                        <p class="step-result" data-i18n="teacher.step1.result">完成后会得到：提取的课程信息（课程名、主题、目标等）</p>
+                        <button type="button" class="step-action-btn btn-import" id="btnImport" data-action="import-outline" data-i18n="teacher.step1.action">开始导入</button>
+                    </div>
+                    <div class="process-card" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-icon"><i class="fas fa-check-circle"></i></div>
+                        <h3 data-i18n="teacher.step2.title">确认教学目标</h3>
+                        <p class="step-what" data-i18n="teacher.step2.what">这一步做什么：确认或补充学习目标、任务类型、预期产出</p>
+                        <p class="step-why" data-i18n="teacher.step2.why">为什么要做：明确的教学目标确保生成的活动符合你的教学需求</p>
+                        <p class="step-result" data-i18n="teacher.step2.result">完成后会得到：完整的教学目标检查结果</p>
+                        <button type="button" class="step-action-btn btn-validate" id="btnValidate" data-action="validate-goals" data-i18n="teacher.step2.action">确认目标</button>
+                    </div>
+                    <div class="process-card" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-icon"><i class="fas fa-cogs"></i></div>
+                        <h3 data-i18n="teacher.step3.title">生成活动流程</h3>
+                        <p class="step-what" data-i18n="teacher.step3.what">这一步做什么：系统自动生成协作学习活动方案</p>
+                        <p class="step-why" data-i18n="teacher.step3.why">为什么要做：基于课程内容和教学目标，生成结构化的活动流程</p>
+                        <p class="step-result" data-i18n="teacher.step3.result">完成后会得到：完整的活动方案，包括场景、角色、任务等</p>
+                        <button type="button" class="step-action-btn btn-generate" id="btnGenerate" data-action="run-pipeline" data-i18n="teacher.step3.action">开始生成</button>
+                    </div>
+                    <div class="process-card" data-step="4">
+                        <div class="step-number">4</div>
+                        <div class="step-icon"><i class="fas fa-rocket"></i></div>
+                        <h3 data-i18n="teacher.step4.title">审阅并发布</h3>
+                        <p class="step-what" data-i18n="teacher.step4.what">这一步做什么：查看生成的活动方案，确认无误后发布给学生</p>
+                        <p class="step-why" data-i18n="teacher.step4.why">为什么要做：确保活动质量符合预期，再让学生开始使用</p>
+                        <p class="step-result" data-i18n="teacher.step4.result">完成后会得到：已发布的活动，学生可以开始参与</p>
+                        <button type="button" class="step-action-btn btn-publish" id="btnPublish" data-action="review-publish" data-i18n="teacher.step4.action">审阅发布</button>
+                    </div>
+                </div>
+
+                <!-- Technical Details Drawer -->
+                <div class="tech-drawer">
+                    <button class="drawer-toggle" onclick="toggleTechDrawer()">
+                        <i class="fas fa-chevron-down"></i>
+                        <span data-i18n="teacher.dashboard.view_tech">查看技术详情</span>
+                    </button>
+                    <div id="techDrawerContent" class="drawer-content hidden">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: var(--primary-color);"><i class="fas fa-folder-open"></i></div>
+                                <div class="stat-content">
+                                    <h3 id="statActiveProjects">0</h3>
+                                    <p data-i18n="teacher.dashboard.stat.projects">活动项目</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: var(--secondary-color);"><i class="fas fa-project-diagram"></i></div>
+                                <div class="stat-content">
+                                    <h3 id="statRunningPipelines">0</h3>
+                                    <p data-i18n="teacher.dashboard.stat.pipelines">自动生成过程</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: var(--accent-color);"><i class="fas fa-rocket"></i></div>
+                                <div class="stat-content">
+                                    <h3 id="statReadyToPublish">0</h3>
+                                    <p data-i18n="teacher.dashboard.stat.publish">待发布活动</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" style="background: var(--success-color);"><i class="fas fa-star"></i></div>
+                                <div class="stat-content">
+                                    <h3 id="statAvgQuality">--</h3>
+                                    <p data-i18n="teacher.dashboard.stat.quality">质量检查结果</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Script Projects View -->
+            <div id="scriptsView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-file-code"></i> <span data-i18n="teacher.scripts.title">活动项目</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.scripts.subtitle">管理你的 CSCL 活动方案</p>
+                    </div>
+                    <button class="btn-primary" onclick="createNewScriptProject()" data-i18n-aria-label="teacher.scripts.create">
+                        <i class="fas fa-plus"></i>
+                        <span data-i18n="teacher.scripts.create">创建新项目</span>
+                    </button>
+                </div>
+                <div id="scriptsList" class="scripts-grid">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p data-i18n="common.loading">加载中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Teaching Plan Settings View -->
+            <div id="specValidationView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-check-circle"></i> <span data-i18n="teacher.spec.title">教学目标设置</span></h2>
+                        <p class="view-subtitle"><span data-i18n="teacher.spec.subtitle">教学目标已就绪，可进行生成。</span></p>
+                    </div>
+                </div>
+                <div class="wizard-body" style="max-width: 800px; margin: 0 auto;">
+                    <div class="wizard-help">
+                        <i class="fas fa-info-circle"></i>
+                        <p><strong data-i18n="teacher.spec.ready">教学目标已就绪，可进行生成。</strong></p>
+                    </div>
+                    <form id="standaloneSpecForm" class="spec-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="standaloneSpecCourse" data-i18n="teacher.form.course">课程名称 *</label>
+                                <input type="text" id="standaloneSpecCourse" required data-i18n-placeholder="teacher.form.course_placeholder" placeholder="例如：CS101">
+                            </div>
+                            <div class="form-group">
+                                <label for="standaloneSpecTopic" data-i18n="teacher.form.topic">主题 *</label>
+                                <input type="text" id="standaloneSpecTopic" required data-i18n-placeholder="teacher.form.topic_placeholder" placeholder="例如：算法公平性">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="standaloneSpecDuration" data-i18n="teacher.form.duration">时长（分钟）*</label>
+                                <input type="number" id="standaloneSpecDuration" required min="30" value="90">
+                            </div>
+                            <div class="form-group">
+                                <label for="standaloneSpecMode" data-i18n="teacher.form.mode">模式 *</label>
+                                <select id="standaloneSpecMode" required>
+                                    <option value="Sync" data-i18n="teacher.form.mode_sync">同步</option>
+                                    <option value="Async" data-i18n="teacher.form.mode_async">异步</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="standaloneSpecClassSize" data-i18n="teacher.form.class_size">班级人数 *</label>
+                                <input type="number" id="standaloneSpecClassSize" required min="2" value="30">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="standaloneSpecObjectives" data-i18n="teacher.form.objectives">学习目标 *（每行一个）</label>
+                            <textarea id="standaloneSpecObjectives" required rows="4" data-i18n-placeholder="teacher.form.objectives_placeholder" placeholder="解释基本公平性指标&#10;比较准确性与公平性之间的权衡"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="standaloneSpecTaskType" data-i18n="teacher.form.task_type">任务类型 *</label>
+                            <select id="standaloneSpecTaskType" required>
+                                <option value="debate">Structured Debate</option>
+                                <option value="collaborative_synthesis">Collaborative Synthesis</option>
+                                <option value="jigsaw">Jigsaw</option>
+                                <option value="role_play">Role Play</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="standaloneSpecExpectedOutput" data-i18n="teacher.form.expected_output">预期产出 *（每行一个）</label>
+                            <textarea id="standaloneSpecExpectedOutput" required rows="3" data-i18n-placeholder="teacher.form.expected_output_placeholder" placeholder="小组论证地图&#10;300字联合反思"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="fillStandaloneDemoSpec()"><i class="fas fa-magic" aria-hidden="true"></i> <span data-i18n="teacher.demo.fill">填充示例数据</span></button>
+                            <button type="button" class="btn-primary" onclick="validateStandaloneSpec()"><i class="fas fa-check-circle" aria-hidden="true"></i> <span data-i18n="teacher.spec.validate">校验教学目标设置</span></button>
+                        </div>
+                    </form>
+                    <div id="standaloneValidationResult" class="validation-result hidden"></div>
+                </div>
+            </div>
+
+            <!-- Course Documents View -->
+            <div id="documentsView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-book-open"></i> <span data-i18n="teacher.sidebar.documents">课程文档</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.doc.subtitle">管理课程材料用于检索增强</p>
+                    </div>
+                    <button class="btn-primary" onclick="uploadDocument()" data-i18n-aria-label="teacher.doc.upload">
+                        <i class="fas fa-upload"></i>
+                        <span data-i18n="teacher.doc.upload">上传文档</span>
+                    </button>
+                </div>
+                <div id="documentsList" class="documents-container">
+                    <div class="empty-state">
+                        <i class="fas fa-book"></i>
+                        <h4 data-i18n="teacher.doc.empty">暂无课程文档</h4>
+                        <p data-i18n="teacher.doc.upload.first">上传第一份文档</p>
+                        <button class="btn-primary" onclick="uploadDocument()">
+                            <i class="fas fa-upload"></i>
+                            <span data-i18n="teacher.doc.upload.first">上传第一份文档</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Timeline View -->
+            <div id="decisionsView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-history"></i> <span data-i18n="teacher.decisions.title">调整时间线</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.decisions.subtitle">追踪教师决策与活动修订</p>
+                    </div>
+                </div>
+                <div id="decisionTimelineContent" class="decision-timeline-container">
+                    <div class="empty-state">
+                        <i class="fas fa-history"></i>
+                        <h4 data-i18n="teacher.decisions.empty">暂无调整记录</h4>
+                        <p data-i18n="teacher.decisions.empty_desc">创建和修改活动项目后，调整时间线将出现在此处。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Publish & Export View -->
+            <div id="publishView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-rocket"></i> <span data-i18n="teacher.publish.title">发布与导出</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.publish.subtitle">完成并发布你的 CSCL 活动</p>
+                    </div>
+                </div>
+                <div id="publishContent" class="publish-container">
+                    <div class="empty-state">
+                        <i class="fas fa-rocket"></i>
+                        <h4 data-i18n="teacher.publish.empty">暂无待发布活动</h4>
+                        <p data-i18n="teacher.publish.empty_desc">完成一个活动项目后即可发布。</p>
+                        <button class="btn-primary" onclick="switchView('scripts')">
+                            <i class="fas fa-folder-open"></i>
+                            <span data-i18n="teacher.publish.view_projects">查看活动项目</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settingsView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-cog"></i> <span data-i18n="teacher.settings.title">设置</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.settings.subtitle">配置你的偏好设置</p>
+                    </div>
+                </div>
+                <div class="settings-container">
+                    <div class="section-card">
+                        <h3 class="section-title"><i class="fas fa-cog" aria-hidden="true"></i> <span data-i18n="teacher.settings.system">系统设置</span></h3>
+                        <p data-i18n="teacher.settings.coming_soon">设置功能即将上线。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipeline Runs View -->
+            <div id="pipelineRunsView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-project-diagram"></i> <span data-i18n="teacher.pipeline.title">生成流程</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.pipeline.subtitle">追踪生成进度</p>
+                    </div>
+                </div>
+                <div id="pipelineRunsList" class="pipeline-runs-container">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p data-i18n="common.loading">加载中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quality Report View -->
+            <div id="qualityReportsView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-chart-line"></i> <span data-i18n="teacher.quality.title">质量报告</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.quality.subtitle">基于证据的质量评估</p>
+                    </div>
+                </div>
+                <div id="qualityReportContent" class="quality-report-container">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p data-i18n="teacher.quality.select">选择一个活动项目以查看质量报告</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4-Step Wizard View -->
+            <div id="wizardView" class="view">
+                <div class="wizard-container">
+                    <div class="wizard-progress">
+                        <div class="wizard-step active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-label"><i class="fas fa-file-upload" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step1">上传课程大纲</span></div>
+                        </div>
+                        <div class="wizard-step" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-label"><i class="fas fa-check-circle" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step2">教学目标设置</span></div>
+                        </div>
+                        <div class="wizard-step" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-label"><i class="fas fa-cogs" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step3">运行生成流程</span></div>
+                        </div>
+                        <div class="wizard-step" data-step="4">
+                            <div class="step-number">4</div>
+                            <div class="step-label"><i class="fas fa-rocket" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step4">审阅并发布</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Upload Syllabus -->
+                    <div id="wizardStep1" class="wizard-step-content active">
+                        <div class="wizard-header">
+                            <h2 data-i18n="teacher.wizard.step1.title">第 1 步：上传课程大纲</h2>
+                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step1.subtitle">上传课程材料以便系统检索</p>
+                        </div>
+                        <div class="wizard-body">
+                            <div class="wizard-help">
+                                <i class="fas fa-info-circle"></i>
+                                <p><strong data-i18n="common.why">为什么要做：</strong><span data-i18n="teacher.wizard.step1.why">课程文档用于检索增强生成，使活动方案贴合你的课程内容。</span></p>
+                            </div>
+                            <div class="upload-section">
+                                <div class="upload-area" id="uploadArea">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p data-i18n="teacher.wizard.step1.drag">将课程大纲文件拖放到此处，或点击浏览</p>
+                                    <input type="file" id="syllabusFile" accept=".txt,.md,.pdf" style="display: none;">
+                                    <button class="btn-secondary" onclick="document.getElementById('syllabusFile').click()"><i class="fas fa-folder-open" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step1.browse">浏览文件</span></button>
+                                </div>
+                                <div class="text-input-section">
+                                    <label data-i18n="teacher.wizard.step1.paste">或粘贴大纲文本：</label>
+                                    <textarea id="syllabusText" rows="10" data-i18n-placeholder="teacher.wizard.step1.paste_placeholder" placeholder="在此粘贴课程大纲内容..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="wizard-footer">
+                            <button class="btn-secondary" onclick="cancelWizard()" data-i18n="teacher.wizard.cancel"><i class="fas fa-times" aria-hidden="true"></i> <span data-i18n="teacher.wizard.cancel">取消</span></button>
+                            <button class="btn-primary" onclick="wizardNext()" data-i18n="teacher.wizard.continue"><i class="fas fa-arrow-right" aria-hidden="true"></i> <span data-i18n="teacher.wizard.continue">继续</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Teaching Plan Settings -->
+                    <div id="wizardStep2" class="wizard-step-content">
+                        <div class="wizard-header">
+                            <h2 data-i18n="teacher.wizard.step2.title">第 2 步：教学目标设置</h2>
+                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step2.subtitle">填写必要信息以生成 CSCL 活动方案</p>
+                        </div>
+                        <div class="wizard-body">
+                            <div class="wizard-help">
+                                <i class="fas fa-info-circle"></i>
+                                <p><strong data-i18n="common.info">信息</strong> <span data-i18n="teacher.wizard.spec_why">教学目标定义学习目标、任务类型与预期产出，便于生成协作活动方案。</span></p>
+                            </div>
+                            <form id="specForm" class="spec-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="specCourse" data-i18n="teacher.form.course">课程名称 *</label>
+                                        <input type="text" id="specCourse" required data-i18n-placeholder="teacher.form.course_placeholder" placeholder="例如：CS101">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="specTopic" data-i18n="teacher.form.topic">主题 *</label>
+                                        <input type="text" id="specTopic" required data-i18n-placeholder="teacher.form.topic_placeholder" placeholder="例如：算法公平性">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="specDuration" data-i18n="teacher.form.duration">时长（分钟）*</label>
+                                        <input type="number" id="specDuration" required min="30" value="90">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="specMode" data-i18n="teacher.form.mode">模式 *</label>
+                                        <select id="specMode" required>
+                                            <option value="sync" data-i18n="teacher.form.mode_sync">同步</option>
+                                            <option value="async" data-i18n="teacher.form.mode_async">异步</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="specClassSize" data-i18n="teacher.form.class_size">班级人数 *</label>
+                                        <input type="number" id="specClassSize" required min="2" value="30">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="specCourseContext" data-i18n="teacher.form.course_context">课程背景 *</label>
+                                    <textarea id="specCourseContext" required rows="3" data-i18n-placeholder="teacher.form.course_context_placeholder" placeholder="描述课程设置、学习者画像和教学情境。"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="specObjectives" data-i18n="teacher.form.objectives">学习目标 *（每行一个）</label>
+                                    <textarea id="specObjectives" required rows="4" data-i18n-placeholder="teacher.form.objectives_placeholder" placeholder="解释基本公平性指标&#10;比较准确性与公平性之间的权衡"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="specTaskType" data-i18n="teacher.form.task_type">任务类型 *</label>
+                                    <select id="specTaskType" required aria-describedby="specTaskTypeHelp" title="">
+                                        <option value="" data-i18n="common.loading_task_types">加载中...</option>
+                                    </select>
+                                    <p id="specTaskTypeHelp" class="form-help" data-i18n="teacher.form.task_type_help">从配置中选择协作论证任务类型。</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="specExpectedOutput" data-i18n="teacher.form.expected_output">预期产出 *（每行一个）</label>
+                                    <textarea id="specExpectedOutput" required rows="3" data-i18n-placeholder="teacher.form.expected_output_placeholder" placeholder="小组论证地图&#10;300字联合反思"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="specCollaborationForm" data-i18n="teacher.form.collaboration_form">协作形式 *</label>
+                                    <select id="specCollaborationForm" required>
+                                        <option value="group" data-i18n="teacher.form.collaboration_group">小组</option>
+                                        <option value="pair" data-i18n="teacher.form.collaboration_pair">双人</option>
+                                        <option value="individual_with_sharing" data-i18n="teacher.form.collaboration_individual">个人分享</option>
+                                        <option value="whole_class" data-i18n="teacher.form.collaboration_whole_class">全班</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="specTaskRequirements" data-i18n="teacher.form.task_requirements">任务要求 *</label>
+                                    <textarea id="specTaskRequirements" required rows="3" data-i18n-placeholder="teacher.form.task_requirements_placeholder" placeholder="指定具体的协作和证据要求。"></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="button" class="btn-secondary" onclick="fillDemoSpec()"><i class="fas fa-magic" aria-hidden="true"></i> <span data-i18n="teacher.demo.fill">填充示例数据</span></button>
+                                    <button type="button" class="btn-primary" onclick="validateSpec()"><i class="fas fa-check-circle" aria-hidden="true"></i> <span data-i18n="teacher.spec.validate">校验教学目标设置</span></button>
+                                </div>
+                            </form>
+                            <div id="specValidationResult" class="validation-result hidden"></div>
+                        </div>
+                        <div class="wizard-footer">
+                            <button class="btn-secondary" onclick="wizardBack()"><i class="fas fa-arrow-left" aria-hidden="true"></i> <span data-i18n="teacher.wizard.back">上一步</span></button>
+                            <button class="btn-primary" id="wizardStep2Next" onclick="wizardNext()" disabled><i class="fas fa-arrow-right" aria-hidden="true"></i> <span data-i18n="teacher.wizard.continue">继续</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Run Pipeline -->
+                    <div id="wizardStep3" class="wizard-step-content">
+                        <div class="wizard-header">
+                            <h2 data-i18n="teacher.wizard.step3.title">第 3 步：运行生成流程</h2>
+                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step3.subtitle">通过多阶段流程生成 CSCL 活动方案</p>
+                        </div>
+                        <div class="wizard-body">
+                            <div class="wizard-help">
+                                <i class="fas fa-info-circle"></i>
+                                <p><strong data-i18n="common.why">为什么要做：</strong><span data-i18n="teacher.wizard.step3.why">流程包含 4 个阶段：规划器（结构）、材料（内容）、审查器（审查）、优化器（润色）。</span></p>
+                            </div>
+                            <div id="pipelineVisualization" class="pipeline-visualization">
+                                <div class="pipeline-stages">
+                                    <div class="pipeline-stage" data-stage="planner">
+                                        <div class="stage-header">
+                                            <div class="stage-icon"><i class="fas fa-map"></i></div>
+                                            <div class="stage-info">
+                                                <h4 data-i18n="teacher.pipeline.stage.planner">规划器</h4>
+                                                <span class="stage-status" data-i18n="teacher.pipeline.stage.pending">等待中</span>
+                                            </div>
+                                        </div>
+                                        <div class="stage-details">
+                                            <div class="stage-duration">--</div>
+                                            <div class="stage-summary">
+                                                <p class="input-summary"><span data-i18n="teacher.pipeline.stage.input">输入：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                                <p class="output-summary"><span data-i18n="teacher.pipeline.stage.output">输出：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="pipeline-stage" data-stage="material">
+                                        <div class="stage-header">
+                                            <div class="stage-icon"><i class="fas fa-file-alt"></i></div>
+                                            <div class="stage-info">
+                                                <h4 data-i18n="teacher.pipeline.stage.material">材料</h4>
+                                                <span class="stage-status" data-i18n="teacher.pipeline.stage.pending">等待中</span>
+                                            </div>
+                                        </div>
+                                        <div class="stage-details">
+                                            <div class="stage-duration">--</div>
+                                            <div class="stage-summary">
+                                                <p class="input-summary"><span data-i18n="teacher.pipeline.stage.input">输入：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                                <p class="output-summary"><span data-i18n="teacher.pipeline.stage.output">输出：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="pipeline-stage" data-stage="critic">
+                                        <div class="stage-header">
+                                            <div class="stage-icon"><i class="fas fa-search"></i></div>
+                                            <div class="stage-info">
+                                                <h4 data-i18n="teacher.pipeline.stage.critic">审查器</h4>
+                                                <span class="stage-status" data-i18n="teacher.pipeline.stage.pending">等待中</span>
+                                            </div>
+                                        </div>
+                                        <div class="stage-details">
+                                            <div class="stage-duration">--</div>
+                                            <div class="stage-summary">
+                                                <p class="input-summary"><span data-i18n="teacher.pipeline.stage.input">输入：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                                <p class="output-summary"><span data-i18n="teacher.pipeline.stage.output">输出：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="pipeline-stage" data-stage="refiner">
+                                        <div class="stage-header">
+                                            <div class="stage-icon"><i class="fas fa-magic"></i></div>
+                                            <div class="stage-info">
+                                                <h4 data-i18n="teacher.pipeline.stage.refiner">优化器</h4>
+                                                <span class="stage-status" data-i18n="teacher.pipeline.stage.pending">等待中</span>
+                                            </div>
+                                        </div>
+                                        <div class="stage-details">
+                                            <div class="stage-duration">--</div>
+                                            <div class="stage-summary">
+                                                <p class="input-summary"><span data-i18n="teacher.pipeline.stage.input">输入：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                                <p class="output-summary"><span data-i18n="teacher.pipeline.stage.output">输出：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pipeline-tech-info">
+                                    <div class="tech-item">
+                                        <label data-i18n="teacher.pipeline.provider">提供商：</label>
+                                        <span id="pipelineProvider">--</span>
+                                    </div>
+                                    <div class="tech-item">
+                                        <label data-i18n="teacher.pipeline.model">模型：</label>
+                                        <span id="pipelineModel">--</span>
+                                    </div>
+                                    <div class="tech-item">
+                                        <label data-i18n="teacher.pipeline.spec_hash">教学目标版本</label>
+                                        <span id="pipelineSpecHash" data-i18n-title="teacher.pipeline.spec_hash_title" title="教学目标版本指纹">--</span>
+                                    </div>
+                                    <div class="tech-item">
+                                        <label data-i18n="teacher.pipeline.config_fp">配置指纹：</label>
+                                        <span id="pipelineConfigFingerprint">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="pipelineErrorPanel" class="validation-result error hidden" role="alert">
+                                <h4><i class="fas fa-exclamation-circle"></i> <span id="pipelineErrorTitle" data-i18n="teacher.pipeline.error">流程错误</span></h4>
+                                <ul id="pipelineErrorList"></ul>
+                                <p id="pipelineErrorAction" class="pipeline-error-action"></p>
+                            </div>
+                            <div class="pipeline-actions">
+                                <button class="btn-primary" id="runPipelineBtn" onclick="runPipeline()">
+                                    <i class="fas fa-play"></i>
+                                    <span data-i18n="teacher.pipeline.start">开始生成</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="wizard-footer">
+                            <button class="btn-secondary" onclick="wizardBack()"><i class="fas fa-arrow-left" aria-hidden="true"></i> <span data-i18n="teacher.wizard.back">上一步</span></button>
+                            <button class="btn-primary" id="wizardStep3Next" onclick="wizardNext()" disabled><i class="fas fa-arrow-right" aria-hidden="true"></i> <span data-i18n="teacher.wizard.continue">继续</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Finalize & Publish -->
+                    <div id="wizardStep4" class="wizard-step-content">
+                        <div class="wizard-header">
+                            <h2 data-i18n="teacher.wizard.step4.title">第 4 步：审阅并发布</h2>
+                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step4.subtitle">查看生成的活动方案并发布给学生</p>
+                        </div>
+                        <div class="wizard-body">
+                            <div class="wizard-help">
+                                <i class="fas fa-info-circle"></i>
+                                <p><strong data-i18n="common.why">为什么要做：</strong><span data-i18n="teacher.wizard.step4.why">审阅确保活动质量，确认后再对学生可见。</span></p>
+                            </div>
+                            <div id="scriptPreview" class="script-preview">
+                                <div class="loading-placeholder">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <p data-i18n="teacher.wizard.loading_preview">正在加载方案预览...</p>
+                                </div>
+                            </div>
+                            <div class="publish-actions">
+                                <button class="btn-secondary" onclick="viewQualityReport()">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span data-i18n="teacher.wizard.view_quality">查看质量报告</span>
+                                </button>
+                                <button class="btn-secondary" onclick="exportScript()">
+                                    <i class="fas fa-download"></i>
+                                    <span data-i18n="teacher.wizard.export">导出方案</span>
+                                </button>
+                                <button class="btn-primary" id="finalizeBtn" onclick="finalizeScript()">
+                                    <i class="fas fa-check"></i>
+                                    <span data-i18n="teacher.wizard.finalize_script">确认方案</span>
+                                </button>
+                                <button class="btn-primary" id="publishBtn" onclick="publishScript()" disabled>
+                                    <i class="fas fa-rocket"></i>
+                                    <span data-i18n="teacher.wizard.publish_activity">发布活动</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="wizard-footer">
+                            <button class="btn-secondary" onclick="wizardBack()"><i class="fas fa-arrow-left" aria-hidden="true"></i> <span data-i18n="teacher.wizard.back">上一步</span></button>
+                            <button class="btn-secondary" onclick="switchView('dashboard')"><i class="fas fa-check" aria-hidden="true"></i> <span data-i18n="teacher.wizard.done">完成</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipeline Run Detail View -->
+            <div id="pipelineRunDetailView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-project-diagram"></i> <span data-i18n="teacher.pipeline.run_detail">流程运行详情</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.pipeline.run_detail_subtitle">查看流程执行详情</p>
+                    </div>
+                    <button class="btn-secondary" onclick="switchView('pipeline-runs')">
+                        <i class="fas fa-arrow-left"></i>
+                        <span data-i18n="teacher.pipeline.back_to_runs">返回流程列表</span>
+                    </button>
+                </div>
+                <div id="pipelineRunDetailContent" class="pipeline-run-detail"></div>
+            </div>
+
+            <!-- Quality Report Detail View -->
+            <div id="qualityReportDetailView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-chart-line"></i> <span data-i18n="teacher.quality.title">质量报告</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.quality.detail_subtitle">六维质量评估</p>
+                    </div>
+                    <button class="btn-secondary" onclick="switchView('quality-reports')">
+                        <i class="fas fa-arrow-left"></i>
+                        <span data-i18n="teacher.quality.back">返回</span>
+                    </button>
+                </div>
+                <div id="qualityReportDetailContent" class="quality-report-detail"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p data-i18n="common.processing">处理中...</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/i18n.js') }}?v={{ static_version }}"></script>
+    <script src="{{ url_for('static', filename='js/teacher.js') }}?v={{ static_version }}"></script>
+    <script>
+        function switchLanguage(locale) {
+            setLocale(locale);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof applyLocaleToPage === 'function') applyLocaleToPage();
+        });
+    </script>
+</body>
+</html>

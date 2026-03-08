@@ -1,0 +1,14 @@
+{
+  "dimensions": {
+    "first_screen_clarity": "pass",
+    "navigation": "pass",
+    "terminology": "pass",
+    "i18n_coverage": "pass",
+    "visual_a11y": "pass",
+    "feedback": "pass",
+    "performance_static": "pass"
+  },
+  "checks_passed": 21,
+  "checks_failed": 0,
+  "overall": "pass"
+}

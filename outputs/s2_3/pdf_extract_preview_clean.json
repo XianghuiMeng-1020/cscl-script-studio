@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "doc_id": "sample-uuid",
+  "detected_type": "txt",
+  "extracted_char_count": 256,
+  "extracted_text_preview": "Introduction to Data Science. This course covers fundamental concepts in machine learning, statistics, and programming. Students will learn to apply analytical methods to real-world datasets. Prerequisites include basic programming and algebra. Topics include: data wrangling, visualization, statistical inference.",
+  "extraction_method": "plain_text",
+  "warnings": []
+}

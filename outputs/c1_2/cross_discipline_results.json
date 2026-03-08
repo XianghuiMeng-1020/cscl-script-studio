@@ -1,0 +1,23 @@
+{
+  "data_science": {
+    "run_id": "run_4efca9955ac94cb1",
+    "status": "success",
+    "coverage": 1.0,
+    "scene_completeness": 1.0,
+    "role_completeness": 0.6666666666666666
+  },
+  "learning_sciences": {
+    "run_id": "run_c1925df1e34e4549",
+    "status": "success",
+    "coverage": 1.0,
+    "scene_completeness": 1.0,
+    "role_completeness": 0.6666666666666666
+  },
+  "humanities": {
+    "run_id": "run_50c5baa0aa404d1b",
+    "status": "success",
+    "coverage": 1.0,
+    "scene_completeness": 1.0,
+    "role_completeness": 0.6666666666666666
+  }
+}

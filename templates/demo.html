@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSCL Script Studio - Quick Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}?v={{ static_version }}">
+    <style>
+        .demo-page { min-height: 100vh; padding: 2rem; background: var(--bg-primary, #f5f6f8); }
+        .demo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        .demo-header h1 { margin: 0; font-size: 1.5rem; }
+        .demo-actions a { margin-left: 0.75rem; color: var(--primary-color, #5B7553); text-decoration: none; }
+        .demo-actions a:hover { text-decoration: underline; }
+        .demo-notice { background: var(--info-bg, #EDF2F7); border: 1px solid var(--border-color, #E2DDD4); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.95rem; }
+        .demo-list { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); padding: 1.5rem; }
+        .demo-list ul { list-style: none; margin: 0; padding: 0; }
+        .demo-list li { padding: 0.75rem 0; border-bottom: 1px solid #eee; }
+        .demo-list li:last-child { border-bottom: none; }
+        .demo-list .empty { color: #666; padding: 2rem; text-align: center; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0.5rem 1rem; border-radius: 8px; font-size: 1rem; text-decoration: none; cursor: pointer; border: none; }
+        .btn-primary { background: var(--primary-color, #5B7553); color: #fff; }
+        .btn-primary:hover { background: var(--primary-dark, #46593F); }
+    </style>
+</head>
+<body class="demo-page">
+    <div class="demo-header">
+        <h1>CSCL Script Studio – <span data-i18n="home.demo">Quick Demo</span></h1>
+        <div class="demo-actions">
+            <a href="/login?role=teacher"><span data-i18n="login.role.teacher">教师</span> <span data-i18n="login.sign_in">登录</span></a>
+            <a href="/login?role=student"><span data-i18n="login.role.student">学生</span> <span data-i18n="login.sign_in">登录</span></a>
+            <a href="/"><span data-i18n="login.back_home">返回首页</span></a>
+        </div>
+    </div>
+    <div class="demo-notice" role="status">
+        <strong>Demo 模式</strong>：仅可浏览活动列表，无法创建或编辑。如需完整功能，请使用上方登录。
+    </div>
+    <div class="demo-list">
+        <ul id="scriptList">
+            <li class="empty"><span data-i18n="common.loading">加载中...</span></li>
+        </ul>
+    </div>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script>
+        (function() {
+            fetch('/api/demo/scripts').then(function(r) { return r.json(); }).then(function(data) {
+                var ul = document.getElementById('scriptList');
+                if (data.scripts && data.scripts.length > 0) {
+                    ul.innerHTML = data.scripts.map(function(s) {
+                        return '<li><strong>' + (s.title || s.id) + '</strong> – ' + (s.topic || '') + '</li>';
+                    }).join('');
+                } else {
+                    ul.innerHTML = '<li class="empty">' + (typeof t === 'function' ? t('common.no.data') : '暂无数据') + '</li>';
+                }
+            }).catch(function() {
+                document.getElementById('scriptList').innerHTML = '<li class="empty">' + (typeof t === 'function' ? t('common.error.network') : '加载失败') + '</li>';
+            });
+        })();
+    </script>
+</body>
+</html>

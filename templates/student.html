@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - CSCL Script Studio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ static_version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student.css') }}?v={{ static_version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}?v={{ static_version }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="student-page">
+    <div class="app-container">
+        <!-- Header -->
+        <header class="student-header">
+            <div class="header-left">
+                <a href="/" class="logo-link">
+                    <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.75"/>
+                        <circle cx="22" cy="10" r="3" stroke="currentColor" stroke-width="1.75"/>
+                        <circle cx="16" cy="22" r="3" stroke="currentColor" stroke-width="1.75"/>
+                        <line x1="10" y1="10" x2="16" y2="22" stroke="currentColor" stroke-width="1.75"/>
+                        <line x1="22" y1="10" x2="16" y2="22" stroke="currentColor" stroke-width="1.75"/>
+                        <line x1="10" y1="10" x2="22" y2="10" stroke="currentColor" stroke-width="1.75"/>
+                        <path d="M24 28 L28 28 L28 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                    </svg>
+                    <span>CSCL Script Studio</span>
+                </a>
+            </div>
+            <div class="header-center">
+                <h1 data-i18n="student.title">学生工作台</h1>
+            </div>
+            <div class="header-right">
+                <div class="language-switcher" style="margin-right: 1rem;">
+                    <select id="languageSelect" onchange="switchLanguage(this.value)" style="padding: 0.4rem 0.5rem; border-radius: var(--radius-sm); background: white; border: 1px solid var(--border-color); font-size: 0.85rem;">
+                        <option value="zh-CN">简体中文</option>
+                        <option value="zh-TW">繁體中文</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="user-name">Student</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="student-main">
+            <!-- Context Banner -->
+            <div id="contextBanner" class="context-banner hidden">
+                <div class="banner-content">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong data-i18n="student.context.viewing">你正在查看：</strong> <span id="contextScriptId">--</span>
+                        <span class="banner-hint" data-i18n="student.context.hint">（通过 ?script_id=xxx 查看特定活动）</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Activity -->
+            <section class="current-activity-section">
+                <div id="currentActivityCard" class="current-activity-card">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p data-i18n="common.loading">加载中...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Current Tasks -->
+            <section class="task-section">
+                <div class="task-header">
+                    <h3><i class="fas fa-tasks" aria-hidden="true"></i> <span data-i18n="student.current.task">本次任务</span></h3>
+                    <p class="section-subtitle" data-i18n="student.task.description">你需要完成以下任务</p>
+                </div>
+                <div id="currentTaskCard" class="task-card">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p data-i18n="common.loading_text">正在加载...</p>
+                    </div>
+                </div>
+                
+                <!-- Deadline Info -->
+                <div id="deadlineInfo" class="deadline-info hidden">
+                    <i class="fas fa-clock"></i>
+                    <span><span data-i18n="student.deadline">截止时间：</span><strong id="deadlineText">--</strong></span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="task-actions">
+                    <button id="submitBtn" class="btn-primary btn-large" onclick="submitTask()" disabled>
+                        <i class="fas fa-check"></i>
+                        <span data-i18n="student.submit">提交任务</span>
+                    </button>
+                    <button id="continueBtn" class="btn-secondary btn-large" onclick="continueTask()" disabled>
+                        <i class="fas fa-arrow-right"></i>
+                        <span data-i18n="student.continue">继续任务</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Collapsible Sections -->
+            <section class="collapsible-sections">
+                <div class="collapsible-section">
+                    <button class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <i class="fas fa-chevron-down"></i>
+                        <span data-i18n="student.scoring">评分标准摘要</span>
+                    </button>
+                    <div class="collapsible-content hidden">
+                        <div id="scoringCriteria" class="scoring-criteria-content">
+                            <p data-i18n="common.no.data">暂无数据</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="collapsible-section">
+                    <button class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <i class="fas fa-chevron-down"></i>
+                        <span data-i18n="student.history">历史记录</span>
+                    </button>
+                    <div class="collapsible-content hidden">
+                        <div id="activityHistory" class="activity-history">
+                            <div class="empty-state">
+                                <i class="fas fa-history"></i>
+                                <h4 data-i18n="common.no.data">暂无数据</h4>
+                                <p data-i18n="student.empty.no_history">你还没有完成任何活动。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="collapsible-section">
+                    <button class="collapsible-header" onclick="toggleCollapsible(this)">
+                        <i class="fas fa-chevron-down"></i>
+                        <span data-i18n="student.collaboration">协作建议</span>
+                    </button>
+                    <div class="collapsible-content hidden">
+                        <div id="collaborationTips" class="collaboration-tips-content">
+                            <ul>
+                                <li data-i18n="student.collaboration.tip1">积极倾听同伴的想法</li>
+                                <li data-i18n="student.collaboration.tip2">在他人贡献的基础上继续</li>
+                                <li data-i18n="student.collaboration.tip3">需要时提出澄清问题</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <script src="{{ url_for('static', filename='js/i18n.js') }}?v={{ static_version }}"></script>
+    <script src="{{ url_for('static', filename='js/student.js') }}?v={{ static_version }}"></script>
+    <script>
+        function switchLanguage(locale) {
+            setLocale(locale);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const langSelect = document.getElementById('languageSelect');
+            if (langSelect) langSelect.value = currentLocale;
+            if (typeof applyLocaleToPage === 'function') applyLocaleToPage();
+        });
+    </script>
+</body>
+</html>

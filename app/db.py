@@ -1,0 +1,63 @@
+"""Database initialization and session management"""
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.pool import NullPool
+import os
+
+db = SQLAlchemy()
+
+
+def init_db(app: Flask):
+    """Initialize database connection"""
+    database_url = app.config.get('DATABASE_URL', '')
+    
+    # Use psycopg3 dialect when postgresql:// is given (psycopg3 supports Python 3.13)
+    if database_url and database_url.startswith('postgresql://') and 'postgresql+' not in database_url:
+        try:
+            import psycopg
+            database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+        except ImportError:
+            pass
+    
+    if not database_url:
+        # No database configured, skip initialization
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        # Still initialize db even if no URL (for testing)
+        db.init_app(app)
+        return False
+    
+    # Set SQLAlchemy config
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+    }
+    
+    # Initialize Flask-SQLAlchemy
+    db.init_app(app)
+    
+    return True
+
+
+def check_db_connection(app: Flask):
+    """Check if database is connected and accessible"""
+    try:
+        database_url = app.config.get('DATABASE_URL', '')
+        if not database_url:
+            return False
+        
+        # Try to connect
+        with app.app_context():
+            # Check if db is initialized
+            if not hasattr(db, 'engine') or db.engine is None:
+                return False
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1'))
+            db.session.commit()
+            return True
+    except Exception:
+        return False

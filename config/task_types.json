@@ -1,0 +1,41 @@
+{
+  "description": "v1 collaborative argumentation task types for GenAI-supported multimodal CSCL script generation. Theory-grounded patterns for higher education.",
+  "task_types": [
+    {
+      "id": "structured_debate",
+      "display_name": "Structured Debate",
+      "description": "Position-based argumentation with evidence and rebuttals; roles for proposer, opposer, moderator.",
+      "pedagogical_goal": "Develop evidence-based argumentation and critical response to counterclaims.",
+      "expected_outputs": ["argument map", "position statement", "rebuttal summary"],
+      "minimum_role_pattern": "proponent, opponent, moderator",
+      "compatible_modalities": ["sync", "async"]
+    },
+    {
+      "id": "evidence_comparison",
+      "display_name": "Evidence Comparison",
+      "description": "Groups compare and evaluate multiple sources of evidence; reach a justified conclusion.",
+      "pedagogical_goal": "Compare evidence quality and synthesize across sources for collaborative argumentation.",
+      "expected_outputs": ["comparison matrix", "synthesis statement", "evidence summary"],
+      "minimum_role_pattern": "analyst, synthesizer, critic",
+      "compatible_modalities": ["sync", "async"]
+    },
+    {
+      "id": "perspective_synthesis",
+      "display_name": "Perspective Synthesis",
+      "description": "Integrate multiple perspectives into a shared artifact; balance viewpoints and justify claims.",
+      "pedagogical_goal": "Synthesize diverse perspectives into a coherent argumentative artifact.",
+      "expected_outputs": ["synthesis document", "joint reflection", "multi-perspective summary"],
+      "minimum_role_pattern": "contributor, synthesizer, reviewer",
+      "compatible_modalities": ["sync", "async"]
+    },
+    {
+      "id": "claim_counterclaim_roleplay",
+      "display_name": "Claim–Counterclaim Role Play",
+      "description": "Participants adopt roles to advance claims and counterclaims; negotiate and refine positions.",
+      "pedagogical_goal": "Practice claim–counterclaim reasoning and role-based argumentation.",
+      "expected_outputs": ["role summary", "negotiation outcome", "position document"],
+      "minimum_role_pattern": "claimant, counterclaimant, facilitator",
+      "compatible_modalities": ["sync", "async"]
+    }
+  ]
+}

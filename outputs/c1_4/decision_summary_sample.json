@@ -1,0 +1,45 @@
+{
+  "total_decisions": 8,
+  "accept_rate": 0.375,
+  "reject_rate": 0.125,
+  "edit_rate": 0.25,
+  "stage_adoption_rate": {
+    "planner": {
+      "adoption_rate": 0.75,
+      "total_decisions": 4,
+      "accept_count": 3
+    },
+    "manual": {
+      "adoption_rate": 0.0,
+      "total_decisions": 4,
+      "accept_count": 0
+    }
+  },
+  "avg_time_to_finalize": 7.0,
+  "evidence_linked_edit_rate": 0.0,
+  "top_modified_target_types": [
+    {
+      "target_type": "scriptlet",
+      "count": 4
+    },
+    {
+      "target_type": "scene",
+      "count": 2
+    },
+    {
+      "target_type": "role",
+      "count": 1
+    },
+    {
+      "target_type": "pipeline_output",
+      "count": 1
+    }
+  ],
+  "reproducibility": {
+    "spec_hash": null,
+    "config_fingerprint": null,
+    "provider": null,
+    "model": null,
+    "pipeline_run_id": null
+  }
+}

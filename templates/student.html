@@ -49,6 +49,14 @@
 
         <!-- Main Content -->
         <main class="student-main">
+            <!-- Post-login instruction / tutorial (dismissible) -->
+            <div id="studentTutorial" class="tutorial-card student-tutorial-card" role="region" aria-label="Welcome tutorial">
+                <div class="tutorial-inner">
+                    <h3 class="tutorial-title" data-i18n="student.tutorial.title">👋 欢迎来到学生工作台</h3>
+                    <p class="tutorial-intro" data-i18n="student.tutorial.intro">在这里你可以：查看当前协作学习活动、完成分配的任务、提交反思。如有任务请按页面提示完成。</p>
+                    <button type="button" class="tutorial-dismiss" id="studentTutorialDismiss" data-i18n="student.tutorial.dismiss">不再显示</button>
+                </div>
+            </div>
             <!-- Context Banner -->
             <div id="contextBanner" class="context-banner hidden">
                 <div class="banner-content">

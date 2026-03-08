@@ -109,6 +109,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof showLoading === 'function') showLoading(false);
     }
     try {
+        var tutorialEl = document.getElementById('teacherTutorial');
+        var dismissBtn = document.getElementById('teacherTutorialDismiss');
+        if (localStorage.getItem('teacher_tutorial_dismissed') === '1' && tutorialEl) {
+            tutorialEl.classList.add('hidden');
+        }
+        if (dismissBtn && tutorialEl) {
+            dismissBtn.addEventListener('click', function() {
+                try { localStorage.setItem('teacher_tutorial_dismissed', '1'); } catch (e) {}
+                tutorialEl.classList.add('hidden');
+            });
+        }
+    } catch (e) { /* ignore */ }
+    try {
         if (typeof console !== 'undefined' && console.log) console.log('[teacher] bind end');
     } catch (e) { /* ignore */ }
     setTimeout(function() {

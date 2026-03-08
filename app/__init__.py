@@ -50,7 +50,19 @@ def create_app(config_class=Config):
     
     # Initialize database (non-blocking, won't fail if DB not configured)
     init_db(app)
-    
+
+    # When no DATABASE_URL (e.g. Render free tier with in-memory SQLite), create tables and seed demo users
+    # so teacher_demo / Demo@12345 login works without running migrations or seed script separately.
+    if not app.config.get('DATABASE_URL'):
+        with app.app_context():
+            import importlib
+            importlib.import_module('app.models')  # register all models so create_all() creates their tables
+            from app.db import db
+            db.create_all()
+            from app.seed_demo import seed_demo_users
+            seed_demo_users()
+            logger.info("Bootstrapped in-memory DB: tables created, demo users seeded")
+
     # S2.14: inject static_version for cache busting in templates
     @app.context_processor
     def inject_static_version():

@@ -108,6 +108,21 @@
                     </div>
                 </div>
 
+                <!-- Post-login instruction / tutorial (dismissible) -->
+                <div id="teacherTutorial" class="tutorial-card" role="region" aria-label="Welcome tutorial">
+                    <div class="tutorial-inner">
+                        <h3 class="tutorial-title" data-i18n="teacher.tutorial.title">👋 欢迎使用教师工作台</h3>
+                        <p class="tutorial-intro" data-i18n="teacher.tutorial.intro">我是你的协作学习活动生成小助手。按下面 4 步即可把课程大纲变成可用的活动方案：</p>
+                        <ul class="tutorial-steps">
+                            <li data-i18n="teacher.tutorial.step1">1. 导入课程大纲 — 上传或粘贴大纲，系统会提取课程信息</li>
+                            <li data-i18n="teacher.tutorial.step2">2. 确认教学目标 — 填写学习目标、任务类型与预期产出</li>
+                            <li data-i18n="teacher.tutorial.step3">3. 生成活动流程 — 点击「开始生成」，系统自动生成活动方案</li>
+                            <li data-i18n="teacher.tutorial.step4">4. 审阅并发布 — 检查无误后发布给学生</li>
+                        </ul>
+                        <button type="button" class="tutorial-dismiss" id="teacherTutorialDismiss" data-i18n="teacher.tutorial.dismiss">不再显示</button>
+                    </div>
+                </div>
+
                 <!-- Four-Step Process Cards -->
                 <div class="process-cards-grid">
                     <div class="process-card" data-step="1">

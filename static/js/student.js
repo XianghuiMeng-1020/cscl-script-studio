@@ -29,6 +29,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 scriptIdSpan.textContent = currentScriptId.substring(0, 16) + '...';
             }
         }
+        var tutorialEl = document.getElementById('studentTutorial');
+        var dismissBtn = document.getElementById('studentTutorialDismiss');
+        if (localStorage.getItem('student_tutorial_dismissed') === '1' && tutorialEl) {
+            tutorialEl.classList.add('hidden');
+        }
+        if (dismissBtn && tutorialEl) {
+            dismissBtn.addEventListener('click', function() {
+                try { localStorage.setItem('student_tutorial_dismissed', '1'); } catch (e) {}
+                tutorialEl.classList.add('hidden');
+            });
+        }
         checkHealth();
         if (currentScriptId) {
             loadCurrentActivity();

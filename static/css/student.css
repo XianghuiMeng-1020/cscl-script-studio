@@ -547,6 +547,40 @@
     color: var(--text-secondary);
 }
 
+/* Post-login tutorial card (dismissible) */
+.student-page .tutorial-card.student-tutorial-card {
+    margin-bottom: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, rgba(var(--primary-rgb, 34, 139, 34), 0.08), rgba(var(--primary-rgb, 34, 139, 34), 0.04));
+    border: 1px solid rgba(var(--primary-rgb, 34, 139, 34), 0.25);
+}
+.student-page .tutorial-card .tutorial-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+.student-page .tutorial-card .tutorial-intro {
+    margin: 0 0 1rem 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+.student-page .tutorial-card .tutorial-dismiss {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+}
+.student-page .tutorial-card .tutorial-dismiss:hover {
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.05);
+}
+
 /* Context Banner */
 .context-banner {
     background: var(--info-bg);

@@ -54,6 +54,15 @@ def run_teacher_slot(slot: int) -> tuple[int, bool, str, dict]:
             return (slot, False, f"create_script {r.status_code}", result)
         script_id = r.json().get("script", {}).get("id") or r.json().get("id")
         if not script_id:
+            # Fallback: list scripts and find by title (ensures same worker/DB sees it)
+            r2 = session.get(f"{BASE_URL}/api/cscl/scripts", timeout=TIMEOUT)
+            if r2.status_code != 200:
+                return (slot, False, "list_scripts failed", result)
+            for s in (r2.json().get("scripts") or []):
+                if s.get("title") == f"Load test {slot}":
+                    script_id = s.get("id")
+                    break
+        if not script_id:
             return (slot, False, "no script id in response", result)
         r = session.post(
             f"{BASE_URL}/api/cscl/scripts/{script_id}/finalize",

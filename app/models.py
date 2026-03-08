@@ -229,6 +229,8 @@ class CSCLScript(db.Model):
     task_type = db.Column(db.String(100), nullable=False)  # e.g., "debate", "collaborative_writing"
     duration_minutes = db.Column(db.Integer, nullable=False, default=60)
     status = db.Column(db.String(50), nullable=False, default='draft')  # draft, final
+    published_at = db.Column(db.DateTime, nullable=True)  # when teacher published for students
+    share_code = db.Column(db.String(12), unique=True, nullable=True, index=True)  # short code for student access
     created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -243,6 +245,8 @@ class CSCLScript(db.Model):
             'task_type': self.task_type,
             'duration_minutes': self.duration_minutes,
             'status': self.status,
+            'published_at': self.published_at.isoformat() if self.published_at else None,
+            'share_code': self.share_code,
             'created_by': self.created_by,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
@@ -523,5 +527,89 @@ class CSCLTeacherDecision(db.Model):
             'rationale_text': self.rationale_text,
             'source_stage': self.source_stage,
             'confidence': self.confidence,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class StudentGroup(db.Model):
+    """One group per published script; students join to collaborate and chat."""
+    __tablename__ = 'student_groups'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    script_id = db.Column(db.String(36), db.ForeignKey('cscl_scripts.id', ondelete='CASCADE'), nullable=False)
+    group_name = db.Column(db.String(200), nullable=False, default='Group')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'script_id': self.script_id,
+            'group_name': self.group_name,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class StudentGroupMember(db.Model):
+    """Student membership in a group; optional role_label from CSCLRole.role_name."""
+    __tablename__ = 'student_group_members'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    group_id = db.Column(db.String(36), db.ForeignKey('student_groups.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    role_label = db.Column(db.String(100), nullable=True)  # e.g. advocate, challenger
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'group_id': self.group_id,
+            'user_id': self.user_id,
+            'role_label': self.role_label,
+            'joined_at': self.joined_at.isoformat() if self.joined_at else None
+        }
+
+
+class GroupMessage(db.Model):
+    """Chat message in a student group."""
+    __tablename__ = 'group_messages'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    group_id = db.Column(db.String(36), db.ForeignKey('student_groups.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    content = db.Column(Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'group_id': self.group_id,
+            'user_id': self.user_id,
+            'content': self.content,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class StudentTaskSubmission(db.Model):
+    """Student's submission for a scene task (one per user per scene per script)."""
+    __tablename__ = 'student_task_submissions'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    script_id = db.Column(db.String(36), db.ForeignKey('cscl_scripts.id', ondelete='CASCADE'), nullable=False)
+    scene_id = db.Column(db.String(36), db.ForeignKey('cscl_scenes.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    content = db.Column(Text, nullable=True)
+    status = db.Column(db.String(50), nullable=False, default='pending')  # pending, submitted, reviewed
+    submitted_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'script_id': self.script_id,
+            'scene_id': self.scene_id,
+            'user_id': self.user_id,
+            'content': self.content,
+            'status': self.status,
+            'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }

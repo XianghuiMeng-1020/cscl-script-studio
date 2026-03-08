@@ -740,6 +740,35 @@
         </div>
     </div>
 
+    <!-- Publish Share Link Modal -->
+    <div id="publishShareModal" class="modal hidden" role="dialog" aria-labelledby="publishShareModalTitle" aria-modal="true">
+        <div class="modal-overlay" onclick="closePublishShareModal()"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="publishShareModalTitle"><i class="fas fa-rocket" aria-hidden="true"></i> <span data-i18n="teacher.publish.share_title">分享给学生</span></h3>
+                <button type="button" class="modal-close" onclick="closePublishShareModal()" aria-label="Close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="publish-share-hint" data-i18n="teacher.publish.share_hint">将下方链接或邀请码发给学生，学生打开链接后登录即可参与活动。</p>
+                <div class="publish-share-code">
+                    <label data-i18n="teacher.publish.share_code">邀请码</label>
+                    <div class="publish-share-row">
+                        <input type="text" id="publishShareCodeInput" readonly />
+                        <button type="button" class="btn-secondary" onclick="copyPublishShareCode()"><i class="fas fa-copy" aria-hidden="true"></i> <span data-i18n="teacher.publish.copy_code">复制邀请码</span></button>
+                    </div>
+                </div>
+                <div class="publish-share-url">
+                    <label data-i18n="teacher.publish.student_link">学生链接</label>
+                    <div class="publish-share-row">
+                        <input type="text" id="publishShareUrlInput" readonly />
+                        <button type="button" class="btn-primary" onclick="copyPublishShareUrl()"><i class="fas fa-link" aria-hidden="true"></i> <span data-i18n="teacher.publish.copy_link">复制链接</span></button>
+                    </div>
+                </div>
+                <button type="button" class="btn-secondary btn-block" onclick="closePublishShareModal()"><span data-i18n="common.close">关闭</span></button>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/i18n.js') }}?v={{ static_version }}"></script>
     <script src="{{ url_for('static', filename='js/teacher.js') }}?v={{ static_version }}"></script>
     <script>

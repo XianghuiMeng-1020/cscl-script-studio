@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import current_user
 from app.db import db
-from app.models import CSCLScript, CSCLScene, CSCLRole, CSCLScriptlet, CSCLScriptRevision, CSCLPipelineRun, CSCLPipelineStageRun, CSCLCourseDocument, CSCLEvidenceBinding, CSCLDocumentChunk, CSCLTeacherDecision
+from app.models import CSCLScript, CSCLScene, CSCLRole, CSCLScriptlet, CSCLScriptRevision, CSCLPipelineRun, CSCLPipelineStageRun, CSCLCourseDocument, CSCLEvidenceBinding, CSCLDocumentChunk, CSCLTeacherDecision, StudentGroup
 from app.auth import role_required, log_audit
 from app.services.script_template_service import ScriptTemplateService
 from app.services.cscl_llm_provider import get_cscl_llm_provider
@@ -17,6 +17,7 @@ from app.services.task_type_config import get_task_types_for_api
 from app.services.cscl_llm_provider import select_runnable_provider
 from datetime import datetime
 import json
+import secrets
 
 cscl_bp = Blueprint('cscl', __name__, url_prefix='/api/cscl')
 
@@ -339,6 +340,50 @@ def finalize_script(script_id):
     
     return jsonify({
         'success': True,
+        'script': script.to_dict()
+    }), 200
+
+
+def _generate_share_code():
+    """Generate a 6-character alphanumeric share code (uppercase for readability)."""
+    alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'  # avoid ambiguous 0/O, 1/I
+    return ''.join(secrets.choice(alphabet) for _ in range(6))
+
+
+@cscl_bp.route('/scripts/<script_id>/publish', methods=['POST'])
+@role_required('teacher', 'admin')
+def publish_script(script_id):
+    """Publish a script for students: set published_at, generate share_code, create one StudentGroup. Returns share_code and student_url."""
+    script = CSCLScript.query.filter_by(id=script_id, created_by=current_user.id).first()
+    if not script:
+        return jsonify({'error': 'Script not found'}), 404
+    if script.published_at:
+        return jsonify({
+            'share_code': script.share_code,
+            'student_url': request.host_url.rstrip('/') + '/student?code=' + (script.share_code or ''),
+            'already_published': True
+        }), 200
+    share_code = _generate_share_code()
+    while CSCLScript.query.filter_by(share_code=share_code).first():
+        share_code = _generate_share_code()
+    script.published_at = datetime.utcnow()
+    script.share_code = share_code
+    script.updated_at = datetime.utcnow()
+    group = StudentGroup(script_id=script.id, group_name=f'Group for {script.title[:50]}')
+    db.session.add(group)
+    db.session.commit()
+    student_url = request.host_url.rstrip('/') + '/student?code=' + share_code
+    log_audit(
+        'script_publish',
+        actor_id=current_user.id,
+        role=current_user.role,
+        target_id=script_id,
+        status='success'
+    )
+    return jsonify({
+        'success': True,
+        'share_code': share_code,
+        'student_url': student_url,
         'script': script.to_dict()
     }), 200
 

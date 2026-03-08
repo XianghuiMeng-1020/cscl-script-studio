@@ -2363,3 +2363,39 @@
     margin-right: 0.5rem;
     color: var(--text-muted);
 }
+
+/* Publish Share Modal */
+.publish-share-hint {
+    margin-bottom: 1.25rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+.publish-share-code,
+.publish-share-url {
+    margin-bottom: 1rem;
+}
+.publish-share-code label,
+.publish-share-url label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    color: var(--text-primary);
+}
+.publish-share-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+.publish-share-row input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    background: var(--light-bg);
+}
+#publishShareModal .btn-block {
+    margin-top: 1rem;
+    width: 100%;
+}

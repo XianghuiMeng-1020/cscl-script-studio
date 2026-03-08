@@ -59,9 +59,10 @@ def create_app(config_class=Config):
             importlib.import_module('app.models')  # register all models so create_all() creates their tables
             from app.db import db
             db.create_all()
-            from app.seed_demo import seed_demo_users
+            from app.seed_demo import seed_demo_users, seed_demo_published_activity
             seed_demo_users()
-            logger.info("Bootstrapped in-memory DB: tables created, demo users seeded")
+            seed_demo_published_activity()
+            logger.info("Bootstrapped in-memory DB: tables created, demo users and demo activity seeded")
 
     # S2.14: inject static_version for cache busting in templates
     @app.context_processor
@@ -71,11 +72,13 @@ def create_app(config_class=Config):
     # Register blueprints
     from app.routes import teacher_bp, student_bp, api_bp, auth_bp
     from app.routes.cscl import cscl_bp
+    from app.routes.student_api import student_api_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(teacher_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(cscl_bp)
+    app.register_blueprint(student_api_bp)
 
     # C2: trace_id for all /api/* requests + structured request log
     @app.before_request

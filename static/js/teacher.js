@@ -1483,9 +1483,60 @@ async function publishScript() {
         showNotification('No script to publish', 'error');
         return;
     }
-    
-    showNotification('Publish functionality coming soon', 'info');
-    // TODO: Implement publish endpoint
+    try {
+        showLoading(true);
+        const res = await fetch(`${API_BASE}/scripts/${currentScriptId}/publish`, { method: 'POST', credentials: 'include' });
+        const data = await res.json().catch(function() { return {}; });
+        if (res.ok && (data.share_code || data.already_published)) {
+            var studentUrl = data.student_url || (window.location.origin + '/student?code=' + (data.share_code || ''));
+            showPublishShareModal(data.share_code || '', studentUrl);
+            if (data.already_published) showNotification('Activity already published; share link shown.', 'info');
+            else showNotification('Published successfully', 'success');
+        } else if (res.status === 401) {
+            showNotification('Please login first', 'error');
+        } else if (res.status === 403) {
+            showNotification('Current role has no permission', 'error');
+        } else if (res.status === 404) {
+            showNotification('Script not found', 'error');
+        } else {
+            showNotification(data.error || 'Failed to publish', 'error');
+        }
+    } catch (e) {
+        console.error('publishScript error', e);
+        showNotification('Failed to publish', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function showPublishShareModal(shareCode, studentUrl) {
+    var modal = document.getElementById('publishShareModal');
+    var codeIn = document.getElementById('publishShareCodeInput');
+    var urlIn = document.getElementById('publishShareUrlInput');
+    if (modal && codeIn && urlIn) {
+        codeIn.value = shareCode || '';
+        urlIn.value = studentUrl || (window.location.origin + '/student?code=' + (shareCode || ''));
+        modal.classList.remove('hidden');
+    }
+}
+
+function closePublishShareModal() {
+    var modal = document.getElementById('publishShareModal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function copyPublishShareCode() {
+    var el = document.getElementById('publishShareCodeInput');
+    if (el && el.value) {
+        navigator.clipboard.writeText(el.value).then(function() { showNotification('Invite code copied', 'success'); }).catch(function() { showNotification('Copy failed', 'error'); });
+    }
+}
+
+function copyPublishShareUrl() {
+    var el = document.getElementById('publishShareUrlInput');
+    if (el && el.value) {
+        navigator.clipboard.writeText(el.value).then(function() { showNotification('Link copied', 'success'); }).catch(function() { showNotification('Copy failed', 'error'); });
+    }
 }
 
 async function viewQualityReport() {
@@ -2245,7 +2296,34 @@ async function loadPublishView() {
 }
 
 async function publishScriptById(scriptId) {
-    showNotification('Publish functionality coming soon', 'info');
+    if (!scriptId) {
+        showNotification('No script to publish', 'error');
+        return;
+    }
+    try {
+        showLoading(true);
+        const res = await fetch(`${API_BASE}/scripts/${scriptId}/publish`, { method: 'POST', credentials: 'include' });
+        const data = await res.json().catch(function() { return {}; });
+        if (res.ok && (data.share_code || data.already_published)) {
+            const studentUrl = data.student_url || (window.location.origin + '/student?code=' + (data.share_code || ''));
+            showPublishShareModal(data.share_code || '', studentUrl);
+            if (data.already_published) showNotification('Activity already published; share link shown.', 'info');
+            else showNotification('Published successfully', 'success');
+        } else if (res.status === 401) {
+            showNotification('Please login first', 'error');
+        } else if (res.status === 403) {
+            showNotification('Current role has no permission', 'error');
+        } else if (res.status === 404) {
+            showNotification('Script not found', 'error');
+        } else {
+            showNotification(data.error || 'Failed to publish', 'error');
+        }
+    } catch (e) {
+        console.error('publishScriptById error', e);
+        showNotification('Failed to publish', 'error');
+    } finally {
+        showLoading(false);
+    }
 }
 
 // S2.16/S2.17: global compatibility fallback for any remaining inline handlers / old cache

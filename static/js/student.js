@@ -1,477 +1,311 @@
-// CSCL Student Dashboard JavaScript - S2.14 dead-UI hotfix
+// CSCL Student - join by share code, scenes, chat, submit
 (function() {
     'use strict';
-    try {
-        if (typeof console !== 'undefined' && console.log) console.log('[student.js] loading');
-    } catch (e) {
-        if (typeof console !== 'undefined' && console.error) console.error('[student.js] init log failed', e);
-    }
 })();
-const API_BASE = '/api/cscl';
-const API_BASE_GENERAL = '/api';
 
-// State
-let currentActivity = null;
-let currentTask = null;
-let currentScriptId = null;
+const STUDENT_API = '/api/student';
 
-// Initialize - S2.14: catch errors so one failure does not leave UI dead
+let shareCode = '';
+let activityData = null;
+let myRoleLabel = '';
+let currentSceneIndex = 0;
+let progressSubmissions = [];
+let chatPollTimer = null;
+let currentUserId = null;
+
+function tr(key, fallback) {
+    return (typeof t === 'function' ? t(key) : null) || fallback || key;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    try {
-        if (typeof console !== 'undefined' && console.log) console.log('[student.js] DOMContentLoaded');
-        var urlParams = new URLSearchParams(window.location.search);
-        currentScriptId = urlParams.get('script_id');
-        if (currentScriptId) {
-            var banner = document.getElementById('contextBanner');
-            var scriptIdSpan = document.getElementById('contextScriptId');
-            if (banner && scriptIdSpan) {
-                banner.classList.remove('hidden');
-                scriptIdSpan.textContent = currentScriptId.substring(0, 16) + '...';
-            }
-        }
-        var tutorialEl = document.getElementById('studentTutorial');
-        var dismissBtn = document.getElementById('studentTutorialDismiss');
-        if (localStorage.getItem('student_tutorial_dismissed') === '1' && tutorialEl) {
-            tutorialEl.classList.add('hidden');
-        }
-        if (dismissBtn && tutorialEl) {
-            dismissBtn.addEventListener('click', function() {
-                try { localStorage.setItem('student_tutorial_dismissed', '1'); } catch (e) {}
-                tutorialEl.classList.add('hidden');
-            });
-        }
-        checkHealth();
-        if (currentScriptId) {
-            loadCurrentActivity();
-            loadCurrentTask();
-            loadProgress();
-        } else {
-            showEmptyState();
-        }
-        document.addEventListener('localeChange', function() {
-            if (currentActivity) renderCurrentActivity(currentActivity);
-            else if (!currentScriptId) showEmptyState();
-            if (currentTask) renderCurrentTask(currentTask);
-        });
-        loadActivityHistory();
-    } catch (err) {
-        console.error('[student.js] init error', err);
-        if (typeof showNotification === 'function') {
-            showNotification('Student UI init failed: ' + (err && err.message ? err.message : 'unknown'), 'error');
-        }
+    var params = new URLSearchParams(window.location.search);
+    shareCode = (params.get('code') || '').trim().toUpperCase();
+    var joinBlock = document.getElementById('studentJoinBlock');
+    var activityBlock = document.getElementById('studentActivityBlock');
+    var codeInput = document.getElementById('shareCodeInput');
+    if (codeInput) codeInput.value = shareCode;
+
+    var joinBtn = document.getElementById('joinActivityBtn');
+    if (joinBtn) joinBtn.addEventListener('click', onJoinClick);
+
+    var saveDraftBtn = document.getElementById('saveDraftBtn');
+    var submitSceneBtn = document.getElementById('submitSceneBtn');
+    if (saveDraftBtn) saveDraftBtn.addEventListener('click', onSaveDraft);
+    if (submitSceneBtn) submitSceneBtn.addEventListener('click', onSubmitScene);
+
+    var scenePrev = document.getElementById('scenePrevBtn');
+    var sceneNext = document.getElementById('sceneNextBtn');
+    if (scenePrev) scenePrev.addEventListener('click', function() { setSceneIndex(Math.max(0, currentSceneIndex - 1)); });
+    if (sceneNext) sceneNext.addEventListener('click', function() {
+        var scenes = activityData && activityData.scenes ? activityData.scenes : [];
+        setSceneIndex(Math.min(currentSceneIndex + 1, Math.max(0, scenes.length - 1)));
+    });
+
+    var chatSend = document.getElementById('chatSendBtn');
+    var chatInput = document.getElementById('chatInput');
+    if (chatSend) chatSend.addEventListener('click', onChatSend);
+    if (chatInput) chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onChatSend(); }
+    });
+
+    fetch('/api/auth/me', { credentials: 'include' })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(d) { if (d && d.id) currentUserId = d.id; })
+        .catch(function() {});
+
+    if (shareCode) {
+        tryJoinAndLoad();
+    } else {
+        if (joinBlock) joinBlock.classList.remove('hidden');
+        if (activityBlock) activityBlock.classList.add('hidden');
     }
+
+    document.addEventListener('localeChange', function() {
+        if (activityData) renderActivity();
+    });
 });
 
-// Health Check
-async function checkHealth() {
+function showJoinError(msg) {
+    var el = document.getElementById('joinError');
+    if (el) { el.textContent = msg || ''; el.classList.toggle('hidden', !msg); }
+}
+
+async function tryJoinAndLoad() {
+    if (!shareCode) return;
+    showJoinError('');
     try {
-        const res = await fetch(`${API_BASE_GENERAL}/health`);
-        const data = await res.json();
-        console.log('Health check:', data);
-    } catch (error) {
-        console.error('Health check failed:', error);
-        showNotification('服务不可用，部分功能可能无法使用。', 'warning');
-    }
-}
-
-// Toggle Collapsible Sections
-function toggleCollapsible(button) {
-    const content = button.nextElementSibling;
-    if (content) {
-        content.classList.toggle('hidden');
-        button.classList.toggle('active');
-    }
-}
-
-// Submit Task
-function submitTask() {
-    if (!currentTask) {
-        showNotification('没有可提交的任务', 'warning');
-        return;
-    }
-    // TODO: Implement task submission
-    showNotification('任务提交功能开发中', 'info');
-}
-
-// Continue Task
-function continueTask() {
-    if (!currentTask) {
-        showNotification('没有可继续的任务', 'warning');
-        return;
-    }
-    // TODO: Implement continue task
-    showNotification('继续任务功能开发中', 'info');
-}
-
-// Load Current Activity
-async function loadCurrentActivity() {
-    const container = document.getElementById('currentActivityCard');
-    
-    if (!currentScriptId) {
-        showEmptyState();
-        return;
-    }
-    
-    try {
-        showLoading(true);
-        
-        // Try to get script export for activity info
-        const res = await fetch(`${API_BASE}/scripts/${currentScriptId}/export`, {
+        var joinRes = await fetch(STUDENT_API + '/activity/' + encodeURIComponent(shareCode) + '/join', {
+            method: 'POST',
             credentials: 'include'
         });
-        
-        const tr = (typeof t === 'function' ? t : (k, d) => d || k);
-        if (res.status === 401) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-lock"></i>
-                    <h4>${tr('student.error.login')}</h4>
-                    <p>${tr('student.error.login_desc')}</p>
-                </div>
-            `;
+        if (joinRes.status === 401) {
+            showJoinError(tr('student.error.login', 'Please log in first.'));
             return;
         }
-        if (res.status === 403) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-ban"></i>
-                    <h4>${tr('student.error.forbidden')}</h4>
-                    <p>${tr('student.error.forbidden_desc')}</p>
-                </div>
-            `;
+        if (!joinRes.ok) {
+            var d = await joinRes.json().catch(function() { return {}; });
+            showJoinError(d.error || tr('student.error.join_failed', 'Join failed.'));
+            return;
+        }
+        var joinData = await joinRes.json();
+        myRoleLabel = (joinData.role_label || '').trim();
+        await loadActivity();
+    } catch (e) {
+        console.error('tryJoinAndLoad', e);
+        showJoinError(tr('common.error.network', 'Network error.'));
+    }
+}
+
+async function onJoinClick() {
+    var codeInput = document.getElementById('shareCodeInput');
+    shareCode = (codeInput && codeInput.value || '').trim().toUpperCase();
+    if (!shareCode) {
+        showJoinError(tr('student.activity.enter_code', 'Enter invite code.'));
+        return;
+    }
+    if (window.history && window.history.replaceState) {
+        var url = new URL(window.location.href);
+        url.searchParams.set('code', shareCode);
+        window.history.replaceState({}, '', url.toString());
+    }
+    await tryJoinAndLoad();
+}
+
+async function loadActivity() {
+    if (!shareCode) return;
+    try {
+        var res = await fetch(STUDENT_API + '/activity/' + encodeURIComponent(shareCode), { credentials: 'include' });
+        if (res.status === 401) {
+            showJoinError(tr('student.error.login', 'Please log in first.'));
             return;
         }
         if (res.status === 404) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <h4>${tr('student.error.not_found')}</h4>
-                    <p>${tr('student.error.not_found_desc')}</p>
-                    <p><strong>${tr('student.empty.next_step')}</strong></p>
-                    <a href="/" class="btn-primary" style="margin-top: 1rem; display: inline-block;">
-                        <i class="fas fa-arrow-left"></i>
-                        ${tr('home.teacher.action')}
-                    </a>
-                </div>
-            `;
+            showJoinError(tr('student.error.not_found', 'Activity not found or not published.'));
             return;
         }
-        
-        if (res.ok) {
-            const data = await res.json();
-            const script = data.script;
-            
-            // Extract activity info from script
-            const activity = {
-                id: script.id,
-                title: script.title || 'Untitled Activity',
-                stage: 'Active',
-                deadline: script.updated_at ? new Date(new Date(script.updated_at).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() : null,
-                role: 'Participant',
-                nextAction: 'Continue Activity'
-            };
-            
-            currentActivity = activity;
-            renderCurrentActivity(activity);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        activityData = await res.json();
+        var progressRes = await fetch(STUDENT_API + '/activity/' + encodeURIComponent(shareCode) + '/progress', { credentials: 'include' });
+        if (progressRes.ok) {
+            var prog = await progressRes.json();
+            progressSubmissions = prog.submissions || [];
         } else {
-            throw new Error(`HTTP ${res.status}`);
+            progressSubmissions = [];
         }
-    } catch (error) {
-        console.error('Error loading current activity:', error);
-        const tr = (typeof t === 'function' ? t : (k, d) => d || k);
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h4>${tr('student.error.load_failed')}</h4>
-                <p>${tr('common.error.network')}</p>
-                <p><strong>${tr('student.empty.next_step')}</strong></p>
-                <button class="btn-secondary" onclick="location.reload()" style="margin-top: 1rem;">
-                    <i class="fas fa-sync"></i>
-                    ${tr('student.error.retry')}
-                </button>
-            </div>
-        `;
-    } finally {
-        showLoading(false);
+        currentSceneIndex = 0;
+        showActivityPanel();
+        renderActivity();
+        startChatPolling();
+    } catch (e) {
+        console.error('loadActivity', e);
+        showJoinError(tr('common.error.network', 'Network error.'));
     }
 }
 
-function showEmptyState() {
-    const tr = (typeof t === 'function' ? t : (k, d) => d || k);
-    const container = document.getElementById('currentActivityCard');
-    container.innerHTML = `
-        <div class="empty-state">
-            <i class="fas fa-calendar-times"></i>
-            <h4>${tr('student.empty.title')}</h4>
-            <p><strong>${tr('student.empty.reason')}</strong></p>
-            <p><strong>${tr('student.empty.next_step')}</strong></p>
-        </div>
-    `;
-    const taskContainer = document.getElementById('currentTaskCard');
-    if (taskContainer) {
-        taskContainer.innerHTML = `<div class="empty-state"><p>${tr('student.empty.no_task')}</p></div>`;
-    }
+function showActivityPanel() {
+    var joinBlock = document.getElementById('studentJoinBlock');
+    var activityBlock = document.getElementById('studentActivityBlock');
+    var chatInputArea = document.getElementById('chatInputArea');
+    var chatEmpty = document.getElementById('chatEmpty');
+    if (joinBlock) joinBlock.classList.add('hidden');
+    if (activityBlock) activityBlock.classList.remove('hidden');
+    if (chatInputArea) chatInputArea.classList.remove('hidden');
+    if (chatEmpty) chatEmpty.classList.add('hidden');
 }
 
-function renderCurrentActivity(activity) {
-    const container = document.getElementById('currentActivityCard');
-    const deadline = activity.deadline ? new Date(activity.deadline) : null;
-    const now = new Date();
-    const timeLeft = deadline ? deadline - now : null;
-    const daysLeft = timeLeft ? Math.ceil(timeLeft / (1000 * 60 * 60 * 24)) : null;
-    
-    const tr = (typeof t === 'function' ? t : (k, d) => d || k);
-    const untitled = tr('student.activity.untitled');
-    const deadlineLabel = tr('student.deadline');
-    const daysLeftFmt = tr('student.days_left').replace('{n}', String(daysLeft != null ? daysLeft : ''));
-    container.innerHTML = `
-        <div class="activity-card-content">
-            <h3 class="activity-title-main">${escapeHtml(activity.title || untitled)}</h3>
-            ${deadline ? `
-            <div id="deadlineInfo" class="deadline-info">
-                <i class="fas fa-clock"></i>
-                <span>${escapeHtml(deadlineLabel)}<strong id="deadlineText">${formatDate(activity.deadline)} (${daysLeftFmt})</strong></span>
-            </div>
-            ` : ''}
-        </div>
-    `;
-    
-    // Show deadline info if exists
-    if (deadline) {
-        const deadlineEl = document.getElementById('deadlineInfo');
-        if (deadlineEl) {
-            deadlineEl.classList.remove('hidden');
-        }
-    }
+function setSceneIndex(idx) {
+    var scenes = activityData && activityData.scenes ? activityData.scenes : [];
+    if (idx < 0 || idx >= scenes.length) return;
+    currentSceneIndex = idx;
+    renderActivity();
 }
 
-// Load Current Task
-async function loadCurrentTask() {
-    const container = document.getElementById('currentTaskCard');
-    
-    if (!currentScriptId) {
-        const tr = (typeof t === 'function' ? t : (k, d) => d || k);
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-info-circle"></i>
-                <h4>${tr('student.empty.title')}</h4>
-                <p><strong>${tr('student.empty.reason')}</strong></p>
-                <p><strong>${tr('student.empty.next_step')}</strong></p>
-            </div>
-        `;
+function renderActivity() {
+    if (!activityData) return;
+    var scenes = activityData.scenes || [];
+    var scene = scenes[currentSceneIndex] || null;
+    var prevBtn = document.getElementById('scenePrevBtn');
+    var nextBtn = document.getElementById('sceneNextBtn');
+    if (prevBtn) prevBtn.disabled = currentSceneIndex <= 0;
+    if (nextBtn) nextBtn.disabled = currentSceneIndex >= scenes.length - 1;
+
+    var titleEl = document.getElementById('activityTitle');
+    var metaEl = document.getElementById('activityMeta');
+    var progressEl = document.getElementById('sceneProgressText');
+    if (titleEl) titleEl.textContent = activityData.title || tr('student.activity.untitled', 'Untitled');
+    if (metaEl) metaEl.textContent = (activityData.topic || '') + (activityData.duration_minutes ? ' · ' + activityData.duration_minutes + ' min' : '');
+    if (progressEl) progressEl.textContent = scenes.length ? (currentSceneIndex + 1) + '/' + scenes.length : '1/1';
+
+    var purposeEl = document.getElementById('scenePurpose');
+    var roleEl = document.getElementById('myRoleText');
+    var taskEl = document.getElementById('sceneTaskContent');
+    var textarea = document.getElementById('submissionTextarea');
+    if (!scene) {
+        if (purposeEl) purposeEl.textContent = '--';
+        if (roleEl) roleEl.textContent = '--';
+        if (taskEl) taskEl.textContent = '--';
+        if (textarea) textarea.value = '';
         return;
     }
-    
-    try {
-        showLoading(true);
-        
-        // Get script export for task info
-        const res = await fetch(`${API_BASE}/scripts/${currentScriptId}/export`, {
-            credentials: 'include'
-        });
-        
-        if (res.ok) {
-            const data = await res.json();
-            const script = data.script;
-            
-            // Extract task from script scenes
-            const scenes = script.scenes || [];
-            const firstScene = scenes[0];
-            
-            if (firstScene) {
-                const task = {
-                    description: firstScene.purpose || 'Participate in the collaborative learning activity.',
-                    instructions: [
-                        'Follow the scene instructions',
-                        'Collaborate with your peers',
-                        'Complete the assigned tasks'
-                    ]
-                };
-                
-                // Extract instructions from scriptlets if available
-                if (firstScene.scriptlets && firstScene.scriptlets.length > 0) {
-                    task.instructions = firstScene.scriptlets.slice(0, 3).map(s => s.prompt_text || 'Follow instructions').slice(0, 50) + '...';
-                }
-                
-                currentTask = task;
-                renderCurrentTask(task);
-            } else {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <p><strong>Why empty:</strong> Script has no scenes defined yet.</p>
-                        <p><strong>Next step:</strong> Wait for your instructor to complete script generation.</p>
-                    </div>
-                `;
-            }
-        } else if (res.status === 404) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <p><strong>Why empty:</strong> Script not found or not yet created.</p>
-                    <p><strong>Next step:</strong> Ask your instructor to create an activity.</p>
-                </div>
-            `;
-        } else {
-            throw new Error(`HTTP ${res.status}`);
-        }
-    } catch (error) {
-        console.error('Error loading current task:', error);
-        container.innerHTML = `
-            <div class="empty-state">
-                <p><strong>Why empty:</strong> Unable to load task data.</p>
-                <p><strong>Next step:</strong> Check your connection and try again.</p>
-            </div>
-        `;
-    } finally {
-        showLoading(false);
-    }
-}
+    if (purposeEl) purposeEl.textContent = scene.purpose || '--';
+    var myRole = (activityData.myRoleLabel || '').trim() || (typeof activityData.role_label !== 'undefined' ? activityData.role_label : '');
+    if (roleEl) roleEl.textContent = myRoleLabel || myRole || '--';
+    var scriptlets = scene.scriptlets || [];
+    var taskHtml = scriptlets.length
+        ? scriptlets.map(function(s) { return '<p>' + escapeHtml(s.prompt_text || '') + '</p>'; }).join('')
+        : '<p>' + escapeHtml(scene.purpose || '') + '</p>';
+    if (taskEl) taskEl.innerHTML = taskHtml;
 
-function renderCurrentTask(task) {
-    const container = document.getElementById('currentTaskCard');
-    container.innerHTML = `
-        <div class="task-content">
-            <h4>Current Scene Task</h4>
-            <p class="task-description">${escapeHtml(task.description)}</p>
-            <div class="task-instructions">
-                <h5>Instructions:</h5>
-                <ol>
-                    ${task.instructions.map(inst => `<li>${escapeHtml(inst)}</li>`).join('')}
-                </ol>
-            </div>
-        </div>
-    `;
-}
-
-// Load Progress
-async function loadProgress() {
-    if (!currentScriptId) {
-        return;
-    }
-    
-    try {
-        // Get quality report for progress summary
-        const res = await fetch(`${API_BASE}/scripts/${currentScriptId}/quality-report`, {
-            credentials: 'include'
-        });
-        
-        if (res.ok) {
-            const data = await res.json();
-            const report = data.report || {};
-            
-            // Calculate average quality score as progress indicator
-            const dimensions = ['coverage', 'pedagogical_alignment', 'argumentation_support', 
-                              'grounding', 'safety_checks', 'teacher_in_loop'];
-            const scores = dimensions.map(d => report[d]?.score || 0).filter(s => s > 0);
-            const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 50;
-            
-            // Update progress circle
-            const progressCircle = document.querySelector('.progress-circle svg circle:last-child');
-            if (progressCircle) {
-                const circumference = 2 * Math.PI * 50;
-                const offset = circumference - (avgScore / 100) * circumference;
-                progressCircle.style.strokeDashoffset = offset;
-            }
-            
-            const percentEl = document.querySelector('.progress-percent');
-            if (percentEl) {
-                percentEl.textContent = `${avgScore}%`;
-            }
-        } else {
-            // Fallback to default progress
-            const progress = 50;
-            const progressCircle = document.querySelector('.progress-circle svg circle:last-child');
-            if (progressCircle) {
-                const circumference = 2 * Math.PI * 50;
-                const offset = circumference - (progress / 100) * circumference;
-                progressCircle.style.strokeDashoffset = offset;
-            }
-            
-            const percentEl = document.querySelector('.progress-percent');
-            if (percentEl) {
-                percentEl.textContent = `${progress}%`;
-            }
-        }
-    } catch (error) {
-        console.error('Error loading progress:', error);
-        // Graceful fallback
-        const progress = 50;
-        const percentEl = document.querySelector('.progress-percent');
-        if (percentEl) {
-            percentEl.textContent = `${progress}%`;
-        }
-    }
-}
-
-// Load Activity History
-async function loadActivityHistory() {
-    const container = document.getElementById('activityHistory');
-    try {
-        // For now, show empty state
-        // In production, this would call an API endpoint for student activity history
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-history"></i>
-                <h4>No Past Activities</h4>
-                <p><strong>Why:</strong> You haven't completed any activities yet.</p>
-                <p><strong>Next step:</strong> Complete your current activity to see it in history.</p>
-            </div>
-        `;
-    } catch (error) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <p><strong>Why empty:</strong> Error loading activity history.</p>
-                <p><strong>Next step:</strong> Try refreshing the page.</p>
-            </div>
-        `;
-    }
-}
-
-// Actions
-function continueActivity() {
-    showNotification('Continuing activity...', 'info');
-    // TODO: Navigate to activity detail page
-}
-
-function joinDemoActivity() {
-    showNotification('Please ask your instructor to create an activity', 'info');
-}
-
-// Utility Functions
-function showLoading(show) {
-    // Simple loading indicator
-    if (show) {
-        const containers = document.querySelectorAll('#currentActivityCard, #currentTaskCard');
-        containers.forEach(container => {
-            if (container && !container.querySelector('.loading-placeholder')) {
-                const placeholder = document.createElement('div');
-                placeholder.className = 'loading-placeholder';
-                placeholder.innerHTML = '<i class="fas fa-spinner fa-spin"></i><p>' + (typeof t === 'function' ? t('common.loading') : 'Loading...') + '</p>';
-                container.appendChild(placeholder);
-            }
-        });
-    }
-}
-
-function showNotification(message, type = 'info') {
-    const notification = document.getElementById('notification');
-    if (notification) {
-        notification.textContent = message;
-        notification.className = `notification show ${type}`;
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 3000);
-    }
+    var sub = progressSubmissions.find(function(s) { return s.scene_id === scene.id; });
+    if (textarea) textarea.value = (sub && sub.content) || '';
 }
 
 function escapeHtml(text) {
     if (!text) return '';
-    const div = document.createElement('div');
+    var div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function onSaveDraft() {
+    saveSubmission('pending');
+}
+
+function onSubmitScene() {
+    saveSubmission('submitted');
+}
+
+function saveSubmission(status) {
+    if (!shareCode || !activityData) return;
+    var scenes = activityData.scenes || [];
+    var scene = scenes[currentSceneIndex];
+    if (!scene) return;
+    var textarea = document.getElementById('submissionTextarea');
+    var content = textarea ? textarea.value : '';
+    fetch(STUDENT_API + '/activity/' + encodeURIComponent(shareCode) + '/scenes/' + encodeURIComponent(scene.id) + '/submit', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content, status: status })
+    })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(result) {
+            if (result.ok) {
+                var idx = progressSubmissions.findIndex(function(s) { return s.scene_id === scene.id; });
+                var sub = result.data;
+                if (idx >= 0) progressSubmissions[idx] = sub;
+                else progressSubmissions.push(sub);
+                showNotification(status === 'submitted' ? tr('student.submission.submitted', 'Submitted.') : tr('student.submission.saved', 'Draft saved.'), 'success');
+            } else {
+                showNotification(result.data.error || tr('common.error.unknown', 'Error.'), 'error');
+            }
+        })
+        .catch(function(e) {
+            console.error('saveSubmission', e);
+            showNotification(tr('common.error.network', 'Network error.'), 'error');
+        });
+}
+
+function startChatPolling() {
+    if (chatPollTimer) clearInterval(chatPollTimer);
+    chatPollTimer = setInterval(pollChat, 3000);
+    pollChat();
+}
+
+function pollChat() {
+    if (!shareCode) return;
+    fetch(STUDENT_API + '/activity/' + encodeURIComponent(shareCode) + '/messages?limit=50', { credentials: 'include' })
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function(d) {
+            var list = d.messages || [];
+            renderChat(list);
+        })
+        .catch(function() {});
+}
+
+function renderChat(messages) {
+    var container = document.getElementById('chatMessages');
+    if (!container) return;
+    var empty = document.getElementById('chatEmpty');
+    if (empty) empty.classList.toggle('hidden', (messages && messages.length) > 0);
+    var existing = container.querySelectorAll('.chat-message');
+    for (var i = 0; i < existing.length; i++) existing[i].remove();
+    var me = currentUserId || '';
+    messages.forEach(function(m) {
+        var div = document.createElement('div');
+        div.className = 'chat-message ' + (m.user_id === me ? 'own' : 'other');
+        var meta = document.createElement('div');
+        meta.className = 'chat-msg-meta';
+        meta.textContent = (m.user_id ? m.user_id.substring(0, 8) : '') + ' · ' + (m.created_at ? new Date(m.created_at).toLocaleTimeString() : '');
+        div.appendChild(document.createTextNode(m.content || ''));
+        div.appendChild(meta);
+        container.appendChild(div);
+    });
+}
+
+function onChatSend() {
+    var input = document.getElementById('chatInput');
+    if (!input || !shareCode) return;
+    var content = (input.value || '').trim();
+    if (!content) return;
+    fetch(STUDENT_API + '/activity/' + encodeURIComponent(shareCode) + '/messages', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content })
+    })
+        .then(function(r) {
+            if (r.ok) { input.value = ''; pollChat(); }
+            else return r.json().then(function(d) { showNotification(d.error || 'Send failed', 'error'); });
+        })
+        .catch(function(e) { showNotification(tr('common.error.network', 'Network error.'), 'error'); });
+}
+
+function showNotification(message, type) {
+    var el = document.getElementById('notification');
+    if (el) {
+        el.textContent = message;
+        el.className = 'notification ' + (type || 'info');
+        setTimeout(function() { el.className = 'notification'; }, 3000);
+    }
 }

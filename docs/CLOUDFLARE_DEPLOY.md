@@ -14,7 +14,9 @@ export GIT_REMOTE_URL=https://github.com/你的用户名/仓库名.git
 ```
 
 脚本会：若尚未配置 `origin` 则添加，然后执行 `git push -u origin <当前分支>`。  
-推送成功后，在 Cloudflare Dashboard 里连接该仓库即可得到用户可访问的 link。
+推送成功后：
+- **Render**：若已连接该仓库，会自动部署；用户 link 为 `https://cscl-script-studio.onrender.com`。
+- **Cloudflare Pages**：在 Cloudflare Dashboard → Pages → Create project → Connect to Git → 选择本仓库，即可得到 `https://<项目名>.pages.dev` 用户可访问的 link。
 
 ---
 

@@ -25,7 +25,7 @@ TEACHER_USER = "teacher_demo"
 STUDENT_USER = "student_demo"
 DEMO_PASSWORD = "Demo@12345"
 DEMO_SHARE_CODE = "DEMO"
-TIMEOUT = 60
+TIMEOUT = 90  # Render free tier can be slow under load
 
 
 def run_teacher_slot(slot: int) -> tuple[int, bool, str, dict]:

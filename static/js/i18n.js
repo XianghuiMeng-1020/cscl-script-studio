@@ -39,6 +39,10 @@ const I18N = {
         'login.back_home': '返回首页',
         'login.welcome': '你好，我是你的协作学习活动生成小助手！可以用我把课程大纲变成结构化的协作学习活动哦～',
 
+        // Demo page
+        'demo.mode.title': 'Demo 模式',
+        'demo.mode.desc': '仅可浏览活动列表，无法创建或编辑。如需完整功能，请使用上方登录。',
+
         // ===== Teacher page =====
         // Sidebar
         'teacher.sidebar.dashboard': '工作台',
@@ -52,9 +56,16 @@ const I18N = {
         'teacher.sidebar.settings': '设置',
         'teacher.sidebar.logout': '退出登录',
 
+        // Language option labels (for selector)
+        'lang.zh-CN': '简体中文',
+        'lang.zh-TW': '繁體中文',
+        'lang.en': 'English',
+
         // Dashboard
         'teacher.dashboard.title': '教师工作台',
         'teacher.dashboard.step_indicator': '你现在在第 {step}/4 步',
+        'teacher.dashboard.step_before': '你现在在第 ',
+        'teacher.dashboard.step_after': '/4 步',
         'teacher.dashboard.new_activity': '新建活动',
         'teacher.dashboard.current_status': '当前状态：',
         'teacher.dashboard.ready': '准备开始',
@@ -240,6 +251,7 @@ const I18N = {
 
         // ===== Student page =====
         'student.title': '学生工作台',
+        'student.user.role': '学生',
         'student.tutorial.title': '👋 欢迎来到学生工作台',
         'student.tutorial.intro': '在这里你可以：查看当前协作学习活动、完成分配的任务、提交反思。如有任务请按页面提示完成。',
         'student.tutorial.dismiss': '不再显示',
@@ -270,6 +282,8 @@ const I18N = {
         'student.context.viewing': '你正在查看：',
         'student.context.hint': '（通过 ?script_id=xxx 查看特定活动）',
         'student.deadline': '截止时间：',
+        'student.days_left': '剩余 {n} 天',
+        'student.activity.untitled': '未命名活动',
 
         // ===== Common =====
         'common.loading': '加载中...',
@@ -342,6 +356,9 @@ const I18N = {
         'login.back_home': '返回首頁',
         'login.welcome': '你好，我是你的協作學習活動生成小助手！可以用我把課程大綱變成結構化的協作學習活動哦～',
 
+        'demo.mode.title': 'Demo 模式',
+        'demo.mode.desc': '僅可瀏覽活動列表，無法建立或編輯。如需完整功能，請使用上方登入。',
+
         // ===== Teacher page =====
         // Sidebar
         'teacher.sidebar.dashboard': '工作台',
@@ -356,8 +373,14 @@ const I18N = {
         'teacher.sidebar.logout': '登出',
 
         // Dashboard
+        'lang.zh-CN': '簡體中文',
+        'lang.zh-TW': '繁體中文',
+        'lang.en': 'English',
+
         'teacher.dashboard.title': '教師工作台',
         'teacher.dashboard.step_indicator': '你現在在第 {step}/4 步',
+        'teacher.dashboard.step_before': '你現在在第 ',
+        'teacher.dashboard.step_after': '/4 步',
         'teacher.dashboard.new_activity': '新建活動',
         'teacher.dashboard.current_status': '目前狀態：',
         'teacher.dashboard.ready': '準備開始',
@@ -543,6 +566,7 @@ const I18N = {
 
         // ===== Student page =====
         'student.title': '學生工作台',
+        'student.user.role': '學生',
         'student.tutorial.title': '👋 歡迎來到學生工作台',
         'student.tutorial.intro': '在這裡你可以：查看當前協作學習活動、完成分配的任務、提交反思。如有任務請按頁面提示完成。',
         'student.tutorial.dismiss': '不再顯示',
@@ -573,6 +597,8 @@ const I18N = {
         'student.context.viewing': '你正在查看：',
         'student.context.hint': '（透過 ?script_id=xxx 查看特定活動）',
         'student.deadline': '截止時間：',
+        'student.days_left': '剩餘 {n} 天',
+        'student.activity.untitled': '未命名活動',
 
         // ===== Common =====
         'common.loading': '載入中...',
@@ -645,6 +671,9 @@ const I18N = {
         'login.back_home': 'Back to Home',
         'login.welcome': "Hi, I'm your group activity generation assistant! Use me to turn course syllabi into structured collaborative learning activities.",
 
+        'demo.mode.title': 'Demo mode',
+        'demo.mode.desc': 'You can only browse the activity list; creating or editing is disabled. Log in above for full features.',
+
         // ===== Teacher page =====
         // Sidebar
         'teacher.sidebar.dashboard': 'Dashboard',
@@ -659,8 +688,14 @@ const I18N = {
         'teacher.sidebar.logout': 'Sign Out',
 
         // Dashboard
+        'lang.zh-CN': 'Simplified Chinese',
+        'lang.zh-TW': 'Traditional Chinese',
+        'lang.en': 'English',
+
         'teacher.dashboard.title': 'Teacher Dashboard',
         'teacher.dashboard.step_indicator': 'You are on step {step}/4',
+        'teacher.dashboard.step_before': 'You are on step ',
+        'teacher.dashboard.step_after': '/4',
         'teacher.dashboard.new_activity': 'New Activity',
         'teacher.dashboard.current_status': 'Current Status:',
         'teacher.dashboard.ready': 'Ready to Start',
@@ -846,6 +881,7 @@ const I18N = {
 
         // ===== Student page =====
         'student.title': 'Student Dashboard',
+        'student.user.role': 'Student',
         'student.tutorial.title': '👋 Welcome to the Student Dashboard',
         'student.tutorial.intro': 'Here you can: view the current collaborative learning activity, complete assigned tasks, and submit reflections. Follow the on-screen prompts for any tasks.',
         'student.tutorial.dismiss': "Don't show again",
@@ -876,6 +912,8 @@ const I18N = {
         'student.context.viewing': 'You are viewing:',
         'student.context.hint': '(Access with ?script_id=xxx to view specific activity)',
         'student.deadline': 'Deadline:',
+        'student.days_left': '{n} days left',
+        'student.activity.untitled': 'Untitled activity',
 
         // ===== Common =====
         'common.loading': 'Loading...',
@@ -962,10 +1000,17 @@ function applyLocaleToPage() {
     document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
         el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
     });
-    // Sync all language selectors on the page
+    // Sync language selector value and update option labels so no residual language
     document.querySelectorAll('#languageSelect, [data-language-select]').forEach(sel => {
         sel.value = currentLocale;
+        [].slice.call(sel.options || []).forEach(function(opt) {
+            var labelKey = 'lang.' + opt.value;
+            if (I18N[currentLocale] && I18N[currentLocale][labelKey] !== undefined) {
+                opt.textContent = I18N[currentLocale][labelKey];
+            }
+        });
     });
+    document.dispatchEvent(new CustomEvent('localeChange'));
 }
 
 // Current locale

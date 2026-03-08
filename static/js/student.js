@@ -48,6 +48,11 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             showEmptyState();
         }
+        document.addEventListener('localeChange', function() {
+            if (currentActivity) renderCurrentActivity(currentActivity);
+            else if (!currentScriptId) showEmptyState();
+            if (currentTask) renderCurrentTask(currentTask);
+        });
         loadActivityHistory();
     } catch (err) {
         console.error('[student.js] init error', err);
@@ -215,13 +220,17 @@ function renderCurrentActivity(activity) {
     const timeLeft = deadline ? deadline - now : null;
     const daysLeft = timeLeft ? Math.ceil(timeLeft / (1000 * 60 * 60 * 24)) : null;
     
+    const tr = (typeof t === 'function' ? t : (k, d) => d || k);
+    const untitled = tr('student.activity.untitled');
+    const deadlineLabel = tr('student.deadline');
+    const daysLeftFmt = tr('student.days_left').replace('{n}', String(daysLeft != null ? daysLeft : ''));
     container.innerHTML = `
         <div class="activity-card-content">
-            <h3 class="activity-title-main">${escapeHtml(activity.title || '未命名活动')}</h3>
+            <h3 class="activity-title-main">${escapeHtml(activity.title || untitled)}</h3>
             ${deadline ? `
             <div id="deadlineInfo" class="deadline-info">
                 <i class="fas fa-clock"></i>
-                <span>截止时间：<strong id="deadlineText">${formatDate(activity.deadline)} (剩余 ${daysLeft} 天)</strong></span>
+                <span>${escapeHtml(deadlineLabel)}<strong id="deadlineText">${formatDate(activity.deadline)} (${daysLeftFmt})</strong></span>
             </div>
             ` : ''}
         </div>
@@ -436,7 +445,7 @@ function showLoading(show) {
             if (container && !container.querySelector('.loading-placeholder')) {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'loading-placeholder';
-                placeholder.innerHTML = '<i class="fas fa-spinner fa-spin"></i><p>Loading...</p>';
+                placeholder.innerHTML = '<i class="fas fa-spinner fa-spin"></i><p>' + (typeof t === 'function' ? t('common.loading') : 'Loading...') + '</p>';
                 container.appendChild(placeholder);
             }
         });

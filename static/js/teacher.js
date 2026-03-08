@@ -130,6 +130,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (e) { /* ignore */ }
     }, 3000);
 });
+document.addEventListener('localeChange', function() {
+    try { if (typeof updateCurrentStep === 'function') updateCurrentStep(); } catch (e) {}
+});
 
 // S2.14.2/S2.17: document-level event delegation - id/class/data-action/data-view/data-step
 function setupEventDelegation() {
@@ -598,12 +601,12 @@ function updateCurrentStep() {
     const statusEl = document.getElementById('currentStatus');
     if (statusEl) {
         const statusMap = {
-            1: '导入课程大纲',
-            2: '确认教学目标',
-            3: '生成活动流程',
-            4: '审阅并发布'
+            1: typeof t === 'function' ? t('teacher.step1.title') : '导入课程大纲',
+            2: typeof t === 'function' ? t('teacher.step2.title') : '确认教学目标',
+            3: typeof t === 'function' ? t('teacher.step3.title') : '生成活动流程',
+            4: typeof t === 'function' ? t('teacher.step4.title') : '审阅并发布'
         };
-        statusEl.textContent = statusMap[wizardStep] || '准备开始';
+        statusEl.textContent = statusMap[wizardStep] || (typeof t === 'function' ? t('teacher.dashboard.ready') : '准备开始');
     }
     // Update process cards active state
     document.querySelectorAll('.process-card').forEach(card => {

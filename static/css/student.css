@@ -14,15 +14,56 @@
 /* ==================== Header ==================== */
 
 .student-header {
-    background: white;
+    background: linear-gradient(180deg, var(--bg-surface) 0%, rgba(255,255,255,0.98) 100%);
     padding: 1rem 2rem;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     display: flex;
     justify-content: space-between;
     align-items: center;
     position: sticky;
     top: 0;
     z-index: 100;
+    border-bottom: 1px solid var(--border-color);
+}
+.student-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.student-header .language-switcher select {
+    min-width: 8rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.student-header .language-switcher select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb, 34, 139, 34), 0.15);
+}
+.student-header .user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-md);
+    background: rgba(var(--primary-rgb, 34, 139, 34), 0.06);
+    border: 1px solid rgba(var(--primary-rgb, 34, 139, 34), 0.2);
+}
+.student-header .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+.student-header .user-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
 }
 
 .header-left .logo-link {
@@ -218,11 +259,20 @@
     font-weight: 600;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     border: none;
+}
+
+.student-page .btn-primary.btn-large:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb, 34, 139, 34), 0.25);
+}
+
+.student-page .btn-secondary.btn-large:not(:disabled):hover {
+    transform: translateY(-1px);
 }
 
 .btn-large:disabled {
@@ -256,7 +306,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    transition: all var(--transition-base);
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .collapsible-header:hover {
@@ -264,7 +314,8 @@
 }
 
 .collapsible-header i {
-    transition: transform var(--transition-base);
+    transition: transform 0.25s ease;
+    color: var(--primary-color);
 }
 
 .collapsible-header.active i {
@@ -554,12 +605,20 @@
     border-radius: var(--radius-lg);
     background: linear-gradient(135deg, rgba(var(--primary-rgb, 34, 139, 34), 0.08), rgba(var(--primary-rgb, 34, 139, 34), 0.04));
     border: 1px solid rgba(var(--primary-rgb, 34, 139, 34), 0.25);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s ease;
+}
+.student-page .tutorial-card.student-tutorial-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 .student-page .tutorial-card .tutorial-title {
     font-size: 1.1rem;
     font-weight: 600;
     margin: 0 0 0.5rem 0;
     color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 .student-page .tutorial-card .tutorial-intro {
     margin: 0 0 1rem 0;
@@ -573,8 +632,9 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.25rem 0.5rem;
+    padding: 0.35rem 0.65rem;
     border-radius: var(--radius-sm);
+    transition: color 0.2s, background 0.2s;
 }
 .student-page .tutorial-card .tutorial-dismiss:hover {
     color: var(--text-secondary);

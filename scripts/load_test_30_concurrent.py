@@ -35,7 +35,7 @@ def run_teacher_slot(slot: int) -> tuple[int, bool, str, dict]:
     session.headers["Accept"] = "application/json"
     session.headers["User-Agent"] = f"LoadTest-30/teacher (slot={slot})"
     try:
-        time.sleep((slot % 10) * 0.05)
+        time.sleep((slot - 1) * 0.4)  # Stagger to avoid overwhelming single worker
         r = session.post(
             f"{BASE_URL}/api/auth/login",
             json={"user_id": TEACHER_USER, "password": DEMO_PASSWORD},
@@ -94,7 +94,7 @@ def run_student_slot(slot: int) -> tuple[int, bool, str, dict]:
     session.headers["Accept"] = "application/json"
     session.headers["User-Agent"] = f"LoadTest-30/student (slot={slot})"
     try:
-        time.sleep((slot % 10) * 0.05)
+        time.sleep((slot - 1) * 0.4)  # Stagger to avoid overwhelming single worker
         r = session.post(
             f"{BASE_URL}/api/auth/login",
             json={"user_id": STUDENT_USER, "password": DEMO_PASSWORD},

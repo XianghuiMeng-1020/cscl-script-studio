@@ -62,7 +62,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.addEventListener('localeChange', function() {
         if (activityData) renderActivity();
+        var chatIn = document.getElementById('chatInput');
+        if (chatIn) chatIn.placeholder = tr('student.chat.placeholder', 'Type a message...');
     });
+    var chatIn = document.getElementById('chatInput');
+    if (chatIn) chatIn.placeholder = tr('student.chat.placeholder', 'Type a message...');
 });
 
 function showJoinError(msg) {

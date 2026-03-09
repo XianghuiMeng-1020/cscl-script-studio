@@ -248,9 +248,13 @@ const I18N = {
 
         // PDF errors
         'teacher.pdf.parse_failed_binary': '文档解析失败：检测到二进制内容，请重新上传或更换 PDF',
-        'teacher.pdf.parse_failed_empty': '提取失败：未能从文档中提取文本，请重试或更换文件',
-        'teacher.pdf.parse_failed_short': '提取失败：文本过短，请使用内容更完整的文件',
-        'teacher.pdf.parse_failed_generic': '提取失败，请重试或更换文件',
+        'teacher.pdf.parse_failed_empty': '提取失败：未能从文档中提取文本。若为扫描版/图片 PDF，请将文字复制为文本粘贴上传。',
+        'teacher.pdf.parse_failed_short': '提取失败：文本过短。若为扫描版/图片 PDF，请将文字复制为文本粘贴上传。',
+        'teacher.pdf.parse_failed_generic': '提取失败，请重试或更换文件。若为扫描版 PDF，请将文字复制为文本粘贴上传。',
+        // Pipeline preflight
+        'teacher.pipeline.no_course_docs': '当前课程下还没有上传文档。请先在左侧「课程文档」中上传 PDF 或文本，再点击运行生成。',
+        'teacher.pipeline.no_docs_title': '请先上传课程文档',
+        'teacher.pipeline.missing_course_id': '请填写课程信息（Step 2 中的课程）后再运行。',
 
         // User info
         'teacher.user.role': '教师',
@@ -590,9 +594,13 @@ const I18N = {
 
         // PDF errors
         'teacher.pdf.parse_failed_binary': '文件解析失敗：偵測到二進位內容，請重新上傳或更換 PDF',
-        'teacher.pdf.parse_failed_empty': '提取失敗：未能從文件提取文字，請重試或更換文件',
-        'teacher.pdf.parse_failed_short': '提取失敗：文字過短，請使用內容更完整的文件',
-        'teacher.pdf.parse_failed_generic': '提取失敗，請重試或更換文件',
+        'teacher.pdf.parse_failed_empty': '提取失敗：未能從文件提取文字。若為掃描版/圖片 PDF，請將文字複製為文本貼上上傳。',
+        'teacher.pdf.parse_failed_short': '提取失敗：文字過短。若為掃描版/圖片 PDF，請將文字複製為文本貼上上傳。',
+        'teacher.pdf.parse_failed_generic': '提取失敗，請重試或更換文件。若為掃描版 PDF，請將文字複製為文本貼上上傳。',
+        // Pipeline preflight
+        'teacher.pipeline.no_course_docs': '當前課程下還沒有上傳文檔。請先在左側「課程文檔」中上傳 PDF 或文本，再點擊運行生成。',
+        'teacher.pipeline.no_docs_title': '請先上傳課程文檔',
+        'teacher.pipeline.missing_course_id': '請填寫課程資訊（Step 2 中的課程）後再運行。',
 
         // User info
         'teacher.user.role': '教師',
@@ -932,9 +940,13 @@ const I18N = {
 
         // PDF errors
         'teacher.pdf.parse_failed_binary': 'Parsing failed: binary PDF content detected. Please re-upload or use another file.',
-        'teacher.pdf.parse_failed_empty': 'Extraction failed: no text could be extracted. Please try again or use another file.',
-        'teacher.pdf.parse_failed_short': 'Extraction failed: text too short. Please use a file with more content.',
-        'teacher.pdf.parse_failed_generic': 'Extraction failed. Please try again or use another file.',
+        'teacher.pdf.parse_failed_empty': 'Extraction failed: no text could be extracted. If this is a scanned/image PDF, paste the text manually.',
+        'teacher.pdf.parse_failed_short': 'Extraction failed: text too short. If this is a scanned/image PDF, paste the text manually.',
+        'teacher.pdf.parse_failed_generic': 'Extraction failed. Please try again or use another file. If this is a scanned PDF, paste the text manually.',
+        // Pipeline preflight
+        'teacher.pipeline.no_course_docs': 'No course documents uploaded yet. Please upload a PDF or text in "Course Documents" (left sidebar) first, then run generation.',
+        'teacher.pipeline.no_docs_title': 'Upload Course Documents First',
+        'teacher.pipeline.missing_course_id': 'Please fill in the course (Step 2) before running.',
 
         // User info
         'teacher.user.role': 'Teacher',

@@ -696,10 +696,19 @@ class QwenProvider(BaseLLMProvider):
             )
 
             if resp.status_code >= 400:
+                err_text = (resp.text or '')[:400]
+                # 401 invalid_api_key: 返回可操作的提示，便于用户在 .env 中修正密钥
+                if resp.status_code == 401 and ('invalid_api_key' in err_text or 'Incorrect API key' in err_text or 'incorrect api key' in err_text.lower()):
+                    error_msg = (
+                        'Qwen API 密钥无效。请在 .env 中设置正确的 QWEN_API_KEY（或 DASHSCOPE_API_KEY），'
+                        '或在阿里云控制台获取/更新密钥：https://help.aliyun.com/zh/model-studio/error-code#apikey-error'
+                    )
+                else:
+                    error_msg = f"Qwen API HTTP {resp.status_code}: {err_text}"
                 return {
                     'success': False,
                     'plan': None,
-                    'error': f"Qwen API HTTP {resp.status_code}: {resp.text[:400]}",
+                    'error': error_msg,
                     'provider': 'qwen',
                     'model': model
                 }

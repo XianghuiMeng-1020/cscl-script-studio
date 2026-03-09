@@ -1181,6 +1181,27 @@ async function runPipeline() {
             showNotification('Current role has no permission', 'error');
             return;
         }
+        // 400: 未上传课程文档 / 缺少 course_id
+        if (res.status === 400) {
+            pipelineRunInProgress = false;
+            var code = result.code || '';
+            var errMsg = result.error || result.message || 'Request failed.';
+            if (code === 'PREFLIGHT_NO_COURSE_DOCS') {
+                errMsg = typeof t === 'function' ? t('teacher.pipeline.no_course_docs') : '当前课程下还没有上传文档。请先在左侧「课程文档」中上传 PDF 或文本，再点击运行生成。';
+                showPipelineErrorPanel(errMsg, typeof t === 'function' ? t('teacher.pipeline.no_docs_title') : '请先上传课程文档', false);
+                showNotification(errMsg, 'error');
+                // Optionally open or highlight the course documents sidebar
+                var docsSection = document.querySelector('[data-docs-section]') || document.getElementById('documentsView');
+                if (docsSection) { docsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); var navItem = document.querySelector('[data-view="documents"]'); if (navItem) navItem.click(); }
+            } else if (code === 'PREFLIGHT_MISSING_COURSE_ID') {
+                showNotification(typeof t === 'function' ? t('teacher.pipeline.missing_course_id') : '请填写课程信息（Step 2 中的课程）后再运行。', 'error');
+                goToStep(2);
+            } else {
+                showNotification(errMsg, 'error');
+            }
+            resetPipelineStageCards();
+            return;
+        }
         // S2.18: Handle 503 LLM_PROVIDER_NOT_READY
         if (res.status === 503) {
             if (result.code === 'LLM_PROVIDER_NOT_READY') {

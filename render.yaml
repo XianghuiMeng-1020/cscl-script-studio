@@ -21,6 +21,20 @@ services:
         value: "true"
       - key: QWEN_IMPLEMENTED
         value: "true"
+      - key: LLM_PROVIDER_PRIMARY
+        value: qwen
+      - key: LLM_PROVIDER_FALLBACK
+        value: openai
+      - key: LLM_STRATEGY
+        value: primary_with_fallback
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_ENABLED
+        value: "true"
+      - key: OPENAI_IMPLEMENTED
+        value: "true"
+      - key: OPENAI_MODEL
+        value: "gpt-4o-mini"
       - key: DEMO_MODE
         value: "true"
       - key: QUICK_DEMO_PUBLIC

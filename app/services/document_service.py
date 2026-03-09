@@ -319,7 +319,7 @@ class DocumentService:
             if (not clean or len(clean.strip()) < _MIN_EXTRACT_LEN) and PDFPLUMBER_SUPPORT:
                 clean, _ = self._extract_with_pdfplumber(data)
             if not clean or len(clean.strip()) < _MIN_EXTRACT_LEN:
-                return {'ok': False, 'code': TEXT_TOO_SHORT, 'error': 'Extracted text is too short or empty'}
+                return {'ok': False, 'code': TEXT_TOO_SHORT, 'error': 'Extracted text is too short or empty. If this is a scanned or image-only PDF, paste the text manually in Step 1.'}
             if is_probably_pdf_binary_text(clean):
                 return {'ok': False, 'code': PDF_PARSE_FAILED, 'error': 'PDF parsing failed: binary or invalid content detected'}
             preview = clean[:_PREVIEW_LEN] if len(clean) > _PREVIEW_LEN else clean

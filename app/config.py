@@ -46,16 +46,15 @@ class Config:
     
     WEB_PORT = get_web_port()
     
-    # LLM Provider Configuration (S2.10: primary + fallback; S2.18: never pick unimplemented)
-    # S2.18: Default primary is qwen (production-safe), fallback is openai
-    LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'qwen').lower()
-    LLM_PROVIDER_PRIMARY = os.getenv('LLM_PRIMARY', os.getenv('LLM_PROVIDER_PRIMARY', 'qwen')).lower()
+    # LLM Provider Configuration (S2.10: primary + fallback; default: OpenAI only)
+    LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'openai').lower()
+    LLM_PROVIDER_PRIMARY = os.getenv('LLM_PRIMARY', os.getenv('LLM_PROVIDER_PRIMARY', 'openai')).lower()
     LLM_PROVIDER_FALLBACK = os.getenv('LLM_FALLBACK', os.getenv('LLM_PROVIDER_FALLBACK', 'openai')).lower()
     LLM_STRATEGY = os.getenv('LLM_PROVIDER_STRATEGY', os.getenv('LLM_STRATEGY', 'primary_with_fallback')).lower()
     LLM_ALLOW_UNIMPLEMENTED_PRIMARY = os.getenv('LLM_ALLOW_UNIMPLEMENTED_PRIMARY', 'false').lower() == 'true'
-    OPENAI_ENABLED = os.getenv('OPENAI_ENABLED', 'false').lower() == 'true'
-    OPENAI_IMPLEMENTED = os.getenv('OPENAI_IMPLEMENTED', 'false').lower() == 'true'
-    QWEN_ENABLED = os.getenv('QWEN_ENABLED', 'true').lower() == 'true'
+    OPENAI_ENABLED = os.getenv('OPENAI_ENABLED', 'true').lower() == 'true'
+    OPENAI_IMPLEMENTED = os.getenv('OPENAI_IMPLEMENTED', 'true').lower() == 'true'
+    QWEN_ENABLED = os.getenv('QWEN_ENABLED', 'false').lower() == 'true'
     QWEN_IMPLEMENTED = os.getenv('QWEN_IMPLEMENTED', 'true').lower() == 'true'
     QWEN_API_KEY = os.getenv('QWEN_API_KEY', '')
     QWEN_BASE_URL = os.getenv('QWEN_BASE_URL', 'https://dashscope.aliyuncs.com/compatible-mode/v1')

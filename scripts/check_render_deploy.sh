@@ -36,12 +36,12 @@ if command -v jq &>/dev/null; then
   READY=$(jq -r '.llm_provider_ready' /tmp/render_health.json 2>/dev/null)
   if [ "$READY" = "true" ]; then
     echo ""
-    echo "   ✅ LLM 已就绪，可正常跑 Pipeline（Qwen/OpenAI 双轨备用）"
+    echo "   ✅ LLM 已就绪，可正常跑 Pipeline（OpenAI）"
   else
     REASON=$(jq -r '.llm_provider_reason // "unknown"' /tmp/render_health.json 2>/dev/null)
     echo ""
     echo "   ⚠️  LLM 未就绪: $REASON"
-    echo "   请确认 Render Environment 中已设置 QWEN_API_KEY 与 OPENAI_API_KEY"
+    echo "   请确认 Render Environment 中已设置 OPENAI_API_KEY"
   fi
 else
   echo ""

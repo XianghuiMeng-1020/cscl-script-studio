@@ -1387,7 +1387,7 @@ async function retryPipelineWithFallback() {
             body: JSON.stringify({
                 spec: currentSpec,
                 generation_options: {
-                    force_provider: 'qwen'
+                    force_provider: 'openai'
                 }
             }),
             credentials: 'include'

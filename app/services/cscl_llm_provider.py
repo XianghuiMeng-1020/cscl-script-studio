@@ -89,7 +89,7 @@ def _resolve_provider_env() -> Dict[str, str]:
     provider = (
         _get_config_value('CSCL_LLM_PROVIDER') or
         _get_config_value('LLM_PROVIDER') or
-        'qwen'
+        'openai'
     )
     primary = (
         _get_config_value('CSCL_LLM_PRIMARY') or
@@ -107,8 +107,8 @@ def _resolve_provider_env() -> Dict[str, str]:
         'single'
     )
     return {
-        'provider': str(provider).lower().strip() if provider else 'qwen',
-        'primary': str(primary).lower().strip() if primary else 'qwen',
+        'provider': str(provider).lower().strip() if provider else 'openai',
+        'primary': str(primary).lower().strip() if primary else 'openai',
         'fallback': str(fallback).lower().strip() if fallback else 'openai',
         'strategy': str(strategy).lower().strip() if strategy else 'single',
     }

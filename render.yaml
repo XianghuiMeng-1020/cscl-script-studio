@@ -14,15 +14,9 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: LLM_PROVIDER
-        value: qwen
-      - key: QWEN_API_KEY
-        sync: false
-      - key: QWEN_ENABLED
-        value: "true"
-      - key: QWEN_IMPLEMENTED
-        value: "true"
+        value: openai
       - key: LLM_PROVIDER_PRIMARY
-        value: qwen
+        value: openai
       - key: LLM_PROVIDER_FALLBACK
         value: openai
       - key: LLM_STRATEGY

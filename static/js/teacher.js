@@ -668,6 +668,9 @@ function wizardNext() {
     if (wizardStep < 4) {
         wizardStep++;
         updateWizardProgress();
+        if (wizardStep === 4) {
+            loadScriptPreview();
+        }
     }
 }
 
@@ -676,6 +679,140 @@ function wizardBack() {
         wizardStep--;
         updateWizardProgress();
     }
+}
+
+async function loadScriptPreview() {
+    var container = document.getElementById('scriptPreview');
+    if (!container) return;
+
+    container.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>Loading script preview...</p></div>';
+
+    var runId = currentPipelineRunId;
+    if (!runId && currentScriptId) {
+        try {
+            var runsRes = await fetch(API_BASE + '/scripts/' + currentScriptId + '/pipeline/runs', { credentials: 'include' });
+            if (runsRes.ok) {
+                var runsData = await runsRes.json();
+                var runs = runsData.runs || [];
+                if (runs.length > 0) runId = runs[0].run_id;
+            }
+        } catch (e) { console.warn('[teacher] loadScriptPreview runs fetch error', e); }
+    }
+
+    if (!runId) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>No pipeline run found. Please go back and run the pipeline first.</p></div>';
+        return;
+    }
+
+    try {
+        var res = await fetch(API_BASE + '/pipeline/runs/' + runId, { credentials: 'include' });
+        if (!res.ok) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Failed to load pipeline results (HTTP ' + res.status + ')</p></div>';
+            return;
+        }
+        var data = await res.json();
+        var stages = data.stages || [];
+        var run = data.run || {};
+
+        if (run.status === 'running') {
+            container.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>Pipeline is still running... Please wait.</p></div>';
+            setTimeout(function() { loadScriptPreview(); }, 3000);
+            return;
+        }
+
+        var output = null;
+        var stageOrder = ['refiner', 'critic', 'material_generator', 'planner'];
+        for (var i = 0; i < stageOrder.length; i++) {
+            var st = stages.find(function(s) { return s.stage_name === stageOrder[i] && s.status === 'success' && s.output_json; });
+            if (st) { output = st.output_json; break; }
+        }
+
+        if (!output) {
+            var errMsg = run.error_message || 'No output was generated';
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Pipeline did not produce output: ' + errMsg + '</p></div>';
+            return;
+        }
+
+        var html = '<div class="script-preview-content">';
+        var roles = output.roles || [];
+        if (roles.length > 0) {
+            html += '<div class="preview-section"><h3><i class="fas fa-users"></i> Roles</h3><div class="roles-grid">';
+            roles.forEach(function(r) {
+                html += '<div class="role-card"><strong>' + _esc(r.role_id || r.name || 'Role') + '</strong>';
+                if (r.description) html += '<p>' + _esc(r.description) + '</p>';
+                html += '</div>';
+            });
+            html += '</div></div>';
+        }
+
+        var scenes = output.scenes || [];
+        if (scenes.length > 0) {
+            html += '<div class="preview-section"><h3><i class="fas fa-film"></i> Scenes (' + scenes.length + ')</h3>';
+            scenes.forEach(function(scene, idx) {
+                html += '<div class="scene-card">';
+                html += '<div class="scene-header"><span class="scene-number">Scene ' + (scene.order_index || idx + 1) + '</span>';
+                if (scene.scene_type) html += '<span class="scene-type badge">' + _esc(scene.scene_type) + '</span>';
+                html += '</div>';
+                if (scene.purpose) html += '<p class="scene-purpose">' + _esc(scene.purpose) + '</p>';
+                var scriptlets = scene.scriptlets || [];
+                if (scriptlets.length > 0) {
+                    html += '<div class="scriptlets-list">';
+                    scriptlets.forEach(function(sl) {
+                        html += '<div class="scriptlet-item">';
+                        if (sl.role_id) html += '<span class="scriptlet-role">' + _esc(sl.role_id) + ':</span> ';
+                        html += '<span class="scriptlet-text">' + _esc(sl.prompt_text || '') + '</span>';
+                        if (sl.prompt_type) html += ' <span class="scriptlet-type badge-sm">' + _esc(sl.prompt_type) + '</span>';
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+                if (scene.transition_rule) html += '<p class="scene-transition"><em>Transition: ' + _esc(scene.transition_rule) + '</em></p>';
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+
+        if (output.refinements_applied) {
+            var ref = output.refinements_applied;
+            html += '<div class="preview-section"><h3><i class="fas fa-magic"></i> Refinements Applied</h3><ul>';
+            if (ref.scenes_added) html += '<li>Scenes added: ' + ref.scenes_added + '</li>';
+            if (ref.roles_added) html += '<li>Roles added: ' + ref.roles_added + '</li>';
+            if (ref.scriptlets_fixed) html += '<li>Scriptlets fixed: ' + ref.scriptlets_fixed + '</li>';
+            html += '</ul></div>';
+        }
+
+        var stagesSummary = '<div class="preview-section"><h3><i class="fas fa-info-circle"></i> Pipeline Summary</h3>';
+        stagesSummary += '<div class="pipeline-summary-grid">';
+        stages.forEach(function(s) {
+            var cls = s.status === 'success' ? 'stage-ok' : (s.status === 'failed' ? 'stage-fail' : 'stage-skip');
+            stagesSummary += '<div class="pipeline-summary-item ' + cls + '">';
+            stagesSummary += '<strong>' + _esc(s.stage_name) + '</strong>';
+            stagesSummary += '<span class="summary-status">' + _esc(s.status) + '</span>';
+            if (s.latency_ms) stagesSummary += '<span class="summary-time">' + (s.latency_ms / 1000).toFixed(1) + 's</span>';
+            stagesSummary += '</div>';
+        });
+        stagesSummary += '</div></div>';
+        html += stagesSummary;
+
+        html += '</div>';
+        container.innerHTML = html;
+
+        var finalizeBtn = document.getElementById('finalizeBtn');
+        if (finalizeBtn && (run.status === 'completed' || run.status === 'success')) {
+            finalizeBtn.disabled = false;
+        }
+
+    } catch (e) {
+        console.error('[teacher] loadScriptPreview error:', e);
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading preview: ' + e.message + '</p></div>';
+    }
+}
+
+function _esc(str) {
+    if (!str) return '';
+    var d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
 }
 
 function updateWizardProgress() {

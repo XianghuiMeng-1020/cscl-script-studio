@@ -168,3 +168,141 @@
     color: var(--text-secondary);
     background: rgba(0, 0, 0, 0.05);
 }
+
+/* Step 4 Script Preview */
+.script-preview-content {
+    padding: 0.5rem 0;
+}
+.preview-section {
+    margin-bottom: 1.5rem;
+}
+.preview-section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary, #333);
+    border-bottom: 2px solid var(--border-light, #e0e0e0);
+    padding-bottom: 0.4rem;
+}
+.preview-section h3 i {
+    margin-right: 0.4rem;
+    color: var(--primary, #4a7c59);
+}
+.roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+.role-card {
+    background: var(--bg-secondary, #f8f8f4);
+    border: 1px solid var(--border-light, #e0e0e0);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+}
+.role-card strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--primary, #4a7c59);
+}
+.role-card p {
+    font-size: 0.85rem;
+    color: var(--text-secondary, #666);
+    margin: 0;
+}
+.scene-card {
+    background: var(--bg-secondary, #f8f8f4);
+    border: 1px solid var(--border-light, #e0e0e0);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+.scene-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.scene-number {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+.badge, .badge-sm {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 12px;
+    background: var(--primary, #4a7c59);
+    color: #fff;
+    font-weight: 500;
+}
+.badge-sm {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    background: var(--text-muted, #999);
+}
+.scene-purpose {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #555);
+    margin-bottom: 0.5rem;
+}
+.scriptlets-list {
+    border-left: 3px solid var(--primary, #4a7c59);
+    padding-left: 0.75rem;
+    margin: 0.5rem 0;
+}
+.scriptlet-item {
+    padding: 0.35rem 0;
+    font-size: 0.88rem;
+    border-bottom: 1px solid var(--border-light, #eee);
+}
+.scriptlet-item:last-child {
+    border-bottom: none;
+}
+.scriptlet-role {
+    font-weight: 600;
+    color: var(--primary, #4a7c59);
+}
+.scene-transition {
+    font-size: 0.82rem;
+    color: var(--text-muted, #888);
+    margin-top: 0.4rem;
+}
+.pipeline-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
+}
+.pipeline-summary-item {
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-light, #ddd);
+    text-align: center;
+}
+.pipeline-summary-item strong {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: capitalize;
+    margin-bottom: 0.2rem;
+}
+.pipeline-summary-item .summary-status {
+    display: block;
+    font-size: 0.78rem;
+    text-transform: capitalize;
+}
+.pipeline-summary-item .summary-time {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-muted, #888);
+}
+.stage-ok {
+    background: #e8f5e9;
+    border-color: #a5d6a7;
+}
+.stage-fail {
+    background: #ffebee;
+    border-color: #ef9a9a;
+}
+.stage-skip {
+    background: #fff8e1;
+    border-color: #ffe082;
+}

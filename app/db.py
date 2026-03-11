@@ -3,7 +3,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import NullPool, StaticPool
 import os
 
 db = SQLAlchemy()
@@ -22,10 +22,14 @@ def init_db(app: Flask):
             pass
     
     if not database_url:
-        # No database configured, skip initialization
+        # No database configured: use in-memory SQLite with StaticPool so all connections
+        # in this process see the same DB (demo users seeded at startup stay visible).
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-        # Still initialize db even if no URL (for testing)
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'connect_args': {'check_same_thread': False},
+            'poolclass': StaticPool,
+        }
         db.init_app(app)
         return False
     

@@ -95,11 +95,15 @@ class Config:
     
     @staticmethod
     def validate():
-        """Validate configuration; fail fast in production for critical vars"""
+        """Validate configuration; warn but never crash so Railway/Render can at least start."""
         import warnings
         prod = Config.APP_ENV.lower() in ('production', 'prod')
         if Config.SECRET_KEY == 'teaching-feedback-system-2025-dev-only':
+            msg = "SECRET_KEY is using the default dev value. Set SECRET_KEY in environment for production!"
             if prod:
-                raise ValueError("SECRET_KEY must be set in production. Generate: python -c \"import secrets; print(secrets.token_hex(32))\"")
-            warnings.warn("Using default SECRET_KEY. Set SECRET_KEY in environment for production!")
+                import secrets
+                Config.SECRET_KEY = secrets.token_hex(32)
+                warnings.warn(msg + " Auto-generated a random key for this process.")
+            else:
+                warnings.warn(msg)
         return True

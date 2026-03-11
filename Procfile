@@ -1,1 +1,1 @@
-web: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 3 --timeout 120 --preload
+web: python -c "import os; os.makedirs('data/course_documents', exist_ok=True); print('DATA DIR READY')" && gunicorn wsgi:app --bind 0.0.0.0:${PORT:-5001} --workers 1 --timeout 120 --access-logfile - --error-logfile -

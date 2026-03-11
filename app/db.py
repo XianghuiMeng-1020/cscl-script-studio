@@ -22,13 +22,16 @@ def init_db(app: Flask):
             pass
     
     if not database_url:
-        # No database configured: use in-memory SQLite with StaticPool so all connections
-        # in this process see the same DB (demo users seeded at startup stay visible).
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        # No external DB configured: use a file-based SQLite so every thread/worker
+        # shares the same database and demo users seeded at startup stay visible.
+        import pathlib
+        db_dir = pathlib.Path(app.root_path).parent / 'data'
+        db_dir.mkdir(parents=True, exist_ok=True)
+        db_path = db_dir / 'app.db'
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
             'connect_args': {'check_same_thread': False},
-            'poolclass': StaticPool,
         }
         db.init_app(app)
         return False

@@ -60,7 +60,7 @@ class Config:
     QWEN_BASE_URL = os.getenv('QWEN_BASE_URL', 'https://dashscope.aliyuncs.com/compatible-mode/v1')
     QWEN_MODEL = os.getenv('QWEN_MODEL', 'qwen-plus')
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
-    OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', '')
+    OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', '') or 'https://api.openai.com/v1'
     OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-mini')
     MOCK_MODEL = os.getenv('MOCK_MODEL', 'mock-model-v1')
     

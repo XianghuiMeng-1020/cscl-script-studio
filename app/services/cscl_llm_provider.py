@@ -405,7 +405,7 @@ class OpenAIProvider(BaseLLMProvider):
 
     def generate_script_plan(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
         model = str(_get_config_value('OPENAI_MODEL', 'gpt-4o-mini'))
-        base_url = str(_get_config_value('OPENAI_BASE_URL', 'https://api.openai.com/v1')).rstrip('/')
+        base_url = (str(_get_config_value('OPENAI_BASE_URL', 'https://api.openai.com/v1')).strip() or 'https://api.openai.com/v1').rstrip('/')
         timeout_s = int(_as_int(_get_config_value('OPENAI_TIMEOUT_SECONDS', 120), 120))
 
         if not self.is_ready():
@@ -497,7 +497,7 @@ class OpenAIProvider(BaseLLMProvider):
             os.getenv('OPENAI_API_KEY', '') or str(_get_config_value('OPENAI_API_KEY', ''))
         )
         model = str(_get_config_value('OPENAI_MODEL', 'gpt-4o-mini'))
-        base_url = str(_get_config_value('OPENAI_BASE_URL', 'https://api.openai.com/v1')).rstrip('/')
+        base_url = (str(_get_config_value('OPENAI_BASE_URL', 'https://api.openai.com/v1')).strip() or 'https://api.openai.com/v1').rstrip('/')
         timeout_s = int(_as_int(_get_config_value('OPENAI_TIMEOUT_SECONDS', 120), 120))
 
         if not api_key:

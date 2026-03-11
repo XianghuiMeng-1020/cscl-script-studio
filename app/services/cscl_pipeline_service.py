@@ -290,7 +290,7 @@ class CSCLPipelineService:
                     )
     
     def run_pipeline(self, script_id: str, spec: Dict[str, Any], initiated_by: str,
-                    options: Dict[str, Any] = None) -> Dict[str, Any]:
+                    options: Dict[str, Any] = None, run_id_override: str = None) -> Dict[str, Any]:
         """
         Run complete pipeline
         
@@ -299,6 +299,7 @@ class CSCLPipelineService:
             spec: Normalized pedagogical specification
             initiated_by: User ID who initiated the run
             options: Generation options
+            run_id_override: If given, use this run_id instead of generating one
         
         Returns:
             {
@@ -312,7 +313,7 @@ class CSCLPipelineService:
             }
         """
         options = options or {}
-        run_id = f"run_{uuid.uuid4().hex[:16]}"
+        run_id = run_id_override or f"run_{uuid.uuid4().hex[:16]}"
         spec_hash = compute_spec_hash(spec)
         
         # Check grounding status

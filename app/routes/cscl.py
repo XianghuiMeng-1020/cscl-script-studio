@@ -1488,79 +1488,50 @@ def run_pipeline(script_id):
     # S2.18: Extract force_provider from options for retry scenarios
     force_provider = options.get('force_provider')
     
-    # Run pipeline
+    # Run pipeline asynchronously so the HTTP request returns immediately
+    import threading
+    from app import create_app as _create_app
+
     pipeline_service = CSCLPipelineService(force_provider=force_provider)
-    try:
-        result = pipeline_service.run_pipeline(
-            script_id=script_id,
-            spec=normalized_spec,
-            initiated_by=current_user.id,
-            options=options
-        )
-        
-        # S2.18: Map result codes to HTTP status codes
-        code = result.get('code', '')
-        http_status = result.get('http_status', 200)
-        
-        if code == 'LLM_PROVIDER_NOT_READY':
-            return jsonify({
-                'error': result.get('error', 'Configured LLM provider is not runnable'),
-                'code': 'LLM_PROVIDER_NOT_READY',
-                'details': result.get('details', {}),
-                'stages': result.get('stages', [])
-            }), 503
-        
-        if code == 'PIPELINE_FAILED':
-            return jsonify({
-                'error': result.get('error', 'Pipeline execution failed'),
-                'code': 'PIPELINE_FAILED',
-                'run_id': result.get('run_id'),
-                'stages': result.get('stages', [])
-            }), 422
-        
-        # Check for provider errors (legacy)
-        if result.get('status') == 'failed' and 'not configured' in result.get('error', '').lower():
-            return jsonify({
-                'error': result['error'],
-                'code': 'PROVIDER_KEY_MISSING',
-                'run_id': result.get('run_id')
-            }), 503
-        
-        if result.get('status') == 'failed':
-            return jsonify({
-                'error': result.get('error', 'Pipeline execution failed'),
-                'code': result.get('code', 'PIPELINE_FAILED'),
-                'run_id': result.get('run_id'),
-                'stages': result.get('stages', [])
-            }), 422
-        
-        log_audit(
-            'pipeline_run',
-            actor_id=current_user.id,
-            role=current_user.role,
-            target_id=script_id,
-            status='success',
-            meta={'run_id': result.get('run_id')}
-        )
-        if idem_key:
-            from app.services.pipeline.idempotency import set_cached_run_for_key
-            set_cached_run_for_key(script_id, idem_key, result['run_id'])
-        
-        return jsonify({
-            'success': True,
-            'run_id': result['run_id'],
-            'status': result['status'],
-            'final_output': result.get('final_output'),
-            'quality_report': result.get('quality_report'),
-            'grounding_status': result.get('grounding_status', 'no_course_docs'),
-            'stages': result.get('stages', [])
-        }), 200
-    except Exception as e:
-        current_app.logger.error(f"Pipeline error: {e}")
-        return jsonify({
-            'error': f'Pipeline execution failed: {str(e)}',
-            'code': 'INTERNAL_ERROR'
-        }), 500
+
+    # Pre-create a run_id and return it immediately; pipeline executes in background thread
+    import uuid as _uuid
+    bg_run_id = f"run_{_uuid.uuid4().hex[:16]}"
+    _app = current_app._get_current_object()
+    _user_id = current_user.id
+    _spec_copy = dict(normalized_spec)
+    _options_copy = dict(options) if options else {}
+    _idem_key = idem_key
+    _script_id = script_id
+
+    def _run_bg():
+        with _app.app_context():
+            try:
+                svc = CSCLPipelineService(force_provider=force_provider)
+                svc.run_pipeline(
+                    script_id=_script_id,
+                    spec=_spec_copy,
+                    initiated_by=_user_id,
+                    options=_options_copy,
+                    run_id_override=bg_run_id,
+                )
+            except Exception:
+                import logging
+                logging.getLogger(__name__).exception("Background pipeline failed")
+
+    t = threading.Thread(target=_run_bg, daemon=True)
+    t.start()
+
+    return jsonify({
+        'success': True,
+        'run_id': bg_run_id,
+        'status': 'running',
+        'async': True,
+        'stages': [],
+        'final_output': None,
+        'quality_report': None,
+        'grounding_status': 'pending',
+    }), 202
 
 
 @cscl_bp.route('/pipeline/runs/<run_id>', methods=['GET'])

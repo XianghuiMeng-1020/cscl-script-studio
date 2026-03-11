@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "python startup_check.py && gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --access-logfile - --error-logfile -",
+    "startCommand": "python -c \"import os; os.makedirs('data/course_documents', exist_ok=True)\" && gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --preload --access-logfile - --error-logfile -",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }

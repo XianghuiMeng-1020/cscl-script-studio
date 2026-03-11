@@ -56,6 +56,22 @@ def health_check():
     }), 200
 
 
+@api_bp.route('/debug/users', methods=['GET'])
+def debug_users():
+    """Temporary debug: check if demo users exist in DB."""
+    from app.models import User
+    try:
+        users = User.query.all()
+        uri = current_app.config.get('SQLALCHEMY_DATABASE_URI', '(not set)')
+        return jsonify({
+            'db_uri': uri[:50] + '...' if len(uri) > 50 else uri,
+            'user_count': len(users),
+            'users': [{'id': u.id, 'has_pw': bool(u.password_hash)} for u in users]
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # ==================== Assignment APIs ====================
 
 @api_bp.route('/assignments', methods=['GET'])

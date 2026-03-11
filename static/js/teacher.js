@@ -1,4 +1,4 @@
-// CSCL Teacher Dashboard JavaScript - S2.14.2 dead-UI precision fix
+// CSCL Teacher Dashboard JavaScript - S2.15 stage-status & wizard-progress fix
 (function() {
     'use strict';
     try {
@@ -825,6 +825,7 @@ function updateWizardProgress() {
     document.querySelectorAll('.wizard-step-content').forEach((content, index) => {
         content.classList.toggle('active', index === wizardStep - 1);
     });
+    updateCurrentStep();
 }
 
 function cancelWizard() {
@@ -1079,11 +1080,23 @@ function specForScript(s) {
 function resetPipelineStageCards() {
     document.querySelectorAll('.pipeline-stage').forEach(function(stage) {
         var status = stage.querySelector('.stage-status');
-        if (status) { status.textContent = 'Pending'; status.className = 'stage-status'; }
-        var inSpan = stage.querySelector('.input-summary span');
-        if (inSpan) inSpan.textContent = 'Waiting...';
-        var outSpan = stage.querySelector('.output-summary span');
-        if (outSpan) outSpan.textContent = 'Waiting...';
+        if (status) {
+            status.removeAttribute('data-i18n');
+            status.textContent = 'Pending';
+            status.className = 'stage-status';
+        }
+        var inputEl = stage.querySelector('.input-summary');
+        if (inputEl) {
+            var spans = inputEl.querySelectorAll('span');
+            var target = spans.length > 1 ? spans[1] : spans[0];
+            if (target) { target.removeAttribute('data-i18n'); target.textContent = 'Waiting...'; }
+        }
+        var outputEl = stage.querySelector('.output-summary');
+        if (outputEl) {
+            var spans = outputEl.querySelectorAll('span');
+            var target = spans.length > 1 ? spans[1] : spans[0];
+            if (target) { target.removeAttribute('data-i18n'); target.textContent = 'Waiting...'; }
+        }
         var dur = stage.querySelector('.stage-duration');
         if (dur) dur.textContent = '--';
     });
@@ -1124,16 +1137,12 @@ function updateStageCardsFromResult(result) {
         var card = document.querySelector('[data-stage="' + dataStage + '"]');
         if (!card) return;
 
-        var statusEl = card.querySelector('.stage-status');
-        if (statusEl) {
-            var label = stage.status === 'success' ? 'Success' : (stage.status === 'failed' ? 'Failed' : stage.status);
-            statusEl.textContent = label;
-            statusEl.className = 'stage-status ' + stage.status;
-        }
+        _setStageStatus(card, stage.status);
         var durationEl = card.querySelector('.stage-duration');
         if (durationEl && stage.latency_ms) {
             durationEl.textContent = (stage.latency_ms / 1000).toFixed(1) + 's';
         }
+        _setStageIO(card, stage);
     });
 
     // Mark stages that were not executed (e.g. refiner skipped) as "Skipped"
@@ -1562,18 +1571,51 @@ function updatePipelineVisualization(data) {
         var dataStage = _stageNameToDataStage[backendName] || backendName;
         var stageElement = document.querySelector('[data-stage="' + dataStage + '"]');
         if (stageElement) {
-            var statusEl = stageElement.querySelector('.stage-status');
-            if (statusEl) {
-                statusEl.textContent = stage.status ? stage.status.charAt(0).toUpperCase() + stage.status.slice(1) : '--';
-                statusEl.className = 'stage-status ' + (stage.status || '');
-            }
+            _setStageStatus(stageElement, stage.status);
             var durationEl = stageElement.querySelector('.stage-duration');
             if (durationEl) {
                 durationEl.textContent = stage.latency_ms ? (stage.latency_ms / 1000).toFixed(1) + 's'
                     : stage.duration_seconds ? stage.duration_seconds.toFixed(1) + 's' : '--';
             }
+            _setStageIO(stageElement, stage);
         }
     });
+}
+
+function _setStageStatus(stageElement, status) {
+    var statusEl = stageElement.querySelector('.stage-status');
+    if (!statusEl) return;
+    statusEl.removeAttribute('data-i18n');
+    var label = status ? status.charAt(0).toUpperCase() + status.slice(1) : '--';
+    statusEl.textContent = label;
+    statusEl.className = 'stage-status ' + (status || '');
+}
+
+function _setStageIO(stageElement, stage) {
+    var inputEl = stageElement.querySelector('.input-summary');
+    var outputEl = stageElement.querySelector('.output-summary');
+    if (inputEl) {
+        var inputSpans = inputEl.querySelectorAll('span');
+        var target = inputSpans.length > 1 ? inputSpans[1] : inputSpans[0];
+        if (target) {
+            target.removeAttribute('data-i18n');
+            if (stage.status === 'success') target.textContent = 'Done';
+            else if (stage.status === 'running') target.textContent = 'Processing...';
+            else if (stage.status === 'failed') target.textContent = 'Error';
+            else if (stage.status === 'skipped') target.textContent = 'Skipped';
+        }
+    }
+    if (outputEl) {
+        var outputSpans = outputEl.querySelectorAll('span');
+        var target = outputSpans.length > 1 ? outputSpans[1] : outputSpans[0];
+        if (target) {
+            target.removeAttribute('data-i18n');
+            if (stage.status === 'success') target.textContent = stage.output_json ? 'Generated' : 'Done';
+            else if (stage.status === 'running') target.textContent = 'Waiting...';
+            else if (stage.status === 'failed') target.textContent = stage.error_message ? stage.error_message.substring(0, 60) : 'Failed';
+            else if (stage.status === 'skipped') target.textContent = 'Skipped';
+        }
+    }
 }
 
 // S2.18: Retry pipeline with fallback provider

@@ -718,9 +718,15 @@ def init_demo_data():
         assignment_repo.delete_all()
         rubric_repo.delete_all()
         if Config.USE_DB_STORAGE:
-            user_repo.delete_all()  # Only delete users in DB mode
+            from app.models import User
+            User.query.filter(User.id.in_(['S001', 'S002'])).delete(synchronize_session=False)
+            db.session.commit()
         
-        # Create demo users (required for foreign key constraints in DB mode)
+        # Re-seed login accounts so teacher_demo etc. are never lost
+        from app.seed_demo import seed_demo_users
+        seed_demo_users()
+
+        # Create demo student users (required for foreign key constraints in DB mode)
         if Config.USE_DB_STORAGE:
             user_repo.create({
                 'id': 'S001',

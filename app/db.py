@@ -9,6 +9,13 @@ import os
 db = SQLAlchemy()
 
 
+def _set_sqlite_pragma(dbapi_conn, connection_record):
+    cursor = dbapi_conn.cursor()
+    cursor.execute('PRAGMA journal_mode=WAL')
+    cursor.execute('PRAGMA busy_timeout=30000')
+    cursor.close()
+
+
 def init_db(app: Flask):
     """Initialize database connection"""
     database_url = app.config.get('DATABASE_URL', '')
@@ -35,12 +42,9 @@ def init_db(app: Flask):
         }
         db.init_app(app)
 
-        @event.listens_for(db.engine, 'connect')
-        def _set_sqlite_wal(dbapi_conn, connection_record):
-            cursor = dbapi_conn.cursor()
-            cursor.execute('PRAGMA journal_mode=WAL')
-            cursor.execute('PRAGMA busy_timeout=30000')
-            cursor.close()
+        from sqlalchemy import event as sa_event
+        with app.app_context():
+            sa_event.listen(db.engine, 'connect', _set_sqlite_pragma)
 
         return False
     

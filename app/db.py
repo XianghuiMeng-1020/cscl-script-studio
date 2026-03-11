@@ -31,9 +31,17 @@ def init_db(app: Flask):
         app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-            'connect_args': {'check_same_thread': False},
+            'connect_args': {'check_same_thread': False, 'timeout': 30},
         }
         db.init_app(app)
+
+        @event.listens_for(db.engine, 'connect')
+        def _set_sqlite_wal(dbapi_conn, connection_record):
+            cursor = dbapi_conn.cursor()
+            cursor.execute('PRAGMA journal_mode=WAL')
+            cursor.execute('PRAGMA busy_timeout=30000')
+            cursor.close()
+
         return False
     
     # Set SQLAlchemy config

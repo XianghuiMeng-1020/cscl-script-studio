@@ -1,5 +1,0 @@
-[variables]
-PYTHONUNBUFFERED = "1"
-
-[start]
-cmd = "python -c \"import os; os.makedirs('data/course_documents', exist_ok=True)\" && gunicorn wsgi:app --bind 0.0.0.0:${PORT:-5001} --workers 1 --timeout 120 --access-logfile - --error-logfile -"

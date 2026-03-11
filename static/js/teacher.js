@@ -843,6 +843,15 @@ function updateWizardProgress() {
         content.classList.toggle('active', index === wizardStep - 1);
     });
     updateCurrentStep();
+    // Ensure Run Pipeline button is enabled when showing Step 3 and not currently running
+    if (wizardStep === 3 && !pipelineRunInProgress) {
+        var runBtn = document.getElementById('runPipelineBtn');
+        if (runBtn) {
+            runBtn.disabled = false;
+            runBtn.classList.remove('btn-loading');
+            if (!runBtn.querySelector('.fa-spinner')) runBtn.innerHTML = '<i class="fas fa-play"></i> <span data-i18n="teacher.pipeline.start">开始生成</span>';
+        }
+    }
 }
 
 function cancelWizard() {

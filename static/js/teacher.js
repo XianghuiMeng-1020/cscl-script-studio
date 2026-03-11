@@ -44,6 +44,7 @@ function looksLikePdfBinary(text) {
 // State
 let currentScriptId = null;
 let currentPipelineRunId = null;
+let _pipelinePollingActive = false;
 let wizardStep = 1;
 let currentSpec = null;
 let scripts = [];
@@ -95,7 +96,12 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         var sid = sessionStorage.getItem('cscl_current_script_id');
         if (sid && !currentScriptId) currentScriptId = sid;
+        var rid = sessionStorage.getItem('cscl_current_run_id');
+        if (rid && !currentPipelineRunId) currentPipelineRunId = rid;
     } catch (e) { /* ignore */ }
+    try {
+        restorePipelineState();
+    } catch (e) { console.error('[teacher] restorePipelineState error', e); }
     try {
         var demoSpec = sessionStorage.getItem('demoSpec');
         if (demoSpec) {
@@ -1260,28 +1266,37 @@ async function runPipeline() {
         }
         if (result.success && result.run_id) {
             currentPipelineRunId = result.run_id;
-            // Pipeline runs synchronously - result already contains final data
+            try { sessionStorage.setItem('cscl_current_run_id', result.run_id); } catch (e) {}
             if (result.status === 'success' || result.status === 'completed') {
                 showNotification('Generation completed!', 'success');
                 updateStageCardsFromResult(result);
                 var nextBtn = document.getElementById('wizardStep3Next');
                 if (nextBtn) nextBtn.disabled = false;
+                pipelineRunInProgress = false;
+                showLoading(false);
+                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
             } else if (result.status === 'partial_failed') {
                 showNotification('Generation partially completed. Some stages had errors.', 'warning');
                 updateStageCardsFromResult(result);
+                pipelineRunInProgress = false;
+                showLoading(false);
+                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
             } else {
                 showNotification('Pipeline started, please wait...', 'success');
+                _pipelinePollingActive = true;
                 pollPipelineStatus(result.run_id);
             }
         } else {
             showNotification('Pipeline failed to start', 'error');
             resetPipelineStageCards();
+            pipelineRunInProgress = false;
+            showLoading(false);
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
         }
     } catch (error) {
         console.error('Error running pipeline:', error);
         showNotification('Failed to run pipeline. Service may be unavailable.', 'error');
         resetPipelineStageCards();
-    } finally {
         pipelineRunInProgress = false;
         showLoading(false);
         if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
@@ -1291,6 +1306,7 @@ async function runPipeline() {
 var _pollRetryCount = 0;
 var _pollMaxRetries = 90;
 async function pollPipelineStatus(runId) {
+    _pipelinePollingActive = true;
     try {
         const res = await fetch(`${API_BASE}/pipeline/runs/${runId}`, {
             credentials: 'include'
@@ -1301,7 +1317,7 @@ async function pollPipelineStatus(runId) {
             if (_pollRetryCount < _pollMaxRetries) {
                 setTimeout(() => pollPipelineStatus(runId), 2000);
             } else {
-                showNotification('Pipeline run not found after timeout', 'error');
+                _finishPolling('Pipeline run not found after timeout', 'error');
             }
             return;
         }
@@ -1310,26 +1326,22 @@ async function pollPipelineStatus(runId) {
             _pollRetryCount = 0;
             const data = await res.json();
             updatePipelineVisualization(data);
-            
+
             if (data.run.status === 'running') {
                 setTimeout(() => pollPipelineStatus(runId), 2000);
             } else if (data.run.status === 'completed' || data.run.status === 'success') {
                 var nextBtn = document.getElementById('wizardStep3Next');
                 if (nextBtn) nextBtn.disabled = false;
-                showNotification('Pipeline completed successfully', 'success');
-                showLoading(false);
-                var runBtn = document.getElementById('runPipelineBtn');
-                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+                _finishPolling('Pipeline completed successfully', 'success');
             } else if (data.run.status === 'failed' || data.run.status === 'partial_failed') {
-                showNotification('Pipeline finished with errors: ' + (data.run.error_message || 'unknown'), 'warning');
-                showLoading(false);
-                var runBtn2 = document.getElementById('runPipelineBtn');
-                if (runBtn2) { runBtn2.disabled = false; runBtn2.classList.remove('btn-loading'); runBtn2.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+                _finishPolling('Pipeline finished with errors: ' + (data.run.error_message || 'unknown'), 'warning');
             }
         } else {
             _pollRetryCount++;
             if (_pollRetryCount < _pollMaxRetries) {
                 setTimeout(() => pollPipelineStatus(runId), 2000);
+            } else {
+                _finishPolling('Pipeline polling failed', 'error');
             }
         }
     } catch (error) {
@@ -1337,7 +1349,56 @@ async function pollPipelineStatus(runId) {
         _pollRetryCount++;
         if (_pollRetryCount < _pollMaxRetries) {
             setTimeout(() => pollPipelineStatus(runId), 3000);
+        } else {
+            _finishPolling('Pipeline polling failed', 'error');
         }
+    }
+}
+
+function _finishPolling(message, level) {
+    _pipelinePollingActive = false;
+    pipelineRunInProgress = false;
+    _pollRetryCount = 0;
+    if (message) showNotification(message, level || 'success');
+    showLoading(false);
+    var runBtn = document.getElementById('runPipelineBtn');
+    if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+}
+
+async function restorePipelineState() {
+    if (!currentScriptId) return;
+    try {
+        var res = await fetch(API_BASE + '/scripts/' + currentScriptId + '/pipeline/runs', { credentials: 'include' });
+        if (!res.ok) return;
+        var data = await res.json();
+        var runs = data.runs || [];
+        if (runs.length === 0) return;
+        var latest = runs[0];
+        currentPipelineRunId = latest.run_id;
+        try { sessionStorage.setItem('cscl_current_run_id', latest.run_id); } catch (e) {}
+        if (latest.status === 'running') {
+            _pipelinePollingActive = true;
+            var runBtn = document.getElementById('runPipelineBtn');
+            if (runBtn) { runBtn.disabled = true; runBtn.classList.add('btn-loading'); runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...'; }
+            showLoading(true);
+            pollPipelineStatus(latest.run_id);
+        } else if (latest.status === 'success' || latest.status === 'completed') {
+            var detailRes = await fetch(API_BASE + '/pipeline/runs/' + latest.run_id, { credentials: 'include' });
+            if (detailRes.ok) {
+                var detailData = await detailRes.json();
+                updatePipelineVisualization(detailData);
+                var nextBtn = document.getElementById('wizardStep3Next');
+                if (nextBtn) nextBtn.disabled = false;
+            }
+        } else if (latest.status === 'partial_failed' || latest.status === 'failed') {
+            var detailRes2 = await fetch(API_BASE + '/pipeline/runs/' + latest.run_id, { credentials: 'include' });
+            if (detailRes2.ok) {
+                var detailData2 = await detailRes2.json();
+                updatePipelineVisualization(detailData2);
+            }
+        }
+    } catch (e) {
+        console.warn('[teacher] restorePipelineState failed:', e);
     }
 }
 
@@ -1438,24 +1499,29 @@ async function retryPipelineWithFallback() {
         }
         if (result.success && result.run_id) {
             currentPipelineRunId = result.run_id;
+            try { sessionStorage.setItem('cscl_current_run_id', result.run_id); } catch (e) {}
             if (result.status === 'success' || result.status === 'completed') {
                 showNotification('Pipeline retry completed!', 'success');
                 updateStageCardsFromResult(result);
                 var nextBtn = document.getElementById('wizardStep3Next');
                 if (nextBtn) nextBtn.disabled = false;
+                showLoading(false);
+                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
             } else {
                 showNotification('Pipeline retry started', 'success');
+                _pipelinePollingActive = true;
                 pollPipelineStatus(result.run_id);
             }
         } else {
             showNotification('Pipeline retry failed to start', 'error');
             resetPipelineStageCards();
+            showLoading(false);
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
         }
     } catch (error) {
         console.error('Error retrying pipeline:', error);
         showNotification('Failed to retry pipeline. Service may be unavailable.', 'error');
         resetPipelineStageCards();
-    } finally {
         showLoading(false);
         if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
     }

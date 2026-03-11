@@ -651,7 +651,7 @@ function resetWizard() {
     updateCurrentStep();
 }
 
-function wizardNext() {
+async function wizardNext() {
     if (wizardStep === 2) {
         if (!currentSpec) {
             showNotification('请先完成教学目标检查', 'warning');
@@ -662,6 +662,23 @@ function wizardNext() {
         if (!currentPipelineRunId) {
             showNotification('Please run pipeline first', 'warning');
             return;
+        }
+    }
+    if (wizardStep === 1) {
+        var syllabusEl = document.getElementById('syllabusText');
+        var text = syllabusEl ? (syllabusEl.value || '').trim() : '';
+        if (text.length >= 80) {
+            try {
+                var uploadRes = await fetch(API_BASE + '/courses/' + DEFAULT_COURSE_ID + '/docs/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: 'Syllabus (Step 1)', text: text }),
+                    credentials: 'include'
+                });
+                if (uploadRes.ok && typeof loadDocuments === 'function') loadDocuments();
+            } catch (e) {
+                console.warn('[teacher] Step 1 syllabus upload as course doc failed', e);
+            }
         }
     }
     

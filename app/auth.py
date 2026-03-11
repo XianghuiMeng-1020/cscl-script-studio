@@ -116,10 +116,19 @@ def student_resource_required(f):
 
 def authenticate_user(user_id, password):
     """Authenticate user by user_id and password"""
+    import logging
+    logger = logging.getLogger(__name__)
     user = User.query.filter_by(id=user_id).first()
-    if user and user.check_password(password):
-        return user
-    return None
+    if user is None:
+        logger.warning("AUTH: user '%s' not found in DB", user_id)
+        all_users = User.query.all()
+        logger.warning("AUTH: DB has %d users: %s", len(all_users), [u.id for u in all_users])
+        return None
+    pw_ok = user.check_password(password)
+    if not pw_ok:
+        logger.warning("AUTH: user '%s' found but password check failed (hash[:20]=%s)", user_id, (user.password_hash or '')[:20])
+        return None
+    return user
 
 
 def authenticate_token(token):

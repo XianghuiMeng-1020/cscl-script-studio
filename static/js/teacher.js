@@ -1288,27 +1288,56 @@ async function runPipeline() {
     }
 }
 
+var _pollRetryCount = 0;
+var _pollMaxRetries = 90;
 async function pollPipelineStatus(runId) {
     try {
         const res = await fetch(`${API_BASE}/pipeline/runs/${runId}`, {
             credentials: 'include'
         });
-        
+
+        if (res.status === 404) {
+            _pollRetryCount++;
+            if (_pollRetryCount < _pollMaxRetries) {
+                setTimeout(() => pollPipelineStatus(runId), 2000);
+            } else {
+                showNotification('Pipeline run not found after timeout', 'error');
+            }
+            return;
+        }
+
         if (res.ok) {
+            _pollRetryCount = 0;
             const data = await res.json();
             updatePipelineVisualization(data);
             
             if (data.run.status === 'running') {
                 setTimeout(() => pollPipelineStatus(runId), 2000);
             } else if (data.run.status === 'completed' || data.run.status === 'success') {
-                document.getElementById('wizardStep3Next').disabled = false;
+                var nextBtn = document.getElementById('wizardStep3Next');
+                if (nextBtn) nextBtn.disabled = false;
                 showNotification('Pipeline completed successfully', 'success');
+                showLoading(false);
+                var runBtn = document.getElementById('runPipelineBtn');
+                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
             } else if (data.run.status === 'failed' || data.run.status === 'partial_failed') {
                 showNotification('Pipeline finished with errors: ' + (data.run.error_message || 'unknown'), 'warning');
+                showLoading(false);
+                var runBtn2 = document.getElementById('runPipelineBtn');
+                if (runBtn2) { runBtn2.disabled = false; runBtn2.classList.remove('btn-loading'); runBtn2.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+            }
+        } else {
+            _pollRetryCount++;
+            if (_pollRetryCount < _pollMaxRetries) {
+                setTimeout(() => pollPipelineStatus(runId), 2000);
             }
         }
     } catch (error) {
         console.error('Error polling pipeline:', error);
+        _pollRetryCount++;
+        if (_pollRetryCount < _pollMaxRetries) {
+            setTimeout(() => pollPipelineStatus(runId), 3000);
+        }
     }
 }
 

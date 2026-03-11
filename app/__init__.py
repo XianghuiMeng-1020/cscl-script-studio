@@ -51,7 +51,7 @@ def create_app(config_class=Config):
     # Initialize database (non-blocking, won't fail if DB not configured)
     init_db(app)
 
-    # When no DATABASE_URL (e.g. Render/Railway free tier with in-memory SQLite), create tables and seed demo users
+    # When no DATABASE_URL (e.g. Render/Railway free tier with in-memory SQLite), create tables
     if not app.config.get('DATABASE_URL'):
         try:
             with app.app_context():
@@ -59,12 +59,20 @@ def create_app(config_class=Config):
                 importlib.import_module('app.models')
                 from app.db import db
                 db.create_all()
-                from app.seed_demo import seed_demo_users, seed_demo_published_activity
-                seed_demo_users()
-                seed_demo_published_activity()
-                logger.info("Bootstrapped in-memory DB: tables created, demo users and demo activity seeded")
+                logger.info("Bootstrapped in-memory DB: tables created")
         except Exception:
             logger.exception("Failed to bootstrap in-memory DB (non-fatal, app will still start)")
+
+    # Always ensure demo users exist (idempotent). Fixes "Invalid username or password" when
+    # DATABASE_URL is set on Railway/Render but no seed was run, or in-memory DB was just created.
+    try:
+        with app.app_context():
+            from app.seed_demo import seed_demo_users, seed_demo_published_activity
+            seed_demo_users()
+            seed_demo_published_activity()
+            logger.info("Demo users and demo activity ensured (teacher_demo, student_demo, admin_demo / Demo@12345)")
+    except Exception:
+        logger.exception("Failed to seed demo users (non-fatal)")
 
     # S2.14: inject static_version for cache busting in templates
     @app.context_processor

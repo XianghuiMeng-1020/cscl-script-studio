@@ -79,17 +79,21 @@ class CriticStage:
             roles = self._normalize_roles(critique.get("roles", []))
             scenes = self._normalize_scenes(critique.get("scenes", []))
             
-            # If material_output has structure, treat as valid when LLM only complains about "no roles" (false positive)
+            # Override: if material has scenes, role-related issues should not fail the whole pipeline
             material_roles = material_output.get("roles") if isinstance(material_output.get("roles"), list) else []
             material_scenes = material_output.get("scenes") if isinstance(material_output.get("scenes"), list) else []
             issues = validation.get("issues") or []
-            role_issue = any("no roles" in (i or "").lower() or "roles defined" in (i or "").lower() or "unknown" in (i or "").lower() for i in issues)
-            if not validation.get("is_valid", True) and role_issue:
-                if (len(material_roles) >= 1 and len(material_scenes) >= 1) or (len(material_scenes) >= 1 and len(material_roles) == 0 and "no roles" in " ".join(issues).lower()):
-                    validation = dict(validation)
+            role_keywords = ["role", "roles defined", "no roles", "insufficient role", "less than"]
+            role_issue = any(any(kw in (i or "").lower() for kw in role_keywords) for i in issues)
+            if not validation.get("is_valid", True) and role_issue and len(material_scenes) >= 1:
+                validation = dict(validation)
+                non_role_issues = [i for i in issues if not any(kw in (i or "").lower() for kw in role_keywords)]
+                if not non_role_issues:
                     validation["is_valid"] = True
                     validation["issues"] = []
-                    validation["warnings"] = (validation.get("warnings") or []) + ["Validation overridden: script has structure."]
+                    validation["warnings"] = (validation.get("warnings") or []) + ["Roles not explicitly defined but script has scenes — treated as valid."]
+                else:
+                    validation["issues"] = non_role_issues
             
             latency_ms = int((time.time() - start_time) * 1000)
             

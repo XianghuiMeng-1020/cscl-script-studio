@@ -437,9 +437,10 @@ class OpenAIProvider(BaseLLMProvider):
                 json={
                     "model": model,
                     "messages": messages,
-                    "temperature": 0.3
+                    "temperature": 0.3,
+                    "max_tokens": 4096
                 },
-                timeout=timeout_s
+                timeout=60
             )
 
             if resp.status_code >= 400:
@@ -515,8 +516,8 @@ class OpenAIProvider(BaseLLMProvider):
             resp = requests.post(
                 f"{base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": model, "messages": messages, "temperature": 0},
-                timeout=timeout_s
+                json={"model": model, "messages": messages, "temperature": 0, "max_tokens": 4096},
+                timeout=60
             )
 
             if resp.status_code >= 400:

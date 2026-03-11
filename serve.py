@@ -18,7 +18,7 @@ log.info("App created with %d routes", len(list(app.url_map.iter_rules())))
 try:
     from waitress import serve
     log.info("Starting waitress on 0.0.0.0:%d", port)
-    serve(app, host="0.0.0.0", port=port, threads=4)
+    serve(app, host="0.0.0.0", port=port, threads=4, channel_timeout=300)
 except ImportError:
     log.warning("waitress not installed, falling back to Flask dev server")
     app.run(host="0.0.0.0", port=port, debug=False)

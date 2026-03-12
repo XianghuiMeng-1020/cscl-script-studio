@@ -669,6 +669,7 @@ async function wizardNext() {
         var materialLevel = (materialLevelEl && materialLevelEl.value) ? materialLevelEl.value : 'course';
         var syllabusEl = document.getElementById('syllabusText');
         var text = syllabusEl ? (syllabusEl.value || '').trim() : '';
+        var uploadedDocId = null;
         if (text.length >= 80) {
             try {
                 var uploadRes = await fetch(API_BASE + '/courses/' + DEFAULT_COURSE_ID + '/docs/upload', {
@@ -677,7 +678,11 @@ async function wizardNext() {
                     body: JSON.stringify({ title: 'Teaching materials (Step 1)', text: text, material_level: materialLevel }),
                     credentials: 'include'
                 });
-                if (uploadRes.ok && typeof loadDocuments === 'function') loadDocuments();
+                var uploadData = uploadRes.json ? await uploadRes.json().catch(function() { return {}; }) : {};
+                if (uploadRes.ok) {
+                    if (typeof loadDocuments === 'function') loadDocuments();
+                    uploadedDocId = uploadData.doc_id || uploadData.document && uploadData.document.id;
+                }
             } catch (e) {
                 console.warn('[teacher] Step 1 materials upload failed', e);
             }
@@ -695,6 +700,34 @@ async function wizardNext() {
                 if (notesRes.ok && typeof loadDocuments === 'function') loadDocuments();
             } catch (e) {
                 console.warn('[teacher] Step 1 lesson notes upload failed', e);
+            }
+        }
+        // Bug 1 fix: after pasting syllabus, prefill Step 2 from uploaded document so form reflects pasted content
+        if (uploadedDocId && typeof fillSpecForm === 'function') {
+            try {
+                var prefillRes = await fetch(API_BASE + '/courses/' + DEFAULT_COURSE_ID + '/docs/' + uploadedDocId + '/prefill', { credentials: 'include' });
+                if (prefillRes.ok) {
+                    var prefillData = await prefillRes.json();
+                    var sug = prefillData.suggestions || {};
+                    var v = function (key) { var s = sug[key]; return s && s.value !== undefined ? s.value : ''; };
+                    var spec = {
+                        course: v('course_title') || v('subject'),
+                        topic: v('topic'),
+                        duration_minutes: typeof v('duration') === 'number' ? v('duration') : (parseInt(v('duration'), 10) || 90),
+                        class_size: typeof v('class_size') === 'number' ? v('class_size') : (parseInt(v('class_size'), 10) || 30),
+                        mode: 'sync',
+                        course_context: v('description'),
+                        learning_objectives: Array.isArray(v('learning_outcomes')) ? v('learning_outcomes') : (v('learning_outcomes') ? [v('learning_outcomes')] : []),
+                        task_type: v('task_type') || 'structured_debate',
+                        expected_output: v('expected_output'),
+                        requirements_text: v('requirements_text')
+                    };
+                    fillSpecForm(spec);
+                    if (prefillData.warnings && prefillData.warnings.length) showNotification(prefillData.warnings[0], 'warning');
+                    else showNotification(typeof t === 'function' ? t('teacher.doc.prefill_success') : 'Suggestions filled. Please confirm or edit, then validate.', 'success');
+                }
+            } catch (e) {
+                console.warn('[teacher] Step 1 prefill after upload failed', e);
             }
         }
     }
@@ -2512,7 +2545,7 @@ async function loadDocuments() {
                     if (preview && typeof preview === 'string' && looksLikePdfBinary(preview)) preview = null;
                     const previewHtml = preview
                         ? `<div class="document-preview"><pre>${escapeHtml(preview)}</pre></div>`
-                        : `<div class="document-preview empty"><p><i class="fas fa-info-circle"></i> 未提取到文本</p></div>`;
+                        : `<div class="document-preview empty"><p><i class="fas fa-info-circle"></i> ${typeof t === 'function' ? t('teacher.doc.no_text_extracted') : 'No text extracted'}</p></div>`;
                     
                     return `
                     <div class="document-card">
@@ -2528,7 +2561,7 @@ async function loadDocuments() {
                         <div class="document-actions">
                             <button class="btn-primary btn-sm" onclick="applyPrefillFromDoc('${doc.id}')" title="Use this document to suggest form fields">
                                 <i class="fas fa-magic"></i>
-                                \u586b\u5145\u5efa\u8bae
+                                ${typeof t === 'function' ? t('teacher.doc.prefill_btn') : 'Fill suggestion'}
                             </button>
                             <button class="btn-secondary btn-sm" onclick="deleteDocument('${doc.id}')">
                                 <i class="fas fa-trash"></i>
@@ -2576,7 +2609,7 @@ async function applyPrefillFromDoc(docId) {
         };
         if (typeof fillSpecForm === 'function') fillSpecForm(spec);
         if (data.warnings && data.warnings.length) showNotification(data.warnings[0], 'warning');
-        else showNotification('\u5df2\u586b\u5165\u5efa\u8bae\uff0c\u8bf7\u786e\u8ba4\u6216\u4fee\u6539\u540e\u518d\u9a8c\u8bc1', 'success');
+        else showNotification(typeof t === 'function' ? t('teacher.doc.prefill_success') : 'Suggestions filled. Please confirm or edit, then validate.', 'success');
         if (typeof goToStep === 'function') goToStep(2);
     } catch (e) {
         console.error('Prefill error:', e);

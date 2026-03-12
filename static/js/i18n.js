@@ -250,6 +250,9 @@ const I18N = {
         'teacher.doc.empty': '暂无课程文档',
         'teacher.doc.upload.first': '上传第一份文档',
         'teacher.doc.subtitle': '管理课程材料用于检索增强',
+        'teacher.doc.prefill_btn': '填充建议',
+        'teacher.doc.no_text_extracted': '未提取到文本',
+        'teacher.doc.prefill_success': '已填入建议，请确认或修改后再验证',
 
         // Decisions
         'teacher.decisions.title': '调整时间线',
@@ -671,6 +674,9 @@ const I18N = {
         'teacher.doc.empty': '暫無課程文件',
         'teacher.doc.upload.first': '上傳第一份文件',
         'teacher.doc.subtitle': '管理課程材料用於檢索增強',
+        'teacher.doc.prefill_btn': '填充建議',
+        'teacher.doc.no_text_extracted': '未提取到文本',
+        'teacher.doc.prefill_success': '已填入建議，請確認或修改後再驗證',
 
         // Decisions
         'teacher.decisions.title': '調整時間線',
@@ -1092,6 +1098,9 @@ const I18N = {
         'teacher.doc.empty': 'No Course Documents',
         'teacher.doc.upload.first': 'Upload First Document',
         'teacher.doc.subtitle': 'Manage course materials for RAG retrieval',
+        'teacher.doc.prefill_btn': 'Fill suggestion',
+        'teacher.doc.no_text_extracted': 'No text extracted',
+        'teacher.doc.prefill_success': 'Suggestions filled. Please confirm or edit, then validate.',
 
         // Decisions
         'teacher.decisions.title': 'Decision Timeline',

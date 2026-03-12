@@ -37,6 +37,18 @@ try:
 except ImportError:
     PDFPLUMBER_SUPPORT = False
 
+try:
+    from pptx import Presentation
+    PPTX_SUPPORT = True
+except ImportError:
+    PPTX_SUPPORT = False
+
+try:
+    from docx import Document as DocxDocument
+    DOCX_SUPPORT = True
+except ImportError:
+    DOCX_SUPPORT = False
+
 # PDF binary/structure markers (S2.13)
 # Only match unambiguous PDF internal structure tokens — avoid false positives on
 # normal English words like "stream", "object", "trailer".
@@ -69,6 +81,14 @@ def _detected_type_from_mime(mime_type: str) -> str:
     m = (mime_type or '').lower()
     if 'pdf' in m:
         return 'pdf'
+    if 'presentation' in m or 'vnd.ms-powerpoint' in m or 'pptx' in m:
+        return 'pptx'
+    if 'wordprocessing' in m or 'msword' in m or 'docx' in m:
+        return 'docx'
+    if 'csv' in m or 'spreadsheet' in m:
+        return 'csv'
+    if 'png' in m or 'jpeg' in m or 'jpg' in m:
+        return 'image'
     if 'markdown' in m or 'md' in m:
         return 'txt'
     return 'txt'
@@ -179,7 +199,7 @@ def _line_printable_ratio(line: str) -> float:
 class DocumentService:
     """Service for managing course documents"""
     
-    ALLOWED_EXTENSIONS = {'txt', 'md', 'pdf'}  # PDF now supported
+    ALLOWED_EXTENSIONS = {'txt', 'md', 'pdf', 'pptx', 'docx', 'csv', 'png', 'jpg', 'jpeg'}
 
     @property
     def MAX_FILE_SIZE(self) -> int:
@@ -406,6 +426,50 @@ class DocumentService:
             raise ValueError(TEXT_TOO_SHORT)
         return normalized
     
+    def extract_text_from_pptx(self, data: bytes) -> str:
+        """Extract text from PowerPoint (PPTX) using python-pptx."""
+        if not PPTX_SUPPORT:
+            raise ValueError(UNSUPPORTED_FILE_TYPE)
+        try:
+            prs = Presentation(io.BytesIO(data))
+            parts = []
+            for slide in prs.slides:
+                for shape in slide.shapes:
+                    if hasattr(shape, 'text') and shape.text:
+                        parts.append(shape.text)
+            if not parts:
+                raise ValueError(EMPTY_EXTRACTED_TEXT)
+            raw = '\n\n'.join(parts)
+            normalized = self.normalize_text(raw)
+            if not normalized or len(normalized.strip()) < _MIN_EXTRACT_LEN:
+                raise ValueError(TEXT_TOO_SHORT)
+            return normalized
+        except ValueError:
+            raise
+        except Exception as e:
+            logging.getLogger(__name__).warning('PPTX extract failed: %s', str(e)[:200])
+            raise ValueError(UNSUPPORTED_FILE_TYPE)
+    
+    def extract_text_from_docx(self, data: bytes) -> str:
+        """Extract text from Word (DOCX) using python-docx."""
+        if not DOCX_SUPPORT:
+            raise ValueError(UNSUPPORTED_FILE_TYPE)
+        try:
+            doc = DocxDocument(io.BytesIO(data))
+            parts = [p.text for p in doc.paragraphs if p.text]
+            if not parts:
+                raise ValueError(EMPTY_EXTRACTED_TEXT)
+            raw = '\n\n'.join(parts)
+            normalized = self.normalize_text(raw)
+            if not normalized or len(normalized.strip()) < _MIN_EXTRACT_LEN:
+                raise ValueError(TEXT_TOO_SHORT)
+            return normalized
+        except ValueError:
+            raise
+        except Exception as e:
+            logging.getLogger(__name__).warning('DOCX extract failed: %s', str(e)[:200])
+            raise ValueError(UNSUPPORTED_FILE_TYPE)
+    
     def _printable_ratio(self, line: str) -> float:
         """Ratio of printable (letter, number, punctuation) chars in line."""
         if not line:
@@ -478,10 +542,11 @@ class DocumentService:
             raise ValueError(PDF_PARSE_FAILED if (mime_type or '').lower().startswith('application/pdf') else UNSUPPORTED_FILE_TYPE)
     
     def upload_document(self, course_id: str, title: str, file_content: bytes,
-                       filename: str, mime_type: str, uploaded_by: str) -> Dict[str, Any]:
+                       filename: str, mime_type: str, uploaded_by: str,
+                       material_level: str = 'course') -> Dict[str, Any]:
         """
-        Upload and process a document
-        
+        Upload and process a document.
+        material_level: 'course' | 'lesson'
         Returns:
             {
                 'document': {...},
@@ -489,6 +554,8 @@ class DocumentService:
                 'error': str or None
             }
         """
+        if material_level not in ('course', 'lesson'):
+            material_level = 'course'
         # Validate file type
         if not self.allowed_file(filename):
             return {
@@ -553,6 +620,9 @@ class DocumentService:
         # S2.13: PDF path uses extract_text_from_pdf_bytes only; never decode(bytes) for preview
         # M1: Run PDF extraction with configurable timeout to avoid long request hangs
         is_pdf = (mime_type or '').lower().startswith('application/pdf') or (filename or '').lower().endswith('.pdf')
+        is_pptx = (mime_type or '').lower().count('presentation') or (filename or '').lower().endswith('.pptx')
+        is_docx = (mime_type or '').lower().count('wordprocessing') or (mime_type or '').lower().count('msword') or (filename or '').lower().endswith('.docx')
+        is_image = (filename or '').lower().endswith(('.png', '.jpg', '.jpeg'))
         text = None
         if is_pdf:
             timeout_sec = getattr(Config, 'PDF_EXTRACTION_TIMEOUT_SECONDS', 60)
@@ -579,6 +649,34 @@ class DocumentService:
                     'error_code': pdf_result.get('code', PDF_PARSE_FAILED)
                 }
             text = pdf_result['extracted_text']
+        elif is_pptx:
+            try:
+                text = self.extract_text_from_pptx(file_content)
+            except ValueError as e:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                err = str(e).strip()
+                error_code = EXTRACTION_FAILED if err == EMPTY_EXTRACTED_TEXT or err == TEXT_TOO_SHORT else UNSUPPORTED_FILE_TYPE
+                return {'document': None, 'chunks_count': 0, 'error': err, 'error_code': error_code}
+            except Exception as e:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                return {'document': None, 'chunks_count': 0, 'error': 'PPTX extraction failed.', 'error_code': UNSUPPORTED_FILE_TYPE}
+        elif is_docx:
+            try:
+                text = self.extract_text_from_docx(file_content)
+            except ValueError as e:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                err = str(e).strip()
+                error_code = EXTRACTION_FAILED if err == EMPTY_EXTRACTED_TEXT or err == TEXT_TOO_SHORT else UNSUPPORTED_FILE_TYPE
+                return {'document': None, 'chunks_count': 0, 'error': err, 'error_code': error_code}
+            except Exception as e:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                return {'document': None, 'chunks_count': 0, 'error': 'DOCX extraction failed.', 'error_code': UNSUPPORTED_FILE_TYPE}
+        elif is_image:
+            text = '[Image: ' + (title or safe_filename) + ']'
         else:
             try:
                 text = self.extract_text_from_file(file_path, mime_type)
@@ -621,6 +719,7 @@ class DocumentService:
             storage_uri=file_path,
             mime_type=mime_type,
             checksum=checksum,
+            material_level=material_level,
             uploaded_by=uploaded_by
         )
         
@@ -707,11 +806,14 @@ class DocumentService:
         }
     
     def upload_text_document(self, course_id: str, title: str, text: str,
-                            uploaded_by: str) -> Dict[str, Any]:
+                            uploaded_by: str, material_level: str = 'course') -> Dict[str, Any]:
         """
-        Upload a text document directly (paste text)
-        Text is cleaned and normalized before processing
+        Upload a text document directly (paste text).
+        material_level: 'course' | 'lesson'
+        Text is cleaned and normalized before processing.
         """
+        if material_level not in ('course', 'lesson'):
+            material_level = 'course'
         # Clean text first
         cleaned_text = self.normalize_text(text)
         if is_probably_pdf_binary_text(cleaned_text):
@@ -753,6 +855,7 @@ class DocumentService:
             storage_uri=None,
             mime_type='text/plain',
             checksum=checksum,
+            material_level=material_level,
             uploaded_by=uploaded_by
         )
         

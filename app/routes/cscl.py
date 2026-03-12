@@ -388,15 +388,149 @@ def publish_script(script_id):
     }), 200
 
 
+def _build_worksheet_teacher_guide_html(script_title: str, student_worksheet: dict, teacher_guide: dict) -> str:
+    """Build a single HTML document with student worksheet and teacher guide (print-ready)."""
+    sw = student_worksheet or {}
+    tg = teacher_guide or {}
+    html = ['<!DOCTYPE html><html><head><meta charset="utf-8"><title>{}</title>'.format(script_title or 'CSCL Activity'),
+            '<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:1.5rem;line-height:1.5;}',
+            'h1,h2,h3{color:#333;} .section{margin-bottom:2rem;} .step{margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid #eee;}',
+            '.teacher-section{background:#f8f9fa;padding:1rem;border-radius:8px;margin-top:2rem;}</style></head><body>']
+    html.append('<h1>{}</h1>'.format(sw.get('title') or script_title or 'Activity'))
+    if sw.get('goal'):
+        html.append('<p><strong>Goal:</strong> {}</p>'.format(_escape_html(str(sw['goal']))))
+    if sw.get('roles_summary'):
+        html.append('<div class="section"><h2>Roles</h2><p>{}</p></div>'.format(_escape_html(str(sw['roles_summary']))))
+    if sw.get('steps'):
+        html.append('<div class="section"><h2>Steps</h2>')
+        for s in sw['steps']:
+            html.append('<div class="step"><strong>Step {}: {}</strong>'.format(s.get('step_order', ''), _escape_html(str(s.get('title', '')))))
+            if s.get('duration_minutes'):
+                html.append(' <span>({} min)</span>'.format(s['duration_minutes']))
+            if s.get('description'):
+                html.append('<p>{}</p>'.format(_escape_html(str(s['description']))))
+            if s.get('prompts'):
+                html.append('<ul>')
+                for p in s['prompts']:
+                    html.append('<li>{}</li>'.format(_escape_html(str(p))))
+                html.append('</ul>')
+            html.append('</div>')
+        html.append('</div>')
+    if sw.get('output_instructions'):
+        html.append('<div class="section"><h2>Expected output</h2><p>{}</p></div>'.format(_escape_html(str(sw['output_instructions']))))
+    if sw.get('reporting_instructions'):
+        html.append('<p>{}</p>'.format(_escape_html(str(sw['reporting_instructions']))))
+    html.append('<hr/><div class="teacher-section"><h2>Teacher guide</h2>')
+    if tg.get('overview'):
+        html.append('<h3>Overview</h3><p>{}</p>'.format(_escape_html(str(tg['overview']))))
+    if tg.get('rationale'):
+        html.append('<h3>Rationale</h3><p>{}</p>'.format(_escape_html(str(tg['rationale']))))
+    if tg.get('implementation_steps'):
+        html.append('<h3>Implementation</h3><p>{}</p>'.format(_escape_html(str(tg['implementation_steps']))))
+    if tg.get('monitoring_points'):
+        html.append('<h3>Monitoring</h3><p>{}</p>'.format(_escape_html(str(tg['monitoring_points']))))
+    if tg.get('debrief_questions'):
+        html.append('<h3>Debrief questions</h3><p>{}</p>'.format(_escape_html(str(tg['debrief_questions']))))
+    html.append('</div></body></html>')
+    return '\n'.join(html)
+
+
+def _build_worksheet_teacher_guide_markdown(script_title: str, student_worksheet: dict, teacher_guide: dict) -> str:
+    """Build Markdown string for student worksheet and teacher guide."""
+    sw = student_worksheet or {}
+    tg = teacher_guide or {}
+    lines = ['# {}\n'.format(sw.get('title') or script_title or 'Activity')]
+    if sw.get('goal'):
+        lines.append('**Goal:** {}\n'.format(sw['goal']))
+    if sw.get('roles_summary'):
+        lines.append('## Roles\n\n{}\n'.format(sw['roles_summary']))
+    if sw.get('steps'):
+        lines.append('## Steps\n')
+        for s in sw['steps']:
+            lines.append('### Step {}: {}'.format(s.get('step_order', ''), s.get('title', '')))
+            if s.get('duration_minutes'):
+                lines.append(' ({} min)'.format(s['duration_minutes']))
+            lines.append('\n')
+            if s.get('description'):
+                lines.append('{}\n'.format(s['description']))
+            if s.get('prompts'):
+                for p in s['prompts']:
+                    lines.append('- {}\n'.format(p))
+        lines.append('')
+    if sw.get('output_instructions'):
+        lines.append('## Expected output\n\n{}\n'.format(sw['output_instructions']))
+    if sw.get('reporting_instructions'):
+        lines.append('{}\n'.format(sw['reporting_instructions']))
+    lines.append('\n---\n\n# Teacher guide\n')
+    if tg.get('overview'):
+        lines.append('## Overview\n\n{}\n'.format(tg['overview']))
+    if tg.get('rationale'):
+        lines.append('## Rationale\n\n{}\n'.format(tg['rationale']))
+    if tg.get('implementation_steps'):
+        lines.append('## Implementation\n\n{}\n'.format(tg['implementation_steps']))
+    if tg.get('monitoring_points'):
+        lines.append('## Monitoring\n\n{}\n'.format(tg['monitoring_points']))
+    if tg.get('debrief_questions'):
+        lines.append('## Debrief questions\n\n{}\n'.format(tg['debrief_questions']))
+    return ''.join(lines)
+
+
+def _escape_html(s: str) -> str:
+    if not s:
+        return ''
+    return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+
+
 @cscl_bp.route('/scripts/<script_id>/export', methods=['GET'])
 @role_required('teacher', 'admin')
 def export_script(script_id):
-    """Export a CSCL script as JSON with evidence bindings (teacher/admin only)"""
+    """Export a CSCL script as JSON (default), HTML, or Markdown (teacher/admin only). Use ?format=html or ?format=markdown."""
     script = CSCLScript.query.filter_by(id=script_id, created_by=current_user.id).first()
     if not script:
         return jsonify({'error': 'Script not found'}), 404
-    
-    # Load full structure
+
+    export_format = (request.args.get('format') or 'json').strip().lower()
+    if export_format in ('html', 'markdown'):
+        latest_run = CSCLPipelineRun.query.filter_by(script_id=script_id).order_by(
+            CSCLPipelineRun.created_at.desc()
+        ).first()
+        pipeline_output = None
+        if latest_run:
+            for stage_name in ('refiner', 'material_generator', 'critic', 'planner'):
+                stage_run = CSCLPipelineStageRun.query.filter_by(
+                    run_id=latest_run.run_id, stage_name=stage_name, status='success'
+                ).order_by(CSCLPipelineStageRun.created_at.desc()).first()
+                if stage_run and stage_run.output_json:
+                    pipeline_output = stage_run.output_json
+                    if pipeline_output.get('student_worksheet') or pipeline_output.get('teacher_guide'):
+                        break
+        if not pipeline_output or (not pipeline_output.get('student_worksheet') and not pipeline_output.get('teacher_guide')):
+            return jsonify({
+                'error': 'No classroom-ready materials (student_worksheet/teacher_guide) found. Run the pipeline first.'
+            }), 404
+        title = (script.title or script.topic or 'Activity').replace('/', '-')
+        if export_format == 'html':
+            body = _build_worksheet_teacher_guide_html(
+                title,
+                pipeline_output.get('student_worksheet'),
+                pipeline_output.get('teacher_guide')
+            )
+            from flask import Response
+            resp = Response(body, mimetype='text/html; charset=utf-8')
+            resp.headers['Content-Disposition'] = 'attachment; filename="{}_activity.html"'.format(title[:50])
+            return resp
+        if export_format == 'markdown':
+            body = _build_worksheet_teacher_guide_markdown(
+                title,
+                pipeline_output.get('student_worksheet'),
+                pipeline_output.get('teacher_guide')
+            )
+            from flask import Response
+            resp = Response(body, mimetype='text/markdown; charset=utf-8')
+            resp.headers['Content-Disposition'] = 'attachment; filename="{}_activity.md"'.format(title[:50])
+            return resp
+
+    # Load full structure (JSON export)
     scenes = CSCLScene.query.filter_by(script_id=script_id).order_by(CSCLScene.order_index).all()
     roles = CSCLRole.query.filter_by(script_id=script_id).all()
     
@@ -766,6 +900,9 @@ def upload_course_document(course_id):
         file_content = file.read()
         filename = file.filename
         mime_type = file.content_type or 'application/octet-stream'
+        material_level = request.form.get('material_level', 'course')
+        if material_level not in ('course', 'lesson'):
+            material_level = 'course'
         
         result = document_service.upload_document(
             course_id=course_id,
@@ -773,12 +910,16 @@ def upload_course_document(course_id):
             file_content=file_content,
             filename=filename,
             mime_type=mime_type,
-            uploaded_by=current_user.id
+            uploaded_by=current_user.id,
+            material_level=material_level
         )
     elif request.is_json:
         data = request.get_json()
         title = data.get('title')
         text = data.get('text')
+        material_level = data.get('material_level', 'course')
+        if material_level not in ('course', 'lesson'):
+            material_level = 'course'
         
         if not title or not text:
             return jsonify({
@@ -790,7 +931,8 @@ def upload_course_document(course_id):
             course_id=course_id,
             title=title,
             text=text,
-            uploaded_by=current_user.id
+            uploaded_by=current_user.id,
+            material_level=material_level
         )
     else:
         return jsonify({

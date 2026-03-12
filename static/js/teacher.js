@@ -665,6 +665,8 @@ async function wizardNext() {
         }
     }
     if (wizardStep === 1) {
+        var materialLevelEl = document.getElementById('materialLevelSelect');
+        var materialLevel = (materialLevelEl && materialLevelEl.value) ? materialLevelEl.value : 'course';
         var syllabusEl = document.getElementById('syllabusText');
         var text = syllabusEl ? (syllabusEl.value || '').trim() : '';
         if (text.length >= 80) {
@@ -672,12 +674,27 @@ async function wizardNext() {
                 var uploadRes = await fetch(API_BASE + '/courses/' + DEFAULT_COURSE_ID + '/docs/upload', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: 'Syllabus (Step 1)', text: text }),
+                    body: JSON.stringify({ title: 'Teaching materials (Step 1)', text: text, material_level: materialLevel }),
                     credentials: 'include'
                 });
                 if (uploadRes.ok && typeof loadDocuments === 'function') loadDocuments();
             } catch (e) {
-                console.warn('[teacher] Step 1 syllabus upload as course doc failed', e);
+                console.warn('[teacher] Step 1 materials upload failed', e);
+            }
+        }
+        var lessonNotesEl = document.getElementById('lessonNotes');
+        var lessonNotes = lessonNotesEl ? (lessonNotesEl.value || '').trim() : '';
+        if (lessonNotes.length >= 20) {
+            try {
+                var notesRes = await fetch(API_BASE + '/courses/' + DEFAULT_COURSE_ID + '/docs/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: 'Lesson notes (Step 1)', text: lessonNotes, material_level: 'lesson' }),
+                    credentials: 'include'
+                });
+                if (notesRes.ok && typeof loadDocuments === 'function') loadDocuments();
+            } catch (e) {
+                console.warn('[teacher] Step 1 lesson notes upload failed', e);
             }
         }
     }
@@ -750,12 +767,74 @@ async function loadScriptPreview() {
             return;
         }
 
+        var hasWorksheet = output.student_worksheet && (output.student_worksheet.title || output.student_worksheet.goal);
+        var hasTeacherGuide = output.teacher_guide && (output.teacher_guide.overview || output.teacher_guide.rationale);
+
         var html = '<div class="script-preview-content">';
+
+        if (hasWorksheet || hasTeacherGuide) {
+            html += '<div class="preview-tabs"><button type="button" class="preview-tab active" data-tab="student">' + (typeof t === 'function' ? t('teacher.preview.tab_student') : 'Student materials') + '</button>';
+            html += '<button type="button" class="preview-tab" data-tab="teacher">' + (typeof t === 'function' ? t('teacher.preview.tab_teacher') : 'Teacher guide') + '</button>';
+            html += '<button type="button" class="preview-tab" data-tab="structure">' + (typeof t === 'function' ? t('teacher.preview.tab_structure') : 'Structure') + '</button></div>';
+            html += '<div class="preview-tab-panels">';
+
+            html += '<div class="preview-tab-panel active" id="preview-panel-student">';
+            if (hasWorksheet) {
+                var sw = output.student_worksheet;
+                html += '<div class="worksheet-preview">';
+                html += '<h2 class="worksheet-title">' + _esc(sw.title || 'Activity') + '</h2>';
+                if (sw.goal) html += '<p class="worksheet-goal"><strong>' + (typeof t === 'function' ? t('teacher.preview.goal') : 'Goal') + ':</strong> ' + _esc(sw.goal) + '</p>';
+                if (sw.roles_summary) html += '<div class="worksheet-roles"><h4>' + (typeof t === 'function' ? t('teacher.preview.roles') : 'Roles') + '</h4><p>' + _esc(sw.roles_summary) + '</p></div>';
+                if (sw.steps && sw.steps.length) {
+                    html += '<div class="worksheet-steps"><h4>' + (typeof t === 'function' ? t('teacher.preview.steps') : 'Steps') + '</h4>';
+                    sw.steps.forEach(function(step, i) {
+                        html += '<div class="worksheet-step"><strong>Step ' + (step.step_order || i + 1) + ': ' + _esc(step.title || '') + '</strong>';
+                        if (step.duration_minutes) html += ' <span class="step-duration">(' + step.duration_minutes + ' min)</span>';
+                        if (step.description) html += '<p>' + _esc(step.description) + '</p>';
+                        if (step.prompts && step.prompts.length) {
+                            html += '<ul class="step-prompts">';
+                            step.prompts.forEach(function(p) { html += '<li>' + _esc(p) + '</li>'; });
+                            html += '</ul>';
+                        }
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+                if (sw.timing_summary) html += '<p class="worksheet-timing">' + _esc(sw.timing_summary) + '</p>';
+                if (sw.output_instructions) html += '<div class="worksheet-output"><h4>' + (typeof t === 'function' ? t('teacher.preview.output') : 'Expected output') + '</h4><p>' + _esc(sw.output_instructions) + '</p></div>';
+                if (sw.reporting_instructions) html += '<p class="worksheet-reporting">' + _esc(sw.reporting_instructions) + '</p>';
+                html += '</div>';
+            } else {
+                html += '<p class="empty-tab">' + (typeof t === 'function' ? t('teacher.preview.no_worksheet') : 'No student worksheet in this run.') + '</p>';
+            }
+            html += '</div>';
+
+            html += '<div class="preview-tab-panel" id="preview-panel-teacher">';
+            if (hasTeacherGuide) {
+                var tg = output.teacher_guide;
+                html += '<div class="teacher-guide-preview">';
+                if (tg.overview) html += '<h3>' + (typeof t === 'function' ? t('teacher.preview.overview') : 'Overview') + '</h3><p>' + _esc(tg.overview) + '</p>';
+                if (tg.alignment_with_objectives) html += '<h3>' + (typeof t === 'function' ? t('teacher.preview.alignment') : 'Alignment with objectives') + '</h3><p>' + _esc(tg.alignment_with_objectives) + '</p>';
+                if (tg.rationale) html += '<h3>' + (typeof t === 'function' ? t('teacher.preview.rationale') : 'Rationale') + '</h3><p>' + _esc(tg.rationale) + '</p>';
+                if (tg.implementation_steps) html += '<h3>' + (typeof t === 'function' ? t('teacher.preview.implementation') : 'Implementation') + '</h3><p>' + _esc(tg.implementation_steps) + '</p>';
+                if (tg.monitoring_points) html += '<h3>' + (typeof t === 'function' ? t('teacher.preview.monitoring') : 'Monitoring') + '</h3><p>' + _esc(tg.monitoring_points) + '</p>';
+                if (tg.expected_difficulties) html += '<h3>' + (typeof t === 'function' ? t('teacher.preview.difficulties') : 'Expected difficulties') + '</h3><p>' + _esc(tg.expected_difficulties) + '</p>';
+                if (tg.debrief_questions) html += '<h3>' + (typeof t === 'function' ? t('teacher.preview.debrief') : 'Debrief questions') + '</h3><p>' + _esc(tg.debrief_questions) + '</p>';
+                if (tg.adaptation_suggestions) html += '<h3>' + (typeof t === 'function' ? t('teacher.preview.adaptations') : 'Adaptations') + '</h3><p>' + _esc(tg.adaptation_suggestions) + '</p>';
+                html += '</div>';
+            } else {
+                html += '<p class="empty-tab">' + (typeof t === 'function' ? t('teacher.preview.no_teacher_guide') : 'No teacher guide in this run.') + '</p>';
+            }
+            html += '</div>';
+
+            html += '<div class="preview-tab-panel" id="preview-panel-structure">';
+        }
+
         var roles = output.roles || [];
         if (roles.length > 0) {
             html += '<div class="preview-section"><h3><i class="fas fa-users"></i> Roles</h3><div class="roles-grid">';
             roles.forEach(function(r) {
-                html += '<div class="role-card"><strong>' + _esc(r.role_id || r.name || 'Role') + '</strong>';
+                html += '<div class="role-card"><strong>' + _esc(r.role_id || r.role_name || r.name || 'Role') + '</strong>';
                 if (r.description) html += '<p>' + _esc(r.description) + '</p>';
                 html += '</div>';
             });
@@ -798,6 +877,10 @@ async function loadScriptPreview() {
             html += '</ul></div>';
         }
 
+        if (hasWorksheet || hasTeacherGuide) {
+            html += '</div>';
+        }
+
         var stagesSummary = '<div class="preview-section"><h3><i class="fas fa-info-circle"></i> Pipeline Summary</h3>';
         stagesSummary += '<div class="pipeline-summary-grid">';
         stages.forEach(function(s) {
@@ -811,8 +894,24 @@ async function loadScriptPreview() {
         stagesSummary += '</div></div>';
         html += stagesSummary;
 
+        if (hasWorksheet || hasTeacherGuide) {
+            html += '</div>';
+        }
         html += '</div>';
         container.innerHTML = html;
+
+        if (hasWorksheet || hasTeacherGuide) {
+            container.querySelectorAll('.preview-tab').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var tab = this.getAttribute('data-tab');
+                    container.querySelectorAll('.preview-tab').forEach(function(b) { b.classList.remove('active'); });
+                    container.querySelectorAll('.preview-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+                    this.classList.add('active');
+                    var panel = document.getElementById('preview-panel-' + tab);
+                    if (panel) panel.classList.add('active');
+                });
+            });
+        }
 
         var finalizeBtn = document.getElementById('finalizeBtn');
         if (finalizeBtn && (run.status === 'completed' || run.status === 'success')) {
@@ -861,51 +960,57 @@ function cancelWizard() {
     }
 }
 
-// Step 1: Upload Syllabus
-// PDF files are uploaded to the backend for extraction (pypdf); only .txt/.md are read locally.
+// Step 1: Upload Teaching Materials
+// PDF/PPTX/DOCX/images: upload to backend. TXT/MD/CSV: read locally then upload as text or send file.
+var MATERIAL_UPLOAD_EXTENSIONS = ['pdf', 'pptx', 'docx', 'png', 'jpg', 'jpeg', 'xlsx'];
 document.getElementById('syllabusFile')?.addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (!file) return;
     const ext = (file.name || '').split('.').pop().toLowerCase();
-    if (ext === 'pdf') {
-        // PDF: upload to backend, show extracted text (never read raw bytes locally)
+    const materialLevel = (document.getElementById('materialLevelSelect') && document.getElementById('materialLevelSelect').value) ? document.getElementById('materialLevelSelect').value : 'course';
+    if (MATERIAL_UPLOAD_EXTENSIONS.indexOf(ext) !== -1 || ext === 'pdf') {
+        // PDF, PPTX, DOCX, images, XLSX: upload to backend
         try {
             showLoading(true);
             const courseId = typeof DEFAULT_COURSE_ID !== 'undefined' ? DEFAULT_COURSE_ID : 'default-course';
             const formData = new FormData();
             formData.append('file', file);
             formData.append('title', file.name);
+            formData.append('material_level', materialLevel);
             const res = await fetch((typeof API_BASE !== 'undefined' ? API_BASE : '/api/cscl') + '/courses/' + courseId + '/docs/upload', {
                 method: 'POST',
                 body: formData,
                 credentials: 'include'
             });
             const result = await res.json();
-            if (res.ok && (result.extracted_text || result.extracted_text_preview)) {
-                document.getElementById('syllabusText').value = result.extracted_text || result.extracted_text_preview;
-                showNotification('PDF uploaded and text extracted successfully', 'success');
+            if (res.ok) {
+                if (result.extracted_text || result.extracted_text_preview) {
+                    document.getElementById('syllabusText').value = result.extracted_text || result.extracted_text_preview;
+                }
+                showNotification(result.message || 'File uploaded successfully', 'success');
                 if (typeof loadDocuments === 'function') loadDocuments();
             } else {
                 var code = result.code || '';
                 var msg = code === 'PDF_PARSE_FAILED'
                     ? 'Unable to extract text from this PDF. Please try a text-based PDF or paste text manually.'
-                    : (result.error || result.message || 'PDF extraction failed. Please paste text manually.');
+                    : (result.error || result.message || 'Upload failed.');
                 showNotification(msg, 'error');
             }
         } catch (err) {
-            console.error('PDF upload error:', err);
-            showNotification('Failed to upload PDF. Please paste text manually.', 'error');
+            console.error('Upload error:', err);
+            showNotification('Failed to upload file.', 'error');
         } finally {
             showLoading(false);
         }
     } else {
-        // TXT/MD: safe to read as text locally
+        // TXT, MD, CSV: safe to read as text locally, then optionally upload
         const reader = new FileReader();
         reader.onload = function(ev) {
             document.getElementById('syllabusText').value = ev.target.result;
         };
         reader.readAsText(file);
     }
+    e.target.value = '';
 });
 
 // Step 2: Validate Spec — canonical payload matches backend (course_context, learning_objectives, task_requirements)
@@ -940,6 +1045,18 @@ function fillSpecForm(spec) {
     var mode = (spec.mode || 'sync').toLowerCase();
     document.getElementById('specMode').value = mode === 'async' ? 'async' : 'sync';
     document.getElementById('specClassSize').value = spec.class_size != null ? spec.class_size : 30;
+    var tsEl = document.getElementById('specTeachingStage');
+    if (tsEl) tsEl.value = spec.teaching_stage || 'concept_exploration';
+    var cpEl = document.getElementById('specCollaborationPurpose');
+    if (cpEl) cpEl.value = spec.collaboration_purpose || 'compare_ideas';
+    var gsEl = document.getElementById('specGroupSize');
+    if (gsEl) gsEl.value = spec.group_size != null ? spec.group_size : 4;
+    var gstEl = document.getElementById('specGroupingStrategy');
+    if (gstEl) gstEl.value = spec.grouping_strategy || 'random';
+    var rsEl = document.getElementById('specRoleStructure');
+    if (rsEl) rsEl.value = spec.role_structure || 'assigned_roles';
+    var wcrEl = document.getElementById('specWholeClassReporting');
+    if (wcrEl) wcrEl.checked = spec.whole_class_reporting !== false;
     var objEl = document.getElementById('specCourseContext');
     if (objEl) objEl.value = spec.course_context || spec.course_context_description || '';
     document.getElementById('specObjectives').value = Array.isArray(spec.learning_objectives)
@@ -951,6 +1068,18 @@ function fillSpecForm(spec) {
         : (spec.expected_output || '');
     var cfEl = document.getElementById('specCollaborationForm');
     if (cfEl) cfEl.value = spec.collaboration_form || 'group';
+    var scaffoldEls = document.querySelectorAll('#specScaffoldingOptions input[name="scaffolding"]');
+    if (scaffoldEls.length) {
+        var opts = spec.scaffolding_options || [];
+        scaffoldEls.forEach(function(cb) { cb.checked = opts.indexOf(cb.value) !== -1; });
+    }
+    var diffEl = document.getElementById('specStudentDifficulties');
+    if (diffEl) diffEl.value = spec.student_difficulties || spec.teacher_concerns || '';
+    var outEls = document.querySelectorAll('#specOutputFormat input[name="output_format"]');
+    if (outEls.length) {
+        var formats = spec.output_format || spec.output_formats || ['student_worksheet', 'teacher_facilitation_sheet'];
+        outEls.forEach(function(cb) { cb.checked = formats.indexOf(cb.value) !== -1; });
+    }
     var trEl = document.getElementById('specTaskRequirements');
     if (trEl) trEl.value = spec.task_requirements || spec.requirements_text || '';
 }
@@ -963,7 +1092,12 @@ function buildCanonicalSpecFromForm() {
     var skills = objectives.length > 1 ? objectives.slice(1) : (objectives.length ? [objectives[0]] : ['Apply concepts']);
     var cfEl = document.getElementById('specCollaborationForm');
     var collaborationForm = (cfEl && cfEl.value) ? cfEl.value : 'group';
-    return {
+    var scaffolding = [];
+    document.querySelectorAll('#specScaffoldingOptions input[name="scaffolding"]:checked').forEach(function(cb) { scaffolding.push(cb.value); });
+    var outputFormat = [];
+    document.querySelectorAll('#specOutputFormat input[name="output_format"]:checked').forEach(function(cb) { outputFormat.push(cb.value); });
+    if (outputFormat.length === 0) outputFormat = ['student_worksheet', 'teacher_facilitation_sheet'];
+    var spec = {
         course_context: {
             subject: document.getElementById('specCourse').value.trim(),
             topic: document.getElementById('specTopic').value.trim(),
@@ -980,6 +1114,23 @@ function buildCanonicalSpecFromForm() {
             requirements_text: (document.getElementById('specTaskRequirements') && document.getElementById('specTaskRequirements').value) ? document.getElementById('specTaskRequirements').value.trim() : ''
         }
     };
+    var tsEl = document.getElementById('specTeachingStage');
+    if (tsEl) spec.teaching_stage = tsEl.value || 'concept_exploration';
+    var cpEl = document.getElementById('specCollaborationPurpose');
+    if (cpEl) spec.collaboration_purpose = cpEl.value || 'compare_ideas';
+    var gsEl = document.getElementById('specGroupSize');
+    if (gsEl) spec.group_size = parseInt(gsEl.value, 10) || 4;
+    var gstEl = document.getElementById('specGroupingStrategy');
+    if (gstEl) spec.grouping_strategy = gstEl.value || 'random';
+    var rsEl = document.getElementById('specRoleStructure');
+    if (rsEl) spec.role_structure = rsEl.value || 'no_roles';
+    var wcrEl = document.getElementById('specWholeClassReporting');
+    if (wcrEl) spec.whole_class_reporting = wcrEl.checked;
+    spec.scaffolding_options = scaffolding;
+    var diffEl = document.getElementById('specStudentDifficulties');
+    if (diffEl) spec.student_difficulties = (diffEl.value || '').trim();
+    spec.output_format = outputFormat;
+    return spec;
 }
 
 // Backend field_path (machine-readable) -> frontend element id for scroll/highlight on 422
@@ -998,7 +1149,13 @@ var pathToFieldId = {
     'task_requirements.task_type': 'specTaskType',
     'task_requirements.expected_output': 'specExpectedOutput',
     'task_requirements.collaboration_form': 'specCollaborationForm',
-    'task_requirements.requirements_text': 'specTaskRequirements'
+    'task_requirements.requirements_text': 'specTaskRequirements',
+    'teaching_stage': 'specTeachingStage',
+    'collaboration_purpose': 'specCollaborationPurpose',
+    'group_size': 'specGroupSize',
+    'grouping_strategy': 'specGroupingStrategy',
+    'role_structure': 'specRoleStructure',
+    'activity_design': 'specTeachingStage'
 };
 
 function firstErrorFieldIdFromPaths(fieldPaths) {
@@ -1870,39 +2027,55 @@ async function viewQualityReport() {
     await loadQualityReportDetail(currentScriptId);
 }
 
-async function exportScript() {
+async function exportScript(format) {
     if (!currentScriptId) {
         showNotification('No script to export', 'error');
         return;
     }
-    
+    format = (format || 'json').toLowerCase();
+    var urlExport = API_BASE + '/scripts/' + currentScriptId + '/export';
+    if (format !== 'json') urlExport += '?format=' + encodeURIComponent(format);
     try {
-        const res = await fetch(`${API_BASE}/scripts/${currentScriptId}/export`, {
-            credentials: 'include'
-        });
-        
+        var res = await fetch(urlExport, { credentials: 'include' });
         if (res.ok) {
-            const data = await res.json();
-            const blob = new Blob([JSON.stringify(data.script, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `script_${currentScriptId}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            showNotification('Script exported successfully', 'success');
+            if (format === 'html' || format === 'markdown') {
+                var blob = await res.blob();
+                var disp = res.headers.get('Content-Disposition');
+                var filename = 'activity.' + (format === 'html' ? 'html' : 'md');
+                if (disp) {
+                    var m = disp.match(/filename="?([^";\n]+)"?/);
+                    if (m && m[1]) filename = m[1].trim();
+                }
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            } else {
+                var data = await res.json();
+                var blob = new Blob([JSON.stringify(data.script, null, 2)], { type: 'application/json' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'script_' + currentScriptId + '.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+            showNotification('Export successful', 'success');
         } else if (res.status === 401) {
             showNotification('Please login first', 'error');
         } else if (res.status === 403) {
             showNotification('Current role has no permission', 'error');
         } else if (res.status === 404) {
-            showNotification('Script not found or not yet created', 'error');
+            var errBody = await res.json().catch(function() { return {}; });
+            showNotification(errBody.error || 'Script or materials not found. Run the pipeline first.', 'error');
         } else {
-            showNotification('Failed to export script', 'error');
+            showNotification('Failed to export', 'error');
         }
     } catch (error) {
         console.error('Error exporting script:', error);
-        showNotification('Failed to export script', 'error');
+        showNotification('Failed to export', 'error');
     }
 }
 

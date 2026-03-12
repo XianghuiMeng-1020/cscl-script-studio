@@ -634,7 +634,15 @@ class CSCLPipelineService:
             pipeline_run.finished_at = datetime.now(timezone.utc)
             db.session.commit()
             
-            final_output = refiner_result['output_snapshot']
+            final_output = dict(refiner_result['output_snapshot']) if refiner_result.get('output_snapshot') else {}
+            # Pass through classroom-ready artefacts from material stage if refiner did not include them
+            mat_snap = material_result.get('output_snapshot') or {}
+            if mat_snap.get('student_worksheet') and not final_output.get('student_worksheet'):
+                final_output['student_worksheet'] = mat_snap['student_worksheet']
+            if mat_snap.get('teacher_guide') and not final_output.get('teacher_guide'):
+                final_output['teacher_guide'] = mat_snap['teacher_guide']
+            if mat_snap.get('role_cards') and not final_output.get('role_cards'):
+                final_output['role_cards'] = mat_snap['role_cards']
             
             return {
                 'run_id': run_id,

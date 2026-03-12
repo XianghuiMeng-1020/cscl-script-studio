@@ -1,5 +1,5 @@
 {
-  "description": "v1 collaborative argumentation task types for GenAI-supported multimodal CSCL script generation. Theory-grounded patterns for higher education.",
+  "description": "CSCL task types for teacher-centred activity generation. Includes argumentation patterns and broader collaborative patterns with compatibility metadata for alignment checking.",
   "task_types": [
     {
       "id": "structured_debate",
@@ -8,7 +8,10 @@
       "pedagogical_goal": "Develop evidence-based argumentation and critical response to counterclaims.",
       "expected_outputs": ["argument map", "position statement", "rebuttal summary"],
       "minimum_role_pattern": "proponent, opponent, moderator",
-      "compatible_modalities": ["sync", "async"]
+      "compatible_modalities": ["sync", "async"],
+      "compatible_teaching_stages": ["concept_exploration", "application", "discussion", "synthesis"],
+      "compatible_collaboration_purposes": ["compare_ideas", "critique_alternatives", "co_construct_explanation"],
+      "recommended_group_size": [3, 4, 5]
     },
     {
       "id": "evidence_comparison",
@@ -17,7 +20,10 @@
       "pedagogical_goal": "Compare evidence quality and synthesize across sources for collaborative argumentation.",
       "expected_outputs": ["comparison matrix", "synthesis statement", "evidence summary"],
       "minimum_role_pattern": "analyst, synthesizer, critic",
-      "compatible_modalities": ["sync", "async"]
+      "compatible_modalities": ["sync", "async"],
+      "compatible_teaching_stages": ["concept_exploration", "guided_practice", "application", "synthesis"],
+      "compatible_collaboration_purposes": ["interpret_evidence", "compare_ideas", "build_consensus", "peer_review"],
+      "recommended_group_size": [3, 4]
     },
     {
       "id": "perspective_synthesis",
@@ -26,7 +32,10 @@
       "pedagogical_goal": "Synthesize diverse perspectives into a coherent argumentative artifact.",
       "expected_outputs": ["synthesis document", "joint reflection", "multi-perspective summary"],
       "minimum_role_pattern": "contributor, synthesizer, reviewer",
-      "compatible_modalities": ["sync", "async"]
+      "compatible_modalities": ["sync", "async"],
+      "compatible_teaching_stages": ["concept_exploration", "application", "discussion", "synthesis", "reflection"],
+      "compatible_collaboration_purposes": ["build_consensus", "co_construct_explanation", "create_shared_product"],
+      "recommended_group_size": [3, 4, 5]
     },
     {
       "id": "claim_counterclaim_roleplay",
@@ -35,7 +44,106 @@
       "pedagogical_goal": "Practice claim–counterclaim reasoning and role-based argumentation.",
       "expected_outputs": ["role summary", "negotiation outcome", "position document"],
       "minimum_role_pattern": "claimant, counterclaimant, facilitator",
-      "compatible_modalities": ["sync", "async"]
+      "compatible_modalities": ["sync", "async"],
+      "compatible_teaching_stages": ["concept_exploration", "application", "discussion"],
+      "compatible_collaboration_purposes": ["compare_ideas", "critique_alternatives", "co_construct_explanation"],
+      "recommended_group_size": [3, 4]
+    },
+    {
+      "id": "jigsaw",
+      "display_name": "Jigsaw",
+      "description": "Each member becomes expert on one part; then teach peers and combine to complete a shared task.",
+      "pedagogical_goal": "Distribute expertise and build interdependence through teaching and synthesis.",
+      "expected_outputs": ["combined product", "expert summary", "group synthesis"],
+      "minimum_role_pattern": "expert, synthesizer",
+      "compatible_modalities": ["sync", "async"],
+      "compatible_teaching_stages": ["concept_exploration", "guided_practice", "application", "synthesis"],
+      "compatible_collaboration_purposes": ["co_construct_explanation", "create_shared_product", "build_consensus"],
+      "recommended_group_size": [4, 5, 6]
+    },
+    {
+      "id": "case_analysis",
+      "display_name": "Case Analysis",
+      "description": "Groups analyse a scenario or case; identify issues, apply concepts, and propose solutions.",
+      "pedagogical_goal": "Apply concepts to real situations and justify interpretations collaboratively.",
+      "expected_outputs": ["case summary", "analysis matrix", "recommendations"],
+      "minimum_role_pattern": "analyst, recorder, presenter",
+      "compatible_modalities": ["sync", "async"],
+      "compatible_teaching_stages": ["application", "discussion", "synthesis", "assessment_prep"],
+      "compatible_collaboration_purposes": ["interpret_evidence", "collaborative_problem_solving", "build_consensus", "create_shared_product"],
+      "recommended_group_size": [3, 4, 5]
+    },
+    {
+      "id": "problem_based_learning",
+      "display_name": "Problem-Based Learning (PBL)",
+      "description": "Open-ended problem; groups define questions, gather information, and propose solutions.",
+      "pedagogical_goal": "Develop problem-solving and self-directed learning through collaborative inquiry.",
+      "expected_outputs": ["problem definition", "solution proposal", "reasoning document"],
+      "minimum_role_pattern": "facilitator, researcher, scribe",
+      "compatible_modalities": ["sync", "async"],
+      "compatible_teaching_stages": ["application", "synthesis", "reflection", "assessment_prep"],
+      "compatible_collaboration_purposes": ["collaborative_problem_solving", "co_construct_explanation", "create_shared_product"],
+      "recommended_group_size": [4, 5, 6]
+    },
+    {
+      "id": "think_pair_share",
+      "display_name": "Think-Pair-Share",
+      "description": "Individual think, then pair discussion, then share with class. Short structured cycle.",
+      "pedagogical_goal": "Quick engagement and peer exchange before whole-class discussion.",
+      "expected_outputs": ["pair summary", "key points to share"],
+      "minimum_role_pattern": "none",
+      "compatible_modalities": ["sync"],
+      "compatible_teaching_stages": ["warm_up", "concept_exploration", "discussion", "reflection"],
+      "compatible_collaboration_purposes": ["compare_ideas", "build_consensus"],
+      "recommended_group_size": [2]
+    },
+    {
+      "id": "gallery_walk",
+      "display_name": "Gallery Walk",
+      "description": "Groups create artefacts; then rotate to view others’ work and leave feedback or compare.",
+      "pedagogical_goal": "Expose students to multiple solutions and perspectives; peer feedback.",
+      "expected_outputs": ["group artefact", "feedback notes", "comparison summary"],
+      "minimum_role_pattern": "creator, reviewer",
+      "compatible_modalities": ["sync"],
+      "compatible_teaching_stages": ["application", "synthesis", "reflection"],
+      "compatible_collaboration_purposes": ["compare_ideas", "peer_review", "create_shared_product"],
+      "recommended_group_size": [3, 4]
+    },
+    {
+      "id": "fishbowl_discussion",
+      "display_name": "Fishbowl Discussion",
+      "description": "Inner circle discusses; outer circle observes and then swaps or feeds back.",
+      "pedagogical_goal": "Structured whole-class discussion with clear roles and reflection.",
+      "expected_outputs": ["discussion summary", "observer notes", "synthesis points"],
+      "minimum_role_pattern": "speaker, observer",
+      "compatible_modalities": ["sync"],
+      "compatible_teaching_stages": ["discussion", "synthesis", "reflection"],
+      "compatible_collaboration_purposes": ["compare_ideas", "build_consensus", "critique_alternatives"],
+      "recommended_group_size": [4, 5, 6]
+    },
+    {
+      "id": "concept_mapping",
+      "display_name": "Concept Mapping",
+      "description": "Groups build a shared concept map linking ideas, evidence, and relationships.",
+      "pedagogical_goal": "Make conceptual structure visible and negotiate meanings collaboratively.",
+      "expected_outputs": ["concept map", "legend or explanation", "key relationships summary"],
+      "minimum_role_pattern": "contributor, synthesizer",
+      "compatible_modalities": ["sync", "async"],
+      "compatible_teaching_stages": ["concept_exploration", "guided_practice", "synthesis", "reflection"],
+      "compatible_collaboration_purposes": ["co_construct_explanation", "create_shared_product", "build_consensus"],
+      "recommended_group_size": [3, 4]
+    },
+    {
+      "id": "peer_review",
+      "display_name": "Peer Review",
+      "description": "Students review each other’s work against criteria; give feedback and optionally revise.",
+      "pedagogical_goal": "Develop critical evaluation and use criteria; improve work through feedback.",
+      "expected_outputs": ["feedback form", "revision notes", "reflection"],
+      "minimum_role_pattern": "author, reviewer",
+      "compatible_modalities": ["sync", "async"],
+      "compatible_teaching_stages": ["guided_practice", "application", "reflection", "assessment_prep"],
+      "compatible_collaboration_purposes": ["peer_review", "critique_alternatives", "compare_ideas"],
+      "recommended_group_size": [2, 3, 4]
     }
   ]
 }

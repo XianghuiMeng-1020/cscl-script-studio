@@ -110,11 +110,15 @@ class SpecValidator:
                 'normalized_spec': None
             }
 
+        # Alignment checks (warnings only, do not invalidate)
+        warnings = SpecValidator._check_alignment(normalized_spec)
+
         return {
             'valid': True,
             'issues': [],
             'field_paths': [],
-            'normalized_spec': normalized_spec
+            'normalized_spec': normalized_spec,
+            'warnings': warnings
         }
     
     @staticmethod
@@ -204,3 +208,29 @@ class SpecValidator:
             if not isinstance(preferences['weight'], dict):
                 issues.append('rubric_preferences.weight must be a dictionary if provided')
         return issues
+
+    @staticmethod
+    def _check_alignment(spec: Dict[str, Any]) -> List[str]:
+        """Check alignment across topic, task_type, learning objectives, expected_output, collaboration. Returns list of warning messages (does not invalidate)."""
+        warnings: List[str] = []
+        tr = spec.get('task_requirements') or {}
+        task_type = tr.get('task_type') or ''
+        expected_output = (tr.get('expected_output') or '').strip()
+        collaboration_form = tr.get('collaboration_form') or 'group'
+        teaching_stage = spec.get('teaching_stage') or ''
+        collaboration_purpose = spec.get('collaboration_purpose') or ''
+        group_size = spec.get('group_size')
+        cc = spec.get('course_context') or {}
+        class_size = cc.get('class_size') or 0
+
+        if collaboration_form == 'pair' and group_size and group_size != 2:
+            warnings.append('Collaboration form is "pair" but group size is not 2; consider setting group size to 2.')
+        if collaboration_form == 'whole_class' and group_size and group_size > 1:
+            warnings.append('Collaboration form is "whole class"; group size may be ignored.')
+        if group_size is not None and class_size > 0 and group_size > 0 and class_size % group_size != 0:
+            warnings.append('Class size is not evenly divisible by group size; some students may need to join other groups or work individually.')
+        if teaching_stage == 'warm_up' and task_type in ('structured_debate', 'evidence_comparison'):
+            warnings.append('Warm-up stage often suits lighter tasks; structured debate/evidence comparison may be better for concept exploration or application.')
+        if collaboration_purpose == 'peer_review' and task_type not in ('peer_review', 'evidence_comparison', 'perspective_synthesis'):
+            warnings.append('Collaboration purpose is peer review; consider choosing a task type that supports peer review (e.g. peer_review, evidence_comparison).')
+        return warnings

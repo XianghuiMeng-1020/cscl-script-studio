@@ -306,3 +306,72 @@
     background: #fff8e1;
     border-color: #ffe082;
 }
+
+/* Step 4: Preview tabs (student materials | teacher guide | structure) */
+.preview-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.preview-tab {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+.preview-tab:hover {
+    color: var(--primary-color);
+}
+.preview-tab.active {
+    color: var(--primary-color);
+    font-weight: 600;
+    border-bottom-color: var(--primary-color);
+}
+.preview-tab-panels {
+    margin-top: 0.5rem;
+}
+.preview-tab-panel {
+    display: none;
+}
+.preview-tab-panel.active {
+    display: block;
+}
+.worksheet-preview,
+.teacher-guide-preview {
+    max-width: 100%;
+    padding: 0.5rem 0;
+}
+.worksheet-preview .worksheet-title {
+    font-size: 1.35rem;
+    margin-bottom: 0.5rem;
+}
+.worksheet-preview .worksheet-goal {
+    margin-bottom: 1rem;
+}
+.worksheet-steps .worksheet-step {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-light, #eee);
+}
+.worksheet-step .step-duration {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+.worksheet-step .step-prompts {
+    margin: 0.35rem 0 0 1rem;
+}
+.teacher-guide-preview h3 {
+    font-size: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 0.35rem;
+}
+.empty-tab {
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 1rem 0;
+}

@@ -419,6 +419,7 @@ class CSCLCourseDocument(db.Model):
     storage_uri = db.Column(db.String(1000), nullable=True)
     mime_type = db.Column(db.String(100), nullable=True)
     checksum = db.Column(db.String(64), nullable=True)
+    material_level = db.Column(db.String(20), nullable=False, default='course')  # course | lesson
     uploaded_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     
@@ -434,6 +435,7 @@ class CSCLCourseDocument(db.Model):
             'storage_uri': self.storage_uri,
             'mime_type': self.mime_type,
             'checksum': self.checksum,
+            'material_level': self.material_level,
             'uploaded_by': self.uploaded_by,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }

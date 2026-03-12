@@ -44,13 +44,27 @@ class PlannerStage:
         }
         
         try:
-            # Prepare input for provider
+            # Prepare input for provider (activity-centred: one specific collaborative activity)
+            cc = spec.get('course_context') or {}
+            tr = spec.get('task_requirements') or {}
             input_payload = {
-                'topic': spec['course_context']['topic'],
-                'learning_objectives': spec['learning_objectives'],
-                'task_type': spec['task_requirements']['task_type'],
-                'duration_minutes': spec['course_context']['duration'],
-                'retrieved_chunks': spec.get('retrieved_chunks', [])
+                'topic': cc.get('topic'),
+                'learning_objectives': spec.get('learning_objectives'),
+                'task_type': tr.get('task_type'),
+                'duration_minutes': cc.get('duration', 60),
+                'retrieved_chunks': spec.get('retrieved_chunks', []),
+                'teaching_stage': spec.get('teaching_stage', 'concept_exploration'),
+                'collaboration_purpose': spec.get('collaboration_purpose', 'compare_ideas'),
+                'group_size': spec.get('group_size', 4),
+                'grouping_strategy': spec.get('grouping_strategy', 'random'),
+                'role_structure': spec.get('role_structure', 'no_roles'),
+                'whole_class_reporting': spec.get('whole_class_reporting', True),
+                'expected_output': tr.get('expected_output'),
+                'requirements_text': tr.get('requirements_text'),
+                'scaffolding_options': spec.get('scaffolding_options', []),
+                'student_difficulties': spec.get('student_difficulties', ''),
+                'class_size': cc.get('class_size'),
+                'mode': cc.get('mode', 'sync')
             }
             
             # Call provider
@@ -88,10 +102,33 @@ class PlannerStage:
                     'error': result.get('error', 'Unknown error')
                 }
             
+            plan_raw = result.get('plan') or {}
+            activity = plan_raw.get('activity') or plan_raw
+            # Backward compatibility: build scenes/roles from activity if present
+            scenes = plan_raw.get('scenes') or []
+            roles = plan_raw.get('roles') or []
+            if activity and not scenes and activity.get('steps'):
+                for s in activity.get('steps', []):
+                    scenes.append({
+                        'order_index': s.get('step_order', len(scenes) + 1),
+                        'scene_type': 'task_step',
+                        'purpose': s.get('description') or s.get('title', ''),
+                        'transition_rule': '',
+                        'scriptlets': [{'prompt_text': p, 'prompt_type': 'discussion', 'role_id': None} for p in (s.get('prompts') or [])]
+                    })
+            if activity and not roles and activity.get('roles'):
+                for r in activity.get('roles', []):
+                    roles.append({
+                        'role_id': r.get('role_name', ''),
+                        'role_name': r.get('role_name', ''),
+                        'description': r.get('description', ''),
+                        'responsibilities': r.get('responsibilities', [])
+                    })
             output_snapshot = {
-                'plan': result.get('plan', {}),
-                'scenes': result.get('plan', {}).get('scenes', []),
-                'roles': result.get('plan', {}).get('roles', [])
+                'plan': {**plan_raw, 'scenes': scenes, 'roles': roles},
+                'activity': activity if isinstance(activity, dict) and activity.get('title') else None,
+                'scenes': scenes,
+                'roles': roles
             }
             
             return {

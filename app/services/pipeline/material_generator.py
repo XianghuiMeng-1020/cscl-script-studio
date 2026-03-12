@@ -60,13 +60,19 @@ class MaterialGeneratorStage:
             materials = provider_result.get("materials") or {}
             roles = self._normalize_roles(materials.get("roles", []))
             scenes = self._normalize_scenes(materials.get("scenes", []))
+            student_worksheet = materials.get("student_worksheet")
+            teacher_guide = materials.get("teacher_guide")
+            role_cards = materials.get("role_cards", [])
             
             latency_ms = int((time.time() - start_time) * 1000)
             
             output_snapshot = {
                 'scenes': scenes,
                 'roles': roles,
-                'materials_generated': len(scenes)
+                'materials_generated': len(scenes),
+                'student_worksheet': student_worksheet,
+                'teacher_guide': teacher_guide,
+                'role_cards': role_cards
             }
             
             result = {

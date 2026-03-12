@@ -422,10 +422,30 @@ class OpenAIProvider(BaseLLMProvider):
         ).strip()
 
         try:
+            teaching_stage = input_payload.get('teaching_stage') or 'concept_exploration'
+            collaboration_purpose = input_payload.get('collaboration_purpose') or 'compare_ideas'
+            group_size = input_payload.get('group_size') or 4
             user_text = json.dumps(input_payload, ensure_ascii=False)
+            system_prompt = """You are a CSCL (Computer-Supported Collaborative Learning) activity designer.
+Your task is to design ONE specific small-group collaborative activity — NOT a full lesson plan.
+
+Return ONLY valid JSON with a single top-level key "activity". The "activity" object MUST contain:
+- "title": string (short activity title)
+- "overview": string (1-2 sentences describing what the group will do)
+- "objective": string (aligned with learning goals)
+- "steps": array of objects, each with: "step_order" (int), "title" (string), "description" (string), "duration_minutes" (int), "prompts" (array of strings for discussion/task prompts)
+- "roles": array of objects, each with: "role_name" (string), "description" (string), "responsibilities" (array of strings). Use empty array if role_structure is "no_roles".
+- "expected_output": string (what the group must produce)
+- "reporting_instructions": string (how to report back to class, or "none" if not applicable)
+
+IMPORTANT:
+- Do NOT generate a full lesson flow (no "introduction → activity → presentation → reflection").
+- Focus on ONE concrete group task with 3-6 clear steps. Every step must tell students exactly what to do.
+- Teaching stage: """ + str(teaching_stage) + """. Collaboration purpose: """ + str(collaboration_purpose) + """. Design for groups of """ + str(group_size) + """ students.
+- If the payload includes "retrieved_chunks", use that content to ground the activity in the course material."""
             messages = [
-                {"role": "system", "content": "You are a CSCL script planner. Return ONLY valid JSON."},
-                {"role": "user", "content": f"Generate a script plan JSON from this payload: {user_text}"}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Design one CSCL group activity from this specification. Return JSON with key 'activity' only.\n\n{user_text}"}
             ]
 
             resp = requests.post(
@@ -575,10 +595,13 @@ class OpenAIProvider(BaseLLMProvider):
     
     def generate_materials(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
         system_prompt = (
-            "You generate CSCL materials. Return ONLY JSON with keys: "
-            "roles (list), scenes (list). "
+            "You generate classroom-ready CSCL activity materials. Return ONLY valid JSON with these keys: "
+            "roles (list), scenes (list), "
+            "student_worksheet (object with: title, goal, roles_summary, steps with title/description/duration_minutes/prompts, timing_summary, output_instructions, reporting_instructions), "
+            "teacher_guide (object with: overview, alignment_with_objectives, rationale, implementation_steps, monitoring_points, expected_difficulties, debrief_questions, adaptation_suggestions). "
             "Each scene must include: order_index, scene_type, purpose, transition_rule, scriptlets. "
-            "Each scriptlet must include: prompt_text, prompt_type, role_id (nullable)."
+            "Each scriptlet: prompt_text, prompt_type, role_id (nullable). "
+            "student_worksheet and teacher_guide must be ready for teachers and students to use directly."
         )
         r = self._chat_json(system_prompt, input_payload)
         if not r['success']:
@@ -592,36 +615,35 @@ class OpenAIProvider(BaseLLMProvider):
         scenes = material_output.get('scenes') if isinstance(material_output.get('scenes'), list) else []
         role_count = len(roles)
         scene_count = len(scenes)
-        role_names = [r.get('role_name', '') for r in roles if isinstance(r, dict)][:20]
+        role_names = [r.get('role_name', r.get('role_id', '')) for r in roles if isinstance(r, dict)][:20]
         scriptlet_count = sum(len(s.get('scriptlets') or []) for s in scenes if isinstance(s, dict))
-        # Build a compact payload to avoid timeout on large specs
         compact_payload = {
             'role_count': role_count,
             'scene_count': scene_count,
             'scriptlet_count': scriptlet_count,
             'role_names': role_names,
-            'roles': roles[:10],  # limit
+            'roles': roles[:10],
             'scenes': [
                 {
                     'order_index': s.get('order_index'),
                     'scene_type': s.get('scene_type'),
-                    'purpose': s.get('purpose', '')[:200],
+                    'purpose': (s.get('purpose') or '')[:200],
                     'scriptlet_count': len(s.get('scriptlets') or []),
-                    'scriptlets': (s.get('scriptlets') or [])[:3]  # first 3 scriptlets per scene
+                    'scriptlets': (s.get('scriptlets') or [])[:3]
                 }
-                for s in scenes[:10] if isinstance(s, dict)
+                for s in (scenes[:10] if isinstance(scenes, list) else []) if isinstance(s, dict)
             ],
-            'spec_topic': (input_payload.get('spec') or {}).get('topic', ''),
-            'spec_task_type': (input_payload.get('spec') or {}).get('task_type', ''),
+            'spec_topic': (input_payload.get('spec') or {}).get('course_context', {}).get('topic', ''),
+            'spec_task_type': (input_payload.get('spec') or {}).get('task_requirements', {}).get('task_type', ''),
+            'has_student_worksheet': bool(material_output.get('student_worksheet')),
+            'has_teacher_guide': bool(material_output.get('teacher_guide')),
         }
         system_prompt = (
-            "You are a CSCL script critic. Return ONLY JSON with keys: "
-            "validation {is_valid:boolean, issues:list[str], warnings:list[str]}, "
-            "quality_indicators {scene_count:int, role_count:int, scriptlet_count:int}, "
-            "roles (list), scenes (list). "
-            "Rule: If the script has at least 2 roles and 2 scenes, set is_valid to true "
-            "unless there are real quality issues (e.g. empty scriptlets, missing scene types). "
-            "Do NOT report 'No roles defined' or 'No scenes' when roles and scenes are non-empty."
+            "You are a CSCL activity quality critic. Evaluate whether this is ONE specific collaborative activity (not a full lesson flow). "
+            "Return ONLY JSON with keys: validation {is_valid:boolean, issues:list[str], warnings:list[str]}, "
+            "quality_indicators {scene_count:int, role_count:int, scriptlet_count:int}, roles (list), scenes (list). "
+            "Set is_valid to true if: (1) there is at least one clear task with steps, (2) students know what to do each step, (3) roles/scenes are consistent. "
+            "Do NOT report 'No roles' or 'No scenes' when roles and scenes are non-empty. Prefer accepting activity-style output (steps with prompts) even with 0-1 roles."
         )
         r = self._chat_json(system_prompt, compact_payload)
         if not r['success']:
@@ -631,9 +653,10 @@ class OpenAIProvider(BaseLLMProvider):
     
     def refine_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
         system_prompt = (
-            "You are a CSCL script refiner. Fix issues and return ONLY JSON with keys: "
+            "You are a CSCL activity refiner. Fix the issues and return ONLY JSON with keys: "
             "roles (list), scenes (list), refinements_applied (object). "
-            "Ensure at least 2 roles, 2 scenes, and non-empty scriptlets."
+            "If student_worksheet and teacher_guide are present in the input, include them in the output unchanged or improved. "
+            "Ensure at least one scene/step with non-empty scriptlets or prompts."
         )
         r = self._chat_json(system_prompt, input_payload)
         if not r['success']:

@@ -101,6 +101,10 @@ class SpecValidator:
         # Augment spec with task_type (from collaboration_purpose) and expected_output (inferred) if missing
         spec_data_for_norm = copy.deepcopy(spec_data)
         ensure_spec_has_task_type_and_expected_output(spec_data_for_norm)
+        # Default course_context.description from topic if empty (pipeline-friendly)
+        cc = spec_data_for_norm.setdefault('course_context', {})
+        if not (cc.get('description') or '').strip():
+            cc['description'] = (cc.get('topic') or '').strip() or 'See learning objectives.'
 
         # Try to create normalized spec
         try:
@@ -148,8 +152,7 @@ class SpecValidator:
             out.append(('course_context.duration is required', f'{path}.duration'))
         elif not isinstance(context['duration'], int) or context['duration'] <= 0:
             out.append(('course_context.duration must be a positive integer', f'{path}.duration'))
-        if 'description' not in context or not (context.get('description') or '').strip():
-            out.append(('course_context.description is required and cannot be empty', f'{path}.description'))
+        # description optional; default filled before from_dict if empty
         return out
     
     @staticmethod
@@ -185,12 +188,11 @@ class SpecValidator:
         if task_type and task_type not in valid_ids:
             out.append((f'task_requirements.task_type must be one of: {", ".join(valid_ids)}', f'{path}.task_type'))
         # expected_output is optional (inferred by backend if empty)
-        if 'collaboration_form' not in requirements:
-            out.append(('task_requirements.collaboration_form is required', f'{path}.collaboration_form'))
-        elif requirements['collaboration_form'] not in SpecValidator.VALID_COLLABORATION_FORMS:
+        # collaboration_form is optional; default 'group' (UI removed; system is for collaboration)
+        cf = requirements.get('collaboration_form') or 'group'
+        if cf not in SpecValidator.VALID_COLLABORATION_FORMS:
             out.append((f'task_requirements.collaboration_form must be one of: {", ".join(SpecValidator.VALID_COLLABORATION_FORMS)}', f'{path}.collaboration_form'))
-        if 'requirements_text' not in requirements or not (requirements.get('requirements_text') or '').strip():
-            out.append(('task_requirements.requirements_text is required and cannot be empty', f'{path}.requirements_text'))
+        # requirements_text is optional (reduced teacher burden)
         return out
     
     @staticmethod

@@ -665,8 +665,7 @@ async function wizardNext() {
         }
     }
     if (wizardStep === 1) {
-        var materialLevelEl = document.getElementById('materialLevelSelect');
-        var materialLevel = (materialLevelEl && materialLevelEl.value) ? materialLevelEl.value : 'course';
+        var materialLevel = 'course';
         var syllabusEl = document.getElementById('syllabusText');
         var text = syllabusEl ? (syllabusEl.value || '').trim() : '';
         var uploadedDocId = null;
@@ -694,7 +693,7 @@ async function wizardNext() {
                 var notesRes = await fetch(API_BASE + '/courses/' + DEFAULT_COURSE_ID + '/docs/upload', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: 'Lesson notes (Step 1)', text: lessonNotes, material_level: 'lesson' }),
+                    body: JSON.stringify({ title: 'Lesson notes (Step 1)', text: lessonNotes, material_level: 'course' }),
                     credentials: 'include'
                 });
                 if (notesRes.ok && typeof loadDocuments === 'function') loadDocuments();
@@ -999,7 +998,7 @@ var MATERIAL_UPLOAD_EXTENSIONS = ['pdf', 'pptx', 'docx', 'png', 'jpg', 'jpeg', '
 document.getElementById('syllabusFile')?.addEventListener('change', async function(e) {
     var files = e.target.files;
     if (!files || !files.length) return;
-    var materialLevel = (document.getElementById('materialLevelSelect') && document.getElementById('materialLevelSelect').value) ? document.getElementById('materialLevelSelect').value : 'course';
+    var materialLevel = 'course';
     var skipExtract = document.getElementById('step1SkipExtract') && document.getElementById('step1SkipExtract').checked;
     var courseId = typeof DEFAULT_COURSE_ID !== 'undefined' ? DEFAULT_COURSE_ID : 'default-course';
     var baseUrl = (typeof API_BASE !== 'undefined' ? API_BASE : '/api/cscl') + '/courses/' + courseId + '/docs/upload';
@@ -1109,8 +1108,6 @@ function fillSpecForm(spec) {
     document.getElementById('specObjectives').value = Array.isArray(spec.learning_objectives)
         ? spec.learning_objectives.join('\n')
         : (spec.learning_objectives || '');
-    var cfEl = document.getElementById('specCollaborationForm');
-    if (cfEl) cfEl.value = spec.collaboration_form || 'group';
     var scaffoldEls = document.querySelectorAll('#specScaffoldingOptions input[name="scaffolding"]');
     if (scaffoldEls.length) {
         var opts = spec.scaffolding_options || [];
@@ -1120,7 +1117,7 @@ function fillSpecForm(spec) {
     if (diffEl) diffEl.value = spec.student_difficulties || spec.teacher_concerns || '';
     var outEls = document.querySelectorAll('#specOutputFormat input[name="output_format"]');
     if (outEls.length) {
-        var formats = spec.output_format || spec.output_formats || ['student_worksheet', 'teacher_facilitation_sheet'];
+        var formats = spec.output_format || spec.output_formats || ['student_worksheet', 'student_slides', 'teacher_facilitation_sheet'];
         outEls.forEach(function(cb) { cb.checked = formats.indexOf(cb.value) !== -1; });
     }
     var trEl = document.getElementById('specTaskRequirements');
@@ -1133,27 +1130,28 @@ function buildCanonicalSpecFromForm() {
     var objectives = document.getElementById('specObjectives').value.split('\n').filter(function(s) { return s.trim(); });
     var knowledge = objectives.length ? objectives : ['Understand topic'];
     var skills = objectives.length > 1 ? objectives.slice(1) : (objectives.length ? [objectives[0]] : ['Apply concepts']);
-    var cfEl = document.getElementById('specCollaborationForm');
-    var collaborationForm = (cfEl && cfEl.value) ? cfEl.value : 'group';
     var scaffolding = [];
     document.querySelectorAll('#specScaffoldingOptions input[name="scaffolding"]:checked').forEach(function(cb) { scaffolding.push(cb.value); });
     var outputFormat = [];
     document.querySelectorAll('#specOutputFormat input[name="output_format"]:checked').forEach(function(cb) { outputFormat.push(cb.value); });
-    if (outputFormat.length === 0) outputFormat = ['student_worksheet', 'teacher_facilitation_sheet'];
+    if (outputFormat.length === 0) outputFormat = ['student_worksheet', 'student_slides', 'teacher_facilitation_sheet'];
+    var topicVal = document.getElementById('specTopic').value.trim();
+    var descVal = (document.getElementById('specCourseContext') && document.getElementById('specCourseContext').value) ? document.getElementById('specCourseContext').value.trim() : '';
+    if (!descVal) descVal = topicVal || 'See learning objectives.';
     var spec = {
         course_context: {
             subject: document.getElementById('specCourse').value.trim(),
-            topic: document.getElementById('specTopic').value.trim(),
+            topic: topicVal,
             class_size: parseInt(document.getElementById('specClassSize').value, 10) || 30,
             mode: mode,
             duration: parseInt(document.getElementById('specDuration').value, 10) || 90,
-            description: (document.getElementById('specCourseContext') && document.getElementById('specCourseContext').value) ? document.getElementById('specCourseContext').value.trim() : ''
+            description: descVal
         },
         learning_objectives: { knowledge: knowledge, skills: skills },
         task_requirements: {
             task_type: '',
             expected_output: '',
-            collaboration_form: collaborationForm,
+            collaboration_form: 'group',
             requirements_text: (document.getElementById('specTaskRequirements') && document.getElementById('specTaskRequirements').value) ? document.getElementById('specTaskRequirements').value.trim() : ''
         }
     };
@@ -1191,7 +1189,7 @@ var pathToFieldId = {
     'task_requirements': 'specTaskRequirements',
     'task_requirements.task_type': 'specCollaborationPurpose',
     'task_requirements.expected_output': 'specTaskRequirements',
-    'task_requirements.collaboration_form': 'specCollaborationForm',
+    'task_requirements.collaboration_form': 'specCollaborationPurpose',
     'task_requirements.requirements_text': 'specTaskRequirements',
     'teaching_stage': 'specTeachingStage',
     'collaboration_purpose': 'specCollaborationPurpose',
@@ -1586,8 +1584,9 @@ async function runPipeline() {
                 var errorMsg = result.error || 'Configured LLM provider is not runnable';
                 var details = result.details || {};
                 var reason = details.reason || 'Provider not available';
+                var hint = (typeof t === 'function' && t('teacher.pipeline.llm_hint')) ? t('teacher.pipeline.llm_hint') : 'If self-hosting, set OPENAI_API_KEY (or Qwen API key) in the environment.';
                 showPipelineErrorPanel(
-                    errorMsg + '. ' + reason,
+                    errorMsg + '. ' + reason + ' ' + hint,
                     'LLM Provider Not Ready',
                     true  // Show retry button
                 );

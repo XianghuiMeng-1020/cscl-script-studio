@@ -91,10 +91,13 @@ def infer_expected_output(spec: Dict[str, Any]) -> str:
 
 def ensure_spec_has_task_type_and_expected_output(spec_data: Dict[str, Any]) -> None:
     """Mutate spec_data in place: set task_requirements.task_type from purpose if missing;
-    set task_requirements.expected_output from infer_expected_output if missing.
+    set task_requirements.expected_output from infer_expected_output if missing;
+    set task_requirements.collaboration_form to 'group' if missing (UI removed).
     """
     tr = spec_data.setdefault('task_requirements', {})
     if not (tr.get('task_type') or '').strip():
         tr['task_type'] = purpose_to_task_type(spec_data.get('collaboration_purpose', ''))
     if not (tr.get('expected_output') or '').strip():
         tr['expected_output'] = infer_expected_output(spec_data)
+    if not (tr.get('collaboration_form') or '').strip():
+        tr['collaboration_form'] = 'group'

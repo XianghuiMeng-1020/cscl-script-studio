@@ -395,19 +395,19 @@
                     <div class="wizard-progress">
                         <div class="wizard-step active" data-step="1">
                             <div class="step-number">1</div>
-                            <div class="step-label"><i class="fas fa-file-upload" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step1">上传教学材料</span></div>
+                            <div class="step-label"><i class="fas fa-file-upload" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step1">上传材料</span></div>
                         </div>
                         <div class="wizard-step" data-step="2">
                             <div class="step-number">2</div>
-                            <div class="step-label"><i class="fas fa-check-circle" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step2">教学目标设置</span></div>
+                            <div class="step-label"><i class="fas fa-check-circle" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step2">定义活动</span></div>
                         </div>
                         <div class="wizard-step" data-step="3">
                             <div class="step-number">3</div>
-                            <div class="step-label"><i class="fas fa-cogs" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step3">运行生成流程</span></div>
+                            <div class="step-label"><i class="fas fa-cogs" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step3">生成</span></div>
                         </div>
                         <div class="wizard-step" data-step="4">
                             <div class="step-number">4</div>
-                            <div class="step-label"><i class="fas fa-rocket" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step4">审阅并发布</span></div>
+                            <div class="step-label"><i class="fas fa-rocket" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step4">审阅发布</span></div>
                         </div>
                     </div>
 
@@ -423,13 +423,6 @@
                                 <p><strong data-i18n="common.why">为什么要做：</strong><span data-i18n="teacher.wizard.step1.why">课程与课堂材料用于检索增强生成，使活动方案贴合你的课程与本节内容。</span></p>
                             </div>
                             <div class="upload-section">
-                                <div class="material-level-select form-group">
-                                    <label data-i18n="teacher.wizard.step1.material_level">材料类型</label>
-                                    <select id="materialLevelSelect">
-                                        <option value="course" data-i18n="teacher.wizard.step1.material_course">课程级材料（大纲、课程说明、评估说明等）</option>
-                                        <option value="lesson" data-i18n="teacher.wizard.step1.material_lesson">课堂级材料（PPT、阅读、工作表、案例、数据、教师备注等）</option>
-                                    </select>
-                                </div>
                                 <div class="upload-area" id="uploadArea">
                                     <i class="fas fa-cloud-upload-alt"></i>
                                     <p data-i18n="teacher.wizard.step1.drag">将文件拖放到此处，或点击浏览（可多选）</p>
@@ -559,24 +552,21 @@
                                     <textarea id="specObjectives" required rows="4" data-i18n-placeholder="teacher.form.objectives_placeholder" placeholder="解释基本公平性指标&#10;比较准确性与公平性之间的权衡"></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label for="specCollaborationForm" data-i18n="teacher.form.collaboration_form">协作形式 *</label>
-                                    <select id="specCollaborationForm" required>
-                                        <option value="group" data-i18n="teacher.form.collaboration_group">小组</option>
-                                        <option value="pair" data-i18n="teacher.form.collaboration_pair">双人</option>
-                                        <option value="individual_with_sharing" data-i18n="teacher.form.collaboration_individual">个人分享</option>
-                                        <option value="whole_class" data-i18n="teacher.form.collaboration_whole_class">全班</option>
-                                    </select>
+                                    <label data-i18n="teacher.form.default_outputs">默认输出材料</label>
+                                    <div class="checkbox-group" id="specOutputFormat">
+                                        <label class="checkbox-label"><input type="checkbox" name="output_format" value="student_worksheet" checked> <span data-i18n="teacher.form.output_worksheet">学生工作表</span></label>
+                                        <label class="checkbox-label"><input type="checkbox" name="output_format" value="student_slides" checked> <span data-i18n="teacher.form.output_slides">学生幻灯片</span></label>
+                                        <label class="checkbox-label"><input type="checkbox" name="output_format" value="teacher_facilitation_sheet" checked> <span data-i18n="teacher.form.output_teacher_guide">教师引导单</span></label>
+                                    </div>
+                                    <p class="form-help" data-i18n="teacher.form.default_outputs_help">学生工作表：学生端活动工作表，含任务说明、记录区、引导问题。学生幻灯片：活动说明幻灯片（非全课 PPT），聚焦活动步骤与目标。教师引导单：教师端引导手册，含实施方式、对齐目标、关注要点。</p>
                                 </div>
                                 <div class="form-group">
-                                    <label data-i18n="teacher.form.scaffolding_options">支架需求（可多选）</label>
+                                    <label data-i18n="teacher.form.support_features">可选支持功能</label>
                                     <div class="checkbox-group" id="specScaffoldingOptions">
-                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="role_cards"> <span data-i18n="teacher.form.scaffold_role_cards">角色卡</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="sentence_starters"> <span data-i18n="teacher.form.scaffold_sentence_starters">句首提示</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="worksheet_prompts"> <span data-i18n="teacher.form.scaffold_worksheet">工作表提示</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="discussion_stems"> <span data-i18n="teacher.form.scaffold_discussion_stems">讨论话术</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="timing_guidance"> <span data-i18n="teacher.form.scaffold_timing">时间指引</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="reporting_templates"> <span data-i18n="teacher.form.scaffold_reporting">汇报模板</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="teacher_facilitation_cues"> <span data-i18n="teacher.form.scaffold_facilitation">教师引导提示</span></label>
+                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="role_cards"> <span data-i18n="teacher.form.support_role_cards">包含角色卡</span></label>
+                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="sentence_starters"> <span data-i18n="teacher.form.support_sentence_starters">包含句首提示/讨论话术</span></label>
+                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="timing_guidance"> <span data-i18n="teacher.form.support_timing">包含时间指引</span></label>
+                                        <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="reporting_templates"> <span data-i18n="teacher.form.support_reporting">包含汇报模板</span></label>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -584,17 +574,8 @@
                                     <textarea id="specStudentDifficulties" rows="2" data-i18n-placeholder="teacher.form.student_difficulties_placeholder" placeholder="例如：学生容易混淆的概念、需要额外支持的环节"></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label data-i18n="teacher.form.output_format">期望输出格式（可多选）</label>
-                                    <div class="checkbox-group" id="specOutputFormat">
-                                        <label class="checkbox-label"><input type="checkbox" name="output_format" value="student_worksheet" checked> <span data-i18n="teacher.form.output_worksheet">学生工作表</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="output_format" value="student_slides"> <span data-i18n="teacher.form.output_slides">学生幻灯片</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="output_format" value="teacher_facilitation_sheet" checked> <span data-i18n="teacher.form.output_teacher_guide">教师引导单</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="output_format" value="full_package"> <span data-i18n="teacher.form.output_full_package">完整材料包</span></label>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="specTaskRequirements" data-i18n="teacher.form.task_requirements">活动具体要求 *</label>
-                                    <textarea id="specTaskRequirements" required rows="3" data-i18n-placeholder="teacher.form.task_requirements_placeholder" placeholder="指定具体的协作和证据要求。"></textarea>
+                                    <label for="specTaskRequirements" data-i18n="teacher.form.task_requirements">活动具体要求（选填）</label>
+                                    <textarea id="specTaskRequirements" rows="3" data-i18n-placeholder="teacher.form.task_requirements_placeholder" placeholder="指定具体的协作和证据要求。"></textarea>
                                 </div>
                                 <div class="form-actions">
                                     <button type="button" class="btn-secondary" onclick="fillDemoSpec()"><i class="fas fa-magic" aria-hidden="true"></i> <span data-i18n="teacher.demo.fill">填充示例数据</span></button>

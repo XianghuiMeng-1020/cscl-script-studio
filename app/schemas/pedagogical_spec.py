@@ -67,10 +67,10 @@ class LearningObjectives:
 @dataclass
 class ActivityDesign:
     """Activity-level design: teaching stage, collaboration purpose, group config."""
-    teaching_stage: str = 'concept_exploration'  # warm_up, concept_exploration, guided_practice, application, discussion, synthesis, reflection, assessment_prep, other
-    collaboration_purpose: str = 'compare_ideas'  # compare_ideas, interpret_evidence, build_consensus, critique_alternatives, co_construct_explanation, collaborative_problem_solving, peer_review, create_shared_product, other
+    teaching_stage: str = 'concept_exploration'  # warm_up, concept_exploration, practice_application, sharing_synthesis, reflection_evaluation (5 high-level)
+    collaboration_purpose: str = 'compare_ideas'  # compare_discuss_ideas, interpret_evidence_solve_problem, build_shared_explanation_product, critique_improve_work, reach_consensus_decision, other (6 options); legacy ids supported
     group_size: int = 4
-    grouping_strategy: str = 'random'  # random, teacher_assigned, self_selected, mixed_ability, same_ability
+    grouping_strategy: str = 'random'  # random, teacher_assigned, self_selected (3 options)
     role_structure: str = 'no_roles'  # no_roles, assigned_roles, rotating_roles, self_selected_roles
     whole_class_reporting: bool = True
     
@@ -133,9 +133,9 @@ class OutputPreferences:
 @dataclass
 class TaskRequirements:
     """Task requirements specification (proposal-aligned: collaboration and evidence requirements)."""
-    task_type: str  # e.g., "debate", "collaborative_synthesis", "jigsaw", "role_play"
-    expected_output: str  # Description of expected output
-    collaboration_form: str  # e.g., "group", "pair", "individual_with_sharing"
+    task_type: str  # Derived from collaboration_purpose if not provided; e.g. "structured_debate", "evidence_comparison"
+    expected_output: str = ''  # Optional; inferred from purpose/objectives if empty
+    collaboration_form: str = 'group'  # e.g., "group", "pair", "individual_with_sharing"
     requirements_text: str = ''  # Concrete collaboration/evidence requirements (required for validation)
     
     def to_dict(self) -> Dict[str, Any]:
@@ -149,8 +149,8 @@ class TaskRequirements:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'TaskRequirements':
         return cls(
-            task_type=data.get('task_type', ''),
-            expected_output=data.get('expected_output', ''),
+            task_type=data.get('task_type', '') or 'structured_debate',
+            expected_output=(data.get('expected_output') or '').strip(),
             collaboration_form=data.get('collaboration_form', 'group'),
             requirements_text=data.get('requirements_text', '')
         )

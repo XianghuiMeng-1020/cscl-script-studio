@@ -903,6 +903,7 @@ def upload_course_document(course_id):
         material_level = request.form.get('material_level', 'course')
         if material_level not in ('course', 'lesson'):
             material_level = 'course'
+        extract_text = (request.form.get('extract_text', 'true') or 'true').strip().lower() not in ('false', '0', 'no')
         
         result = document_service.upload_document(
             course_id=course_id,
@@ -911,7 +912,8 @@ def upload_course_document(course_id):
             filename=filename,
             mime_type=mime_type,
             uploaded_by=current_user.id,
-            material_level=material_level
+            material_level=material_level,
+            extract_text=extract_text
         )
     elif request.is_json:
         data = request.get_json()

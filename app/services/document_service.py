@@ -543,10 +543,11 @@ class DocumentService:
     
     def upload_document(self, course_id: str, title: str, file_content: bytes,
                        filename: str, mime_type: str, uploaded_by: str,
-                       material_level: str = 'course') -> Dict[str, Any]:
+                       material_level: str = 'course', extract_text: bool = True) -> Dict[str, Any]:
         """
         Upload and process a document.
         material_level: 'course' | 'lesson'
+        extract_text: if False, only store file and metadata; no text extraction or chunks (for RAG storage only).
         Returns:
             {
                 'document': {...},
@@ -616,6 +617,57 @@ class DocumentService:
         
         with open(file_path, 'wb') as f:
             f.write(file_content)
+        
+        if not extract_text:
+            # Store only; no text extraction or chunks (for RAG / reference only).
+            document = CSCLCourseDocument(
+                id=file_id,
+                course_id=course_id,
+                title=title or safe_filename,
+                source_type='file',
+                storage_uri=file_path,
+                mime_type=mime_type,
+                checksum=checksum,
+                material_level=material_level,
+                uploaded_by=uploaded_by
+            )
+            db.session.add(document)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except OSError:
+                        pass
+                existing = CSCLCourseDocument.query.filter_by(course_id=course_id, checksum=checksum).first()
+                if existing:
+                    return {
+                        'document': existing.to_dict(),
+                        'chunks_count': 0,
+                        'error': None,
+                        'extraction_metadata': {
+                            'detected_type': _detected_type_from_mime(mime_type),
+                            'extracted_char_count': 0,
+                            'extraction_method': 'skipped',
+                            'warnings': [],
+                            'extracted_text_preview': None
+                        }
+                    }
+                raise
+            return {
+                'document': document.to_dict(),
+                'chunks_count': 0,
+                'error': None,
+                'extraction_metadata': {
+                    'detected_type': _detected_type_from_mime(mime_type),
+                    'extracted_char_count': 0,
+                    'extraction_method': 'skipped',
+                    'warnings': [],
+                    'extracted_text_preview': None
+                }
+            }
         
         # S2.13: PDF path uses extract_text_from_pdf_bytes only; never decode(bytes) for preview
         # M1: Run PDF extraction with configurable timeout to avoid long request hangs

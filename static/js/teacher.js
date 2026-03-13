@@ -993,55 +993,69 @@ function cancelWizard() {
     }
 }
 
-// Step 1: Upload Teaching Materials
+// Step 1: Upload Teaching Materials (multiple files supported; optional skip text extraction)
 // PDF/PPTX/DOCX/images: upload to backend. TXT/MD/CSV: read locally then upload as text or send file.
 var MATERIAL_UPLOAD_EXTENSIONS = ['pdf', 'pptx', 'docx', 'png', 'jpg', 'jpeg', 'xlsx'];
 document.getElementById('syllabusFile')?.addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const ext = (file.name || '').split('.').pop().toLowerCase();
-    const materialLevel = (document.getElementById('materialLevelSelect') && document.getElementById('materialLevelSelect').value) ? document.getElementById('materialLevelSelect').value : 'course';
-    if (MATERIAL_UPLOAD_EXTENSIONS.indexOf(ext) !== -1 || ext === 'pdf') {
-        // PDF, PPTX, DOCX, images, XLSX: upload to backend
-        try {
-            showLoading(true);
-            const courseId = typeof DEFAULT_COURSE_ID !== 'undefined' ? DEFAULT_COURSE_ID : 'default-course';
-            const formData = new FormData();
+    var files = e.target.files;
+    if (!files || !files.length) return;
+    var materialLevel = (document.getElementById('materialLevelSelect') && document.getElementById('materialLevelSelect').value) ? document.getElementById('materialLevelSelect').value : 'course';
+    var skipExtract = document.getElementById('step1SkipExtract') && document.getElementById('step1SkipExtract').checked;
+    var courseId = typeof DEFAULT_COURSE_ID !== 'undefined' ? DEFAULT_COURSE_ID : 'default-course';
+    var baseUrl = (typeof API_BASE !== 'undefined' ? API_BASE : '/api/cscl') + '/courses/' + courseId + '/docs/upload';
+    var firstExtractedText = null;
+    var okCount = 0;
+    var errCount = 0;
+    try {
+        showLoading(true);
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var ext = (file.name || '').split('.').pop().toLowerCase();
+            if (MATERIAL_UPLOAD_EXTENSIONS.indexOf(ext) === -1 && ext !== 'pdf') {
+                if (ext === 'txt' || ext === 'md' || ext === 'csv') {
+                    try {
+                        var text = await new Promise(function(resolve, reject) {
+                            var r = new FileReader();
+                            r.onload = function() { resolve(r.result || ''); };
+                            r.onerror = reject;
+                            r.readAsText(file);
+                        });
+                        var ta = document.getElementById('syllabusText');
+                        ta.value = (ta.value ? ta.value + '\n\n' : '') + text;
+                    } catch (err) { console.warn('Read text file failed', file.name, err); }
+                }
+                continue;
+            }
+            var formData = new FormData();
             formData.append('file', file);
             formData.append('title', file.name);
             formData.append('material_level', materialLevel);
-            const res = await fetch((typeof API_BASE !== 'undefined' ? API_BASE : '/api/cscl') + '/courses/' + courseId + '/docs/upload', {
-                method: 'POST',
-                body: formData,
-                credentials: 'include'
-            });
-            const result = await res.json();
+            formData.append('extract_text', skipExtract ? 'false' : 'true');
+            var res = await fetch(baseUrl, { method: 'POST', body: formData, credentials: 'include' });
+            var result = await res.json();
             if (res.ok) {
-                if (result.extracted_text || result.extracted_text_preview) {
-                    document.getElementById('syllabusText').value = result.extracted_text || result.extracted_text_preview;
-                }
-                showNotification(result.message || 'File uploaded successfully', 'success');
-                if (typeof loadDocuments === 'function') loadDocuments();
+                okCount++;
+                if (!skipExtract && (result.extracted_text || result.extracted_text_preview) && !firstExtractedText)
+                    firstExtractedText = result.extracted_text || result.extracted_text_preview;
             } else {
-                var code = result.code || '';
-                var msg = code === 'PDF_PARSE_FAILED'
+                errCount++;
+                var msg = (result.code === 'PDF_PARSE_FAILED')
                     ? 'Unable to extract text from this PDF. Please try a text-based PDF or paste text manually.'
                     : (result.error || result.message || 'Upload failed.');
-                showNotification(msg, 'error');
+                showNotification((file.name || 'File') + ': ' + msg, 'error');
             }
-        } catch (err) {
-            console.error('Upload error:', err);
-            showNotification('Failed to upload file.', 'error');
-        } finally {
-            showLoading(false);
         }
-    } else {
-        // TXT, MD, CSV: safe to read as text locally, then optionally upload
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            document.getElementById('syllabusText').value = ev.target.result;
-        };
-        reader.readAsText(file);
+        if (firstExtractedText)
+            document.getElementById('syllabusText').value = firstExtractedText;
+        if (okCount > 0) {
+            showNotification(okCount === 1 ? 'File uploaded successfully' : okCount + ' files uploaded', 'success');
+            if (typeof loadDocuments === 'function') loadDocuments();
+        }
+    } catch (err) {
+        console.error('Upload error:', err);
+        showNotification('Failed to upload file(s).', 'error');
+    } finally {
+        showLoading(false);
     }
     e.target.value = '';
 });
@@ -1095,10 +1109,6 @@ function fillSpecForm(spec) {
     document.getElementById('specObjectives').value = Array.isArray(spec.learning_objectives)
         ? spec.learning_objectives.join('\n')
         : (spec.learning_objectives || '');
-    document.getElementById('specTaskType').value = spec.task_type || 'structured_debate';
-    document.getElementById('specExpectedOutput').value = Array.isArray(spec.expected_output)
-        ? spec.expected_output.join('\n')
-        : (spec.expected_output || '');
     var cfEl = document.getElementById('specCollaborationForm');
     if (cfEl) cfEl.value = spec.collaboration_form || 'group';
     var scaffoldEls = document.querySelectorAll('#specScaffoldingOptions input[name="scaffolding"]');
@@ -1141,8 +1151,8 @@ function buildCanonicalSpecFromForm() {
         },
         learning_objectives: { knowledge: knowledge, skills: skills },
         task_requirements: {
-            task_type: document.getElementById('specTaskType').value || 'structured_debate',
-            expected_output: (document.getElementById('specExpectedOutput').value.split('\n').filter(function(s) { return s.trim(); }).join('; ')) || 'Group artifact',
+            task_type: '',
+            expected_output: '',
             collaboration_form: collaborationForm,
             requirements_text: (document.getElementById('specTaskRequirements') && document.getElementById('specTaskRequirements').value) ? document.getElementById('specTaskRequirements').value.trim() : ''
         }
@@ -1150,7 +1160,7 @@ function buildCanonicalSpecFromForm() {
     var tsEl = document.getElementById('specTeachingStage');
     if (tsEl) spec.teaching_stage = tsEl.value || 'concept_exploration';
     var cpEl = document.getElementById('specCollaborationPurpose');
-    if (cpEl) spec.collaboration_purpose = cpEl.value || 'compare_ideas';
+    if (cpEl) spec.collaboration_purpose = cpEl.value || 'compare_discuss_ideas';
     var gsEl = document.getElementById('specGroupSize');
     if (gsEl) spec.group_size = parseInt(gsEl.value, 10) || 4;
     var gstEl = document.getElementById('specGroupingStrategy');
@@ -1178,9 +1188,9 @@ var pathToFieldId = {
     'learning_objectives': 'specObjectives',
     'learning_objectives.knowledge': 'specObjectives',
     'learning_objectives.skills': 'specObjectives',
-    'task_requirements': 'specTaskType',
-    'task_requirements.task_type': 'specTaskType',
-    'task_requirements.expected_output': 'specExpectedOutput',
+    'task_requirements': 'specTaskRequirements',
+    'task_requirements.task_type': 'specCollaborationPurpose',
+    'task_requirements.expected_output': 'specTaskRequirements',
     'task_requirements.collaboration_form': 'specCollaborationForm',
     'task_requirements.requirements_text': 'specTaskRequirements',
     'teaching_stage': 'specTeachingStage',
@@ -2429,8 +2439,6 @@ function fillStandaloneDemoSpec() {
     document.getElementById('standaloneSpecMode').value = demoSpec.mode;
     document.getElementById('standaloneSpecClassSize').value = demoSpec.class_size;
     document.getElementById('standaloneSpecObjectives').value = demoSpec.learning_objectives.join('\n');
-    document.getElementById('standaloneSpecTaskType').value = demoSpec.task_type;
-    document.getElementById('standaloneSpecExpectedOutput').value = demoSpec.expected_output.join('\n');
 }
 
 async function validateStandaloneSpec() {
@@ -2447,8 +2455,8 @@ async function validateStandaloneSpec() {
         mode: document.getElementById('standaloneSpecMode').value,
         class_size: parseInt(document.getElementById('standaloneSpecClassSize').value),
         learning_objectives: document.getElementById('standaloneSpecObjectives').value.split('\n').filter(s => s.trim()),
-        task_type: document.getElementById('standaloneSpecTaskType').value,
-        expected_output: document.getElementById('standaloneSpecExpectedOutput').value.split('\n').filter(s => s.trim())
+        task_type: '',
+        expected_output: ''
     };
     
     try {

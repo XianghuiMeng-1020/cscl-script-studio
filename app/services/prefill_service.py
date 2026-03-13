@@ -36,31 +36,34 @@ def extract_prefill(text: str) -> Dict[str, Any]:
     suggestions: Dict[str, Any] = {}
     valid_task_types = get_valid_task_type_ids()
 
-    # Subject / course title: first non-empty line or line containing "课程"/"Course"
+    # Subject / course title: first line or first sentence, max 80 chars to avoid long blocks
+    _COURSE_TITLE_MAX = 80
     subject_candidates = []
     for line in raw.split("\n"):
         line = line.strip()
         if not line or len(line) < 2:
             continue
         if re.search(r"课程|course|subject|课名", line, re.I):
-            subject_candidates.append((line, 0.8))
-        elif not subject_candidates and 3 <= len(line) <= 120:
-            subject_candidates.append((line, 0.5))
+            subject_candidates.append((line[:_COURSE_TITLE_MAX], 0.8))
+        elif not subject_candidates and 3 <= len(line) <= _COURSE_TITLE_MAX:
+            subject_candidates.append((line[:_COURSE_TITLE_MAX], 0.5))
     if subject_candidates:
         best = subject_candidates[0]
         suggestions["course_title"] = _field(best[0], best[0], best[1], best[1] < 0.7)
     else:
-        suggestions["course_title"] = _field("", "", 0.0, True)
+        first_line = _first_line(raw, _COURSE_TITLE_MAX)
+        suggestions["course_title"] = _field(first_line, first_line, 0.4 if first_line else 0.0, True)
 
-    # Topic: second meaningful line or line with "主题"/"topic"
+    # Topic: single line, max 60 chars; prefer line with "主题|topic|单元"
+    _TOPIC_MAX = 60
     lines = [ln.strip() for ln in raw.split("\n") if ln.strip() and len(ln.strip()) >= 2]
     topic_val = ""
     for line in lines[:5]:
         if re.search(r"主题|topic|单元", line, re.I):
-            topic_val = line
+            topic_val = line[:_TOPIC_MAX]
             break
     if not topic_val and len(lines) >= 2:
-        topic_val = lines[1]
+        topic_val = (lines[1] or "")[:_TOPIC_MAX]
     suggestions["topic"] = _field(
         topic_val or "",
         topic_val,
@@ -68,9 +71,10 @@ def extract_prefill(text: str) -> Dict[str, Any]:
         not topic_val or len(topic_val) < 3,
     )
 
-    # Description: first paragraph or first 300 chars
+    # Description (Course Context): first 1–2 paragraphs or 200–300 chars
+    _DESC_MAX = 280
     desc = raw.replace("\n\n", "\n").split("\n")
-    desc_block = " ".join(desc[:4]).strip()[:400] if desc else ""
+    desc_block = " ".join(desc[:4]).strip()[:_DESC_MAX] if desc else ""
     suggestions["description"] = _field(
         desc_block or "",
         desc_block[:200] if desc_block else "",
@@ -78,18 +82,19 @@ def extract_prefill(text: str) -> Dict[str, Any]:
         True,
     )
 
-    # Learning outcomes: lines with "目标|objective|outcome|learning"
+    # Learning outcomes: max 8 items, max 120 chars per item
+    _OBJ_LINE_MAX = 120
     objectives: List[str] = []
     for line in raw.split("\n"):
         line = line.strip()
         if not line:
             continue
         if re.search(r"目标|objective|outcome|learning|能力", line, re.I):
-            objectives.append(line[:200])
+            objectives.append(line[:_OBJ_LINE_MAX])
         elif re.match(r"^[\d•\-*]\s*", line) and 5 <= len(line) <= 200:
-            objectives.append(line.lstrip("0123456789•\-* ")[:200])
-    if not objectives and len(raw) > 100:
-        objectives = [lines[i] for i in range(min(3, len(lines))) if 10 <= len(lines[i]) <= 200]
+            objectives.append(line.lstrip("0123456789•\-* ")[:_OBJ_LINE_MAX])
+    if not objectives and len(raw) > 100 and lines:
+        objectives = [lines[i][:_OBJ_LINE_MAX] for i in range(min(3, len(lines))) if 10 <= len(lines[i]) <= 200]
     suggestions["learning_outcomes"] = _field(
         objectives[:8],
         "\n".join(objectives[:3]) if objectives else "",
@@ -97,7 +102,7 @@ def extract_prefill(text: str) -> Dict[str, Any]:
         not objectives or len(objectives) < 2,
     )
 
-    # Task type: default structured_debate if not detected
+    # Task type: default structured_debate if not detected (backend will map from collaboration_purpose)
     task_type = "structured_debate"
     for tt in valid_task_types:
         if tt in raw.lower() or tt.replace("_", " ") in raw.lower():
@@ -105,16 +110,8 @@ def extract_prefill(text: str) -> Dict[str, Any]:
             break
     suggestions["task_type"] = _field(task_type, task_type, 0.5, True)
 
-    # Expected output: line with "产出|output|作业|assignment"
-    out_val = ""
-    for line in raw.split("\n"):
-        line = line.strip()
-        if re.search(r"产出|expected output|作业|assignment|报告|report", line, re.I) and 5 <= len(line) <= 300:
-            out_val = line
-            break
-    if not out_val and len(lines) >= 3:
-        out_val = lines[-1][:200] if lines else ""
-    suggestions["expected_output"] = _field(out_val or "小组产出", out_val or "", 0.4 if out_val else 0.3, True)
+    # Expected output: no prefill (backend infers from purpose/objectives); empty value to avoid Chinese "小组产出"
+    suggestions["expected_output"] = _field("", "", 0.0, True)
 
     # Requirements text: short summary or placeholder
     req_val = ""

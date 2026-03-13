@@ -250,7 +250,7 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="standaloneSpecDuration" data-i18n="teacher.form.duration">时长（分钟）*</label>
+                                <label for="standaloneSpecDuration" data-i18n="teacher.form.duration">活动时长（分钟）*</label>
                                 <input type="number" id="standaloneSpecDuration" required min="30" value="90">
                             </div>
                             <div class="form-group">
@@ -268,19 +268,6 @@
                         <div class="form-group">
                             <label for="standaloneSpecObjectives" data-i18n="teacher.form.objectives">学习目标 *（每行一个）</label>
                             <textarea id="standaloneSpecObjectives" required rows="4" data-i18n-placeholder="teacher.form.objectives_placeholder" placeholder="解释基本公平性指标&#10;比较准确性与公平性之间的权衡"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="standaloneSpecTaskType" data-i18n="teacher.form.task_type">任务类型 *</label>
-                            <select id="standaloneSpecTaskType" required>
-                                <option value="debate">Structured Debate</option>
-                                <option value="collaborative_synthesis">Collaborative Synthesis</option>
-                                <option value="jigsaw">Jigsaw</option>
-                                <option value="role_play">Role Play</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="standaloneSpecExpectedOutput" data-i18n="teacher.form.expected_output">预期产出 *（每行一个）</label>
-                            <textarea id="standaloneSpecExpectedOutput" required rows="3" data-i18n-placeholder="teacher.form.expected_output_placeholder" placeholder="小组论证地图&#10;300字联合反思"></textarea>
                         </div>
                         <div class="form-actions">
                             <button type="button" class="btn-secondary" onclick="fillStandaloneDemoSpec()"><i class="fas fa-magic" aria-hidden="true"></i> <span data-i18n="teacher.demo.fill">填充示例数据</span></button>
@@ -445,9 +432,16 @@
                                 </div>
                                 <div class="upload-area" id="uploadArea">
                                     <i class="fas fa-cloud-upload-alt"></i>
-                                    <p data-i18n="teacher.wizard.step1.drag">将文件拖放到此处，或点击浏览</p>
-                                    <input type="file" id="syllabusFile" accept=".txt,.md,.pdf,.pptx,.docx,.xlsx,.csv,.png,.jpg,.jpeg" style="display: none;">
+                                    <p data-i18n="teacher.wizard.step1.drag">将文件拖放到此处，或点击浏览（可多选）</p>
+                                    <input type="file" id="syllabusFile" accept=".txt,.md,.pdf,.pptx,.docx,.xlsx,.csv,.png,.jpg,.jpeg" multiple style="display: none;">
                                     <button class="btn-secondary" onclick="document.getElementById('syllabusFile').click()"><i class="fas fa-folder-open" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step1.browse">浏览文件</span></button>
+                                </div>
+                                <div class="form-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="step1SkipExtract" value="1">
+                                        <span data-i18n="teacher.wizard.step1.skip_extract">不提取文字（仅存储供 RAG 使用）</span>
+                                    </label>
+                                    <p class="form-help" data-i18n="teacher.wizard.step1.skip_extract_help">勾选后上传的文件将只保存不进行文字识别，适用于仅需检索引用的材料。</p>
                                 </div>
                                 <div class="text-input-section">
                                     <label data-i18n="teacher.wizard.step1.paste">或粘贴文本：</label>
@@ -490,7 +484,7 @@
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="specDuration" data-i18n="teacher.form.duration">时长（分钟）*</label>
+                                        <label for="specDuration" data-i18n="teacher.form.duration">活动时长（分钟）*</label>
                                         <input type="number" id="specDuration" required min="30" value="90">
                                     </div>
                                     <div class="form-group">
@@ -510,26 +504,19 @@
                                     <select id="specTeachingStage" required>
                                         <option value="warm_up" data-i18n="teacher.form.stage_warm_up">热身/导入</option>
                                         <option value="concept_exploration" data-i18n="teacher.form.stage_concept">概念探索</option>
-                                        <option value="guided_practice" data-i18n="teacher.form.stage_guided">指导练习</option>
-                                        <option value="application" data-i18n="teacher.form.stage_application">应用</option>
-                                        <option value="discussion" data-i18n="teacher.form.stage_discussion">讨论</option>
-                                        <option value="synthesis" data-i18n="teacher.form.stage_synthesis">综合</option>
-                                        <option value="reflection" data-i18n="teacher.form.stage_reflection">反思</option>
-                                        <option value="assessment_prep" data-i18n="teacher.form.stage_assessment">评估准备</option>
-                                        <option value="other" data-i18n="teacher.form.stage_other">其他</option>
+                                        <option value="practice_application" data-i18n="teacher.form.stage_practice_application">练习/应用</option>
+                                        <option value="sharing_synthesis" data-i18n="teacher.form.stage_sharing_synthesis">分享/综合</option>
+                                        <option value="reflection_evaluation" data-i18n="teacher.form.stage_reflection_evaluation">反思/评估</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
                                     <label for="specCollaborationPurpose" data-i18n="teacher.form.collaboration_purpose">协作目的 *</label>
                                     <select id="specCollaborationPurpose" required>
-                                        <option value="compare_ideas" data-i18n="teacher.form.collab_compare">比较观点</option>
-                                        <option value="interpret_evidence" data-i18n="teacher.form.collab_interpret">解读证据</option>
-                                        <option value="build_consensus" data-i18n="teacher.form.collab_consensus">达成共识</option>
-                                        <option value="critique_alternatives" data-i18n="teacher.form.collab_critique">批判备选</option>
-                                        <option value="co_construct_explanation" data-i18n="teacher.form.collab_co_construct">共同建构解释</option>
-                                        <option value="collaborative_problem_solving" data-i18n="teacher.form.collab_problem">协作解决问题</option>
-                                        <option value="peer_review" data-i18n="teacher.form.collab_peer_review">同伴互评</option>
-                                        <option value="create_shared_product" data-i18n="teacher.form.collab_shared_product">共创成果</option>
+                                        <option value="compare_discuss_ideas" data-i18n="teacher.form.collab_compare_discuss">比较和讨论想法</option>
+                                        <option value="interpret_evidence_solve_problem" data-i18n="teacher.form.collab_interpret_solve">解释证据或解决问题</option>
+                                        <option value="build_shared_explanation_product" data-i18n="teacher.form.collab_build_shared">建立共享解释或产品</option>
+                                        <option value="critique_improve_work" data-i18n="teacher.form.collab_critique_improve">批判与改进工作</option>
+                                        <option value="reach_consensus_decision" data-i18n="teacher.form.collab_reach_consensus">达成共识或做出决定</option>
                                         <option value="other" data-i18n="teacher.form.collab_other">其他</option>
                                     </select>
                                 </div>
@@ -544,8 +531,6 @@
                                             <option value="random" data-i18n="teacher.form.grouping_random">随机</option>
                                             <option value="teacher_assigned" data-i18n="teacher.form.grouping_teacher">教师指定</option>
                                             <option value="self_selected" data-i18n="teacher.form.grouping_self">自选</option>
-                                            <option value="mixed_ability" data-i18n="teacher.form.grouping_mixed">混合能力</option>
-                                            <option value="same_ability" data-i18n="teacher.form.grouping_same">同质能力</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
@@ -558,11 +543,12 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group" id="specWholeClassReportingGroup">
                                     <label class="checkbox-label">
-                                        <input type="checkbox" id="specWholeClassReporting" checked>
+                                        <input type="checkbox" id="specWholeClassReporting" checked aria-describedby="specWholeClassReportingHelp">
                                         <span data-i18n="teacher.form.whole_class_reporting">需要全班汇报/分享</span>
                                     </label>
+                                    <p id="specWholeClassReportingHelp" class="form-help" data-i18n="teacher.form.whole_class_reporting_help">活动结束后是否需要全班汇报或分享小组结论（如口头汇报、张贴结论、投票等）。</p>
                                 </div>
                                 <div class="form-group">
                                     <label for="specCourseContext" data-i18n="teacher.form.course_context">课程背景 *</label>
@@ -571,17 +557,6 @@
                                 <div class="form-group">
                                     <label for="specObjectives" data-i18n="teacher.form.objectives">学习目标 *（每行一个）</label>
                                     <textarea id="specObjectives" required rows="4" data-i18n-placeholder="teacher.form.objectives_placeholder" placeholder="解释基本公平性指标&#10;比较准确性与公平性之间的权衡"></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label for="specTaskType" data-i18n="teacher.form.task_type">任务类型 *</label>
-                                    <select id="specTaskType" required aria-describedby="specTaskTypeHelp" title="">
-                                        <option value="" data-i18n="common.loading_task_types">加载中...</option>
-                                    </select>
-                                    <p id="specTaskTypeHelp" class="form-help" data-i18n="teacher.form.task_type_help">从配置中选择协作论证任务类型。</p>
-                                </div>
-                                <div class="form-group">
-                                    <label for="specExpectedOutput" data-i18n="teacher.form.expected_output">预期产出 *（每行一个）</label>
-                                    <textarea id="specExpectedOutput" required rows="3" data-i18n-placeholder="teacher.form.expected_output_placeholder" placeholder="小组论证地图&#10;300字联合反思"></textarea>
                                 </div>
                                 <div class="form-group">
                                     <label for="specCollaborationForm" data-i18n="teacher.form.collaboration_form">协作形式 *</label>

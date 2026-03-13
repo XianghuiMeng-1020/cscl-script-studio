@@ -1,10 +1,12 @@
 """Pedagogical specification validator"""
+import copy
 from typing import Dict, List, Any, Optional
 from app.schemas.pedagogical_spec import (
     PedagogicalSpec, CourseContext, LearningObjectives,
     TaskRequirements, Constraints, RubricPreferences
 )
 from app.services.task_type_config import get_valid_task_type_ids
+from app.services.collaboration_purpose_mapping import ensure_spec_has_task_type_and_expected_output
 
 
 class SpecValidationError(Exception):
@@ -96,9 +98,13 @@ class SpecValidator:
                 'normalized_spec': None
             }
 
+        # Augment spec with task_type (from collaboration_purpose) and expected_output (inferred) if missing
+        spec_data_for_norm = copy.deepcopy(spec_data)
+        ensure_spec_has_task_type_and_expected_output(spec_data_for_norm)
+
         # Try to create normalized spec
         try:
-            spec = PedagogicalSpec.from_dict(spec_data)
+            spec = PedagogicalSpec.from_dict(spec_data_for_norm)
             normalized_spec = spec.to_dict()
         except Exception as e:
             issues.append(f'Failed to normalize spec: {str(e)}')
@@ -169,16 +175,16 @@ class SpecValidator:
     
     @staticmethod
     def _validate_task_requirements(requirements: Dict[str, Any]) -> List[tuple]:
-        """Validate task requirements. Returns list of (message, field_path)."""
+        """Validate task requirements. Returns list of (message, field_path).
+        task_type and expected_output are optional; backend will derive from collaboration_purpose if missing.
+        """
         out: List[tuple] = []
         path = 'task_requirements'
         valid_ids = get_valid_task_type_ids()
-        if 'task_type' not in requirements or not requirements['task_type']:
-            out.append(('task_requirements.task_type is required and cannot be empty', f'{path}.task_type'))
-        elif requirements['task_type'] not in valid_ids:
+        task_type = (requirements.get('task_type') or '').strip()
+        if task_type and task_type not in valid_ids:
             out.append((f'task_requirements.task_type must be one of: {", ".join(valid_ids)}', f'{path}.task_type'))
-        if 'expected_output' not in requirements or not requirements['expected_output']:
-            out.append(('task_requirements.expected_output is required and cannot be empty', f'{path}.expected_output'))
+        # expected_output is optional (inferred by backend if empty)
         if 'collaboration_form' not in requirements:
             out.append(('task_requirements.collaboration_form is required', f'{path}.collaboration_form'))
         elif requirements['collaboration_form'] not in SpecValidator.VALID_COLLABORATION_FORMS:
@@ -231,6 +237,7 @@ class SpecValidator:
             warnings.append('Class size is not evenly divisible by group size; some students may need to join other groups or work individually.')
         if teaching_stage == 'warm_up' and task_type in ('structured_debate', 'evidence_comparison'):
             warnings.append('Warm-up stage often suits lighter tasks; structured debate/evidence comparison may be better for concept exploration or application.')
-        if collaboration_purpose == 'peer_review' and task_type not in ('peer_review', 'evidence_comparison', 'perspective_synthesis'):
-            warnings.append('Collaboration purpose is peer review; consider choosing a task type that supports peer review (e.g. peer_review, evidence_comparison).')
+        purpose_lower = collaboration_purpose.lower() if collaboration_purpose else ''
+        if purpose_lower in ('peer_review', 'critique_improve_work') and task_type not in ('peer_review', 'evidence_comparison', 'perspective_synthesis'):
+            warnings.append('Collaboration purpose is peer review / critique; consider a task type that supports peer review (e.g. peer_review, evidence_comparison).')
         return warnings

@@ -36,14 +36,6 @@
                     <i class="fas fa-file-code"></i>
                     <span data-i18n="teacher.sidebar.scripts">活动项目</span>
                 </a>
-                <a href="#" class="nav-item" data-view="spec-validation" data-i18n-aria-label="teacher.sidebar.spec">
-                    <i class="fas fa-check-circle"></i>
-                    <span data-i18n="teacher.sidebar.spec">教学目标检查</span>
-                </a>
-                <a href="#" class="nav-item" data-view="pipeline-runs" data-i18n-aria-label="teacher.sidebar.pipeline">
-                    <i class="fas fa-project-diagram"></i>
-                    <span data-i18n="teacher.sidebar.pipeline">自动生成过程</span>
-                </a>
                 <a href="#" class="nav-item" data-view="documents" data-i18n-aria-label="teacher.sidebar.documents">
                     <i class="fas fa-book-open"></i>
                     <span data-i18n="teacher.sidebar.documents">课程文档</span>
@@ -224,8 +216,8 @@
                 </div>
             </div>
 
-            <!-- Teaching Plan Settings View -->
-            <div id="specValidationView" class="view">
+            <!-- Teaching Plan Settings View (hidden - removed from sidebar) -->
+            <div id="specValidationView" class="view hidden" aria-hidden="true">
                 <div class="view-header">
                     <div>
                         <h2><i class="fas fa-check-circle"></i> <span data-i18n="teacher.spec.title">教学目标设置</span></h2>
@@ -357,8 +349,8 @@
                 </div>
             </div>
 
-            <!-- Pipeline Runs View -->
-            <div id="pipelineRunsView" class="view">
+            <!-- Pipeline Runs View (hidden - removed from sidebar) -->
+            <div id="pipelineRunsView" class="view hidden" aria-hidden="true">
                 <div class="view-header">
                     <div>
                         <h2><i class="fas fa-project-diagram"></i> <span data-i18n="teacher.pipeline.title">生成流程</span></h2>
@@ -431,10 +423,14 @@
                                 </div>
                                 <div class="form-group">
                                     <label class="checkbox-label">
-                                        <input type="checkbox" id="step1SkipExtract" value="1">
+                                        <input type="checkbox" id="step1SkipExtract" value="1" checked>
                                         <span data-i18n="teacher.wizard.step1.skip_extract">不提取文字（仅存储供 RAG 使用）</span>
                                     </label>
                                     <p class="form-help" data-i18n="teacher.wizard.step1.skip_extract_help">勾选后上传的文件将只保存不进行文字识别，适用于仅需检索引用的材料。</p>
+                                </div>
+                                <div id="uploadedFilesListContainer" class="uploaded-files-section" style="margin-top: 1rem;">
+                                    <h4 class="uploaded-files-title" data-i18n="teacher.wizard.step1.uploaded_files">已上传的文件</h4>
+                                    <div id="uploadedFilesList" class="uploaded-files-list"></div>
                                 </div>
                                 <div class="text-input-section">
                                     <label data-i18n="teacher.wizard.step1.paste">或粘贴文本：</label>
@@ -465,6 +461,11 @@
                                 <p><strong data-i18n="common.info">信息</strong> <span data-i18n="teacher.wizard.spec_why">定义一项具体的小组协作活动：教学阶段、协作目的、分组与支架需求。</span></p>
                             </div>
                             <form id="specForm" class="spec-form">
+                                <div class="form-group form-group-initial-idea">
+                                    <label for="specInitialIdea" data-i18n="teacher.form.initial_idea">对本次活动有什么初步想法？（选填）</label>
+                                    <p class="form-help" data-i18n="teacher.form.initial_idea_help">简单描述你的想法、偏好或顾虑即可，不必写很长。</p>
+                                    <textarea id="specInitialIdea" rows="4" data-i18n-placeholder="teacher.form.initial_idea_placeholder" placeholder="例如：希望学生分组比较两个例子并达成共识；希望人人参与，活动简单一些，15 分钟内完成。"></textarea>
+                                </div>
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="specCourse" data-i18n="teacher.form.course">课程名称 *</label>
@@ -723,21 +724,25 @@
                                 </div>
                             </div>
                             <div class="publish-actions">
+                                <button class="btn-secondary" id="editRegenerateBtn" onclick="editAndRegenerate()" title="">
+                                    <i class="fas fa-edit"></i>
+                                    <span data-i18n="teacher.wizard.edit_regenerate">修改并重新生成</span>
+                                </button>
                                 <button class="btn-secondary" onclick="viewQualityReport()">
                                     <i class="fas fa-chart-line"></i>
                                     <span data-i18n="teacher.wizard.view_quality">查看质量报告</span>
                                 </button>
-                                <button class="btn-secondary" onclick="exportScript()">
+                                <button class="btn-secondary" onclick="exportScript()" data-i18n-title="teacher.wizard.export_tooltip_json" title="">
                                     <i class="fas fa-download"></i>
-                                    <span data-i18n="teacher.wizard.export">导出 JSON</span>
+                                    <span data-i18n="teacher.wizard.export">下载 JSON 数据</span>
                                 </button>
-                                <button class="btn-secondary" onclick="exportScript('html')">
+                                <button class="btn-secondary" onclick="exportScript('html')" data-i18n-title="teacher.wizard.export_tooltip_html" title="">
                                     <i class="fas fa-file-code"></i>
-                                    <span data-i18n="teacher.wizard.export_html">导出 HTML</span>
+                                    <span data-i18n="teacher.wizard.export_html">下载为网页</span>
                                 </button>
-                                <button class="btn-secondary" onclick="exportScript('markdown')">
+                                <button class="btn-secondary" onclick="exportScript('markdown')" data-i18n-title="teacher.wizard.export_tooltip_md" title="">
                                     <i class="fas fa-file-alt"></i>
-                                    <span data-i18n="teacher.wizard.export_md">导出 Markdown</span>
+                                    <span data-i18n="teacher.wizard.export_md">下载为文本</span>
                                 </button>
                                 <button class="btn-primary" id="finalizeBtn" onclick="finalizeScript()">
                                     <i class="fas fa-check"></i>

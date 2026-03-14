@@ -64,7 +64,8 @@ class PlannerStage:
                 'scaffolding_options': spec.get('scaffolding_options', []),
                 'student_difficulties': spec.get('student_difficulties', ''),
                 'class_size': cc.get('class_size'),
-                'mode': cc.get('mode', 'sync')
+                'mode': cc.get('mode', 'sync'),
+                'initial_idea': (spec.get('initial_idea') or '').strip() or None
             }
             
             # Call provider

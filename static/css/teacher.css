@@ -1677,6 +1677,48 @@
     margin-bottom: 1rem;
 }
 
+.uploaded-files-section {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    background: var(--bg-surface);
+}
+
+.uploaded-files-title {
+    font-size: 0.95rem;
+    margin: 0 0 0.75rem 0;
+    color: var(--text-primary);
+}
+
+.uploaded-files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.uploaded-file-item {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.uploaded-file-name {
+    font-weight: 500;
+}
+
+.uploaded-file-meta {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.uploaded-files-empty {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
 .text-input-section {
     display: flex;
     flex-direction: column;
@@ -1978,6 +2020,43 @@
 
 .quality-dimension-card.poor {
     border-left: 4px solid var(--error-color);
+}
+
+.quality-dimension-card.unassessed {
+    border-left: 4px solid var(--text-muted);
+}
+
+.quality-report-intro {
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.dimension-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0 0 0;
+}
+
+.student-slides-preview .slides-title {
+    margin-top: 0;
+}
+
+.slide-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.slide-card h4 {
+    margin: 0 0 0.5rem 0;
+}
+
+.slide-content {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    white-space: pre-wrap;
 }
 
 .dimension-header {

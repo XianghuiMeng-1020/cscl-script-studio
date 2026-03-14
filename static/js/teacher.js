@@ -548,6 +548,9 @@ function renderScripts(scriptsList) {
         return;
     }
     
+    var labelEdit = typeof t === 'function' ? t('common.edit') : 'Edit';
+    var labelDuplicate = typeof t === 'function' ? t('teacher.scripts.duplicate') : 'Duplicate';
+    var labelQuality = typeof t === 'function' ? t('teacher.scripts.quality_report') : 'Quality Report';
     container.innerHTML = scriptsList.map(script => `
         <div class="script-card" onclick="openScript('${script.id}')">
             <div class="script-card-header">
@@ -561,9 +564,14 @@ function renderScripts(scriptsList) {
             </div>
             <div class="script-card-footer">
                 <span class="script-time">Updated: ${formatTime(script.updated_at)}</span>
+                <button class="btn-secondary btn-sm" onclick="event.stopPropagation(); editScript('${script.id}')" title="${labelEdit}">
+                    <i class="fas fa-edit"></i> ${labelEdit}
+                </button>
+                <button class="btn-secondary btn-sm" onclick="event.stopPropagation(); duplicateScript('${script.id}')" title="${labelDuplicate}">
+                    <i class="fas fa-copy"></i> ${labelDuplicate}
+                </button>
                 <button class="btn-secondary btn-sm" onclick="event.stopPropagation(); viewScriptQuality('${script.id}')">
-                    <i class="fas fa-chart-line"></i>
-                    Quality Report
+                    <i class="fas fa-chart-line"></i> ${labelQuality}
                 </button>
             </div>
         </div>
@@ -575,6 +583,7 @@ function startNewActivity() {
     wizardStep = 1;
     switchView('wizard');
     resetWizard();
+    if (typeof loadUploadedFilesListForStep1 === 'function') loadUploadedFilesListForStep1();
 }
 
 function goToStep(step) {
@@ -597,6 +606,7 @@ function goToStep(step) {
         content.classList.toggle('active', index === step - 1);
     });
     updateCurrentStep();
+    if (step === 1 && typeof loadUploadedFilesListForStep1 === 'function') loadUploadedFilesListForStep1();
 }
 
 function updateCurrentStep() {
@@ -800,13 +810,16 @@ async function loadScriptPreview() {
         }
 
         var hasWorksheet = output.student_worksheet && (output.student_worksheet.title || output.student_worksheet.goal);
+        var hasStudentSlides = output.student_slides && (output.student_slides.title || (output.student_slides.slides && output.student_slides.slides.length > 0));
         var hasTeacherGuide = output.teacher_guide && (output.teacher_guide.overview || output.teacher_guide.rationale);
+        var hasAnyMaterials = hasWorksheet || hasStudentSlides || hasTeacherGuide;
 
         var html = '<div class="script-preview-content">';
 
-        if (hasWorksheet || hasTeacherGuide) {
-            html += '<div class="preview-tabs"><button type="button" class="preview-tab active" data-tab="student">' + (typeof t === 'function' ? t('teacher.preview.tab_student') : 'Student materials') + '</button>';
-            html += '<button type="button" class="preview-tab" data-tab="teacher">' + (typeof t === 'function' ? t('teacher.preview.tab_teacher') : 'Teacher guide') + '</button>';
+        if (hasAnyMaterials) {
+            html += '<div class="preview-tabs"><button type="button" class="preview-tab active" data-tab="student">' + (typeof t === 'function' ? t('teacher.preview.tab_worksheet') : 'Student Worksheet') + '</button>';
+            html += '<button type="button" class="preview-tab" data-tab="slides">' + (typeof t === 'function' ? t('teacher.preview.tab_slides') : 'Student Slides') + '</button>';
+            html += '<button type="button" class="preview-tab" data-tab="teacher">' + (typeof t === 'function' ? t('teacher.preview.tab_facilitation') : 'Teacher Facilitation Sheet') + '</button>';
             html += '<button type="button" class="preview-tab" data-tab="structure">' + (typeof t === 'function' ? t('teacher.preview.tab_structure') : 'Structure') + '</button></div>';
             html += '<div class="preview-tab-panels">';
 
@@ -838,6 +851,24 @@ async function loadScriptPreview() {
                 html += '</div>';
             } else {
                 html += '<p class="empty-tab">' + (typeof t === 'function' ? t('teacher.preview.no_worksheet') : 'No student worksheet in this run.') + '</p>';
+            }
+            html += '</div>';
+
+            html += '<div class="preview-tab-panel" id="preview-panel-slides">';
+            if (hasStudentSlides) {
+                var ss = output.student_slides;
+                html += '<div class="student-slides-preview">';
+                html += '<h2 class="slides-title">' + _esc(ss.title || 'Student Slides') + '</h2>';
+                var slides = ss.slides || [];
+                slides.forEach(function(slide, i) {
+                    html += '<div class="slide-card">';
+                    html += '<h4>' + (typeof t === 'function' ? t('teacher.preview.slide') : 'Slide') + ' ' + (slide.slide_number != null ? slide.slide_number : i + 1) + ': ' + _esc(slide.title || '') + '</h4>';
+                    if (slide.content) html += '<div class="slide-content">' + _esc(slide.content) + '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            } else {
+                html += '<p class="empty-tab">' + (typeof t === 'function' ? t('teacher.preview.no_slides') : 'No student slides in this run.') + '</p>';
             }
             html += '</div>';
 
@@ -909,30 +940,19 @@ async function loadScriptPreview() {
             html += '</ul></div>';
         }
 
-        if (hasWorksheet || hasTeacherGuide) {
+        if (hasAnyMaterials) {
             html += '</div>';
         }
 
-        var stagesSummary = '<div class="preview-section"><h3><i class="fas fa-info-circle"></i> Pipeline Summary</h3>';
-        stagesSummary += '<div class="pipeline-summary-grid">';
-        stages.forEach(function(s) {
-            var cls = s.status === 'success' ? 'stage-ok' : (s.status === 'failed' ? 'stage-fail' : 'stage-skip');
-            stagesSummary += '<div class="pipeline-summary-item ' + cls + '">';
-            stagesSummary += '<strong>' + _esc(s.stage_name) + '</strong>';
-            stagesSummary += '<span class="summary-status">' + _esc(s.status) + '</span>';
-            if (s.latency_ms) stagesSummary += '<span class="summary-time">' + (s.latency_ms / 1000).toFixed(1) + 's</span>';
-            stagesSummary += '</div>';
-        });
-        stagesSummary += '</div></div>';
-        html += stagesSummary;
+        /* Pipeline Summary removed per Issue #7 - not shown to end user */
 
-        if (hasWorksheet || hasTeacherGuide) {
+        if (hasAnyMaterials) {
             html += '</div>';
         }
         html += '</div>';
         container.innerHTML = html;
 
-        if (hasWorksheet || hasTeacherGuide) {
+        if (hasAnyMaterials) {
             container.querySelectorAll('.preview-tab').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     var tab = this.getAttribute('data-tab');
@@ -963,6 +983,40 @@ function _esc(str) {
     return d.innerHTML;
 }
 
+/** Step 4: Edit & Regenerate — go back to Step 2 so teacher can modify spec and run pipeline again */
+function editAndRegenerate() {
+    if (currentSpec && typeof fillSpecForm === 'function') {
+        var flat = currentSpec;
+        if (currentSpec.course_context && !currentSpec.course) {
+            var cc = currentSpec.course_context;
+            flat = {
+                course: cc.subject,
+                topic: cc.topic,
+                duration_minutes: cc.duration,
+                mode: cc.mode,
+                class_size: cc.class_size,
+                course_context: cc.description,
+                teaching_stage: currentSpec.teaching_stage,
+                collaboration_purpose: currentSpec.collaboration_purpose,
+                group_size: currentSpec.group_size,
+                grouping_strategy: currentSpec.grouping_strategy,
+                role_structure: currentSpec.role_structure,
+                whole_class_reporting: currentSpec.whole_class_reporting,
+                learning_objectives: (currentSpec.learning_objectives && (currentSpec.learning_objectives.knowledge || currentSpec.learning_objectives.skills))
+                    ? [].concat(currentSpec.learning_objectives.knowledge || [], currentSpec.learning_objectives.skills || [])
+                    : [],
+                scaffolding_options: currentSpec.scaffolding_options || [],
+                student_difficulties: currentSpec.student_difficulties || '',
+                output_format: currentSpec.output_format,
+                task_requirements: (currentSpec.task_requirements && currentSpec.task_requirements.requirements_text) || '',
+                initial_idea: currentSpec.initial_idea || ''
+            };
+        }
+        fillSpecForm(flat);
+    }
+    goToStep(2);
+}
+
 function updateWizardProgress() {
     document.querySelectorAll('.wizard-step').forEach((step, index) => {
         const stepNum = index + 1;
@@ -980,7 +1034,7 @@ function updateWizardProgress() {
         if (runBtn) {
             runBtn.disabled = false;
             runBtn.classList.remove('btn-loading');
-            if (!runBtn.querySelector('.fa-spinner')) runBtn.innerHTML = '<i class="fas fa-play"></i> <span data-i18n="teacher.pipeline.start">开始生成</span>';
+            if (!runBtn.querySelector('.fa-spinner')) runBtn.innerHTML = '<i class="fas fa-play"></i> <span>' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation') + '</span>';
         }
     }
 }
@@ -990,6 +1044,52 @@ function cancelWizard() {
         switchView('dashboard');
         resetWizard();
     }
+}
+
+// Step 1: Load and display uploaded files list (for current course)
+async function loadUploadedFilesListForStep1() {
+    var container = document.getElementById('uploadedFilesList');
+    if (!container) return;
+    var courseId = typeof DEFAULT_COURSE_ID !== 'undefined' ? DEFAULT_COURSE_ID : 'default-course';
+    try {
+        var res = await fetch((typeof API_BASE !== 'undefined' ? API_BASE : '/api/cscl') + '/courses/' + courseId + '/docs', { credentials: 'include' });
+        if (!res.ok) {
+            container.innerHTML = '';
+            return;
+        }
+        var data = await res.json();
+        var documents = data.documents || [];
+        if (documents.length === 0) {
+            container.innerHTML = '<p class="uploaded-files-empty">' + (typeof t === 'function' ? t('teacher.wizard.step1.no_uploaded_yet') : 'No files uploaded yet') + '</p>';
+            return;
+        }
+        var labelUploaded = typeof t === 'function' ? t('teacher.wizard.step1.uploaded_at') : 'Uploaded';
+        var labelDelete = typeof t === 'function' ? t('common.delete') : 'Delete';
+        container.innerHTML = documents.map(function(doc) {
+            return '<div class="uploaded-file-item">' +
+                '<span class="uploaded-file-name">' + escapeHtml(doc.title || 'Untitled') + '</span>' +
+                ' <span class="uploaded-file-meta">' + (doc.mime_type || '') + ' · ' + (doc.created_at ? formatTime(doc.created_at) : '') + '</span>' +
+                ' <button type="button" class="btn-secondary btn-sm" onclick="deleteDocumentFromStep1(\'' + doc.id + '\')" aria-label="' + labelDelete + '">' + labelDelete + '</button>' +
+                '</div>';
+        }).join('');
+    } catch (e) {
+        console.warn('[teacher] loadUploadedFilesListForStep1 error', e);
+        container.innerHTML = '';
+    }
+}
+
+function deleteDocumentFromStep1(docId) {
+    if (!confirm(typeof t === 'function' ? t('teacher.doc.confirm_delete') : 'Delete this document?')) return;
+    var courseId = typeof DEFAULT_COURSE_ID !== 'undefined' ? DEFAULT_COURSE_ID : 'default-course';
+    fetch((typeof API_BASE !== 'undefined' ? API_BASE : '/api/cscl') + '/courses/' + courseId + '/docs/' + docId, {
+        method: 'DELETE',
+        credentials: 'include'
+    }).then(function(res) {
+        if (res.ok) {
+            loadUploadedFilesListForStep1();
+            if (typeof loadDocuments === 'function') loadDocuments();
+        }
+    }).catch(function() {});
 }
 
 // Step 1: Upload Teaching Materials (multiple files supported; optional skip text extraction)
@@ -1049,6 +1149,7 @@ document.getElementById('syllabusFile')?.addEventListener('change', async functi
         if (okCount > 0) {
             showNotification(okCount === 1 ? 'File uploaded successfully' : okCount + ' files uploaded', 'success');
             if (typeof loadDocuments === 'function') loadDocuments();
+            if (typeof loadUploadedFilesListForStep1 === 'function') loadUploadedFilesListForStep1();
         }
     } catch (err) {
         console.error('Upload error:', err);
@@ -1122,6 +1223,8 @@ function fillSpecForm(spec) {
     }
     var trEl = document.getElementById('specTaskRequirements');
     if (trEl) trEl.value = spec.task_requirements || spec.requirements_text || '';
+    var initialIdeaEl = document.getElementById('specInitialIdea');
+    if (initialIdeaEl) initialIdeaEl.value = spec.initial_idea || '';
 }
 
 function buildCanonicalSpecFromForm() {
@@ -1171,6 +1274,8 @@ function buildCanonicalSpecFromForm() {
     var diffEl = document.getElementById('specStudentDifficulties');
     if (diffEl) spec.student_difficulties = (diffEl.value || '').trim();
     spec.output_format = outputFormat;
+    var initialIdeaEl = document.getElementById('specInitialIdea');
+    if (initialIdeaEl) spec.initial_idea = (initialIdeaEl.value || '').trim() || undefined;
     return spec;
 }
 
@@ -1432,11 +1537,11 @@ async function runPipeline() {
         return;
     }
     pipelineRunInProgress = true;
-    if (runBtn) { runBtn.disabled = true; runBtn.classList.add('btn-loading'); runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...'; }
+    if (runBtn) { runBtn.disabled = true; runBtn.classList.add('btn-loading'); runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.generating') : 'Generating...'); }
     if (!currentSpec) {
         showNotification('Please complete teaching plan validation first', 'warning');
         pipelineRunInProgress = false;
-        if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+        if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
         return;
     }
     hidePipelineErrorPanel();
@@ -1465,7 +1570,7 @@ async function runPipeline() {
     } catch (e) {
         showNotification('Could not validate teaching plan. Try again.', 'error');
         pipelineRunInProgress = false;
-        if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+        if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
         return;
     }
 
@@ -1493,19 +1598,19 @@ async function runPipeline() {
                 if (res.status === 401) {
                     showNotification('Session expired, please login again', 'error');
                     pipelineRunInProgress = false;
-                    if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+                    if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
                     return;
                 }
                 showNotification('Failed to create script project', 'error');
                 pipelineRunInProgress = false;
-                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
                 return;
             }
         } catch (error) {
             console.error('Error creating script:', error);
             showNotification('Failed to create script project', 'error');
             pipelineRunInProgress = false;
-            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             return;
         }
     }
@@ -1516,18 +1621,18 @@ async function runPipeline() {
         if (getRes.status === 404) {
             currentScriptId = null;
             if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('cscl_current_script_id');
-            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             showNotification('Script expired, please complete Step 2 again', 'warning');
             goToStep(2);
             return;
         }
         if (getRes.status === 401) {
-            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             showNotification('Session expired, please login again', 'error');
             return;
         }
     } catch (e) {
-        if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+        if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
         showNotification('Could not verify script. Try again.', 'error');
         return;
     }
@@ -1645,13 +1750,13 @@ async function runPipeline() {
                 if (nextBtn) nextBtn.disabled = false;
                 pipelineRunInProgress = false;
                 showLoading(false);
-                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             } else if (result.status === 'partial_failed') {
                 showNotification('Generation partially completed. Some stages had errors.', 'warning');
                 updateStageCardsFromResult(result);
                 pipelineRunInProgress = false;
                 showLoading(false);
-                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             } else {
                 showNotification('Pipeline started, please wait...', 'success');
                 _pipelinePollingActive = true;
@@ -1662,7 +1767,7 @@ async function runPipeline() {
             resetPipelineStageCards();
             pipelineRunInProgress = false;
             showLoading(false);
-            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
         }
     } catch (error) {
         console.error('Error running pipeline:', error);
@@ -1670,7 +1775,7 @@ async function runPipeline() {
         resetPipelineStageCards();
         pipelineRunInProgress = false;
         showLoading(false);
-        if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+        if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
     }
 }
 
@@ -1733,7 +1838,7 @@ function _finishPolling(message, level) {
     if (message) showNotification(message, level || 'success');
     showLoading(false);
     var runBtn = document.getElementById('runPipelineBtn');
-    if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+    if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
 }
 
 async function restorePipelineState() {
@@ -1750,7 +1855,7 @@ async function restorePipelineState() {
         if (latest.status === 'running') {
             _pipelinePollingActive = true;
             var runBtn = document.getElementById('runPipelineBtn');
-            if (runBtn) { runBtn.disabled = true; runBtn.classList.add('btn-loading'); runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...'; }
+            if (runBtn) { runBtn.disabled = true; runBtn.classList.add('btn-loading'); runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.generating') : 'Generating...'); }
             showLoading(true);
             pollPipelineStatus(latest.run_id);
         } else if (latest.status === 'success' || latest.status === 'completed') {
@@ -1910,7 +2015,7 @@ async function retryPipelineWithFallback() {
                 var nextBtn = document.getElementById('wizardStep3Next');
                 if (nextBtn) nextBtn.disabled = false;
                 showLoading(false);
-                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+                if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             } else {
                 showNotification('Pipeline retry started', 'success');
                 _pipelinePollingActive = true;
@@ -1920,14 +2025,14 @@ async function retryPipelineWithFallback() {
             showNotification('Pipeline retry failed to start', 'error');
             resetPipelineStageCards();
             showLoading(false);
-            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
         }
     } catch (error) {
         console.error('Error retrying pipeline:', error);
         showNotification('Failed to retry pipeline. Service may be unavailable.', 'error');
         resetPipelineStageCards();
         showLoading(false);
-        if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> Run Pipeline'; }
+        if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
     }
 }
 
@@ -2219,24 +2324,30 @@ async function loadQualityReportDetail(scriptId) {
 
 function renderQualityReport(report) {
     const container = document.getElementById('qualityReportDetailContent');
-    
+    var introText = typeof t === 'function' ? t('teacher.quality.intro') : 'This report scores your activity script across six dimensions. Use it to spot gaps and improve the design.';
+    var statusLabel = function(score, status) {
+        if (score === 0) return (typeof t === 'function' ? t('teacher.quality.not_assessed') : 'Not yet assessed');
+        return status.toUpperCase();
+    };
     const dimensions = [
-        { key: 'coverage', label: 'Coverage', icon: 'fas fa-check-circle' },
-        { key: 'pedagogical_alignment', label: 'Pedagogical Alignment', icon: 'fas fa-graduation-cap' },
-        { key: 'argumentation_support', label: 'Argumentation Support', icon: 'fas fa-comments' },
-        { key: 'grounding', label: 'Grounding', icon: 'fas fa-anchor' },
-        { key: 'safety_checks', label: 'Safety Checks', icon: 'fas fa-shield-alt' },
-        { key: 'teacher_in_loop', label: 'Teacher in Loop', icon: 'fas fa-user-check' }
+        { key: 'coverage', label: (typeof t === 'function' ? t('teacher.quality.dim_coverage') : 'Coverage'), icon: 'fas fa-check-circle', desc: (typeof t === 'function' ? t('teacher.quality.dim_coverage_desc') : 'Learning objectives and rubric coverage') },
+        { key: 'pedagogical_alignment', label: (typeof t === 'function' ? t('teacher.quality.dim_pedagogical') : 'Pedagogical Alignment'), icon: 'fas fa-graduation-cap', desc: (typeof t === 'function' ? t('teacher.quality.dim_pedagogical_desc') : 'Fit to task type and timing') },
+        { key: 'argumentation_support', label: (typeof t === 'function' ? t('teacher.quality.dim_argumentation') : 'Argumentation Support'), icon: 'fas fa-comments', desc: (typeof t === 'function' ? t('teacher.quality.dim_argumentation_desc') : 'Claims, evidence, rebuttals') },
+        { key: 'grounding', label: (typeof t === 'function' ? t('teacher.quality.dim_grounding') : 'Grounding'), icon: 'fas fa-anchor', desc: (typeof t === 'function' ? t('teacher.quality.dim_grounding_desc') : 'Evidence linked to materials') },
+        { key: 'safety_checks', label: (typeof t === 'function' ? t('teacher.quality.dim_safety') : 'Safety Checks'), icon: 'fas fa-shield-alt', desc: (typeof t === 'function' ? t('teacher.quality.dim_safety_desc') : 'Sensitive content and references') },
+        { key: 'teacher_in_loop', label: (typeof t === 'function' ? t('teacher.quality.dim_teacher') : 'Teacher in Loop'), icon: 'fas fa-user-check', desc: (typeof t === 'function' ? t('teacher.quality.dim_teacher_desc') : 'Your edits and acceptances') }
     ];
     
     container.innerHTML = `
+        <p class="quality-report-intro">${escapeHtml(introText)}</p>
         <div class="quality-report-grid">
             ${dimensions.map(dim => {
                 const metric = report[dim.key] || {};
                 const score = metric.score || 0;
                 const status = getStatusFromScore(score);
                 const evidence = metric.evidence || [];
-                const actionTip = metric.action_tip || 'No specific action needed';
+                const actionTip = metric.action_tip || (typeof t === 'function' ? t('teacher.quality.no_action') : 'No specific action needed');
+                const statusText = statusLabel(score, status);
                 
                 return `
                     <div class="quality-dimension-card ${status}">
@@ -2246,22 +2357,23 @@ function renderQualityReport(report) {
                             </div>
                             <div class="dimension-info">
                                 <h4>${dim.label}</h4>
+                                <p class="dimension-desc">${escapeHtml(dim.desc)}</p>
                                 <div class="dimension-score">
                                     <span class="score-value">${score}/100</span>
-                                    <span class="score-status ${status}">${status.toUpperCase()}</span>
+                                    <span class="score-status ${status}">${statusText}</span>
                                 </div>
                             </div>
                         </div>
                         <div class="dimension-body">
                             <div class="dimension-evidence">
-                                <h5>Evidence:</h5>
+                                <h5>${typeof t === 'function' ? t('teacher.quality.evidence') : 'Evidence'}:</h5>
                                 ${evidence.length > 0 
                                     ? `<ul>${evidence.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`
-                                    : '<p>No evidence available</p>'
+                                    : '<p>' + (typeof t === 'function' ? t('teacher.quality.no_evidence') : 'No evidence available') + '</p>'
                                 }
                             </div>
                             <div class="dimension-action">
-                                <h5>Action Tip:</h5>
+                                <h5>${typeof t === 'function' ? t('teacher.quality.action_tip') : 'Action Tip'}:</h5>
                                 <p>${escapeHtml(actionTip)}</p>
                             </div>
                         </div>
@@ -2273,6 +2385,7 @@ function renderQualityReport(report) {
 }
 
 function getStatusFromScore(score) {
+    if (score === 0) return 'unassessed';
     if (score >= 80) return 'good';
     if (score >= 60) return 'warning';
     return 'poor';
@@ -2390,6 +2503,92 @@ function formatTime(timeString) {
 function openScript(scriptId) {
     currentScriptId = scriptId;
     switchView('scripts');
+}
+
+/** Open script in wizard at Step 2 to edit and re-run pipeline */
+async function editScript(scriptId) {
+    try {
+        showLoading(true);
+        var res = await fetch(API_BASE + '/scripts/' + scriptId, { credentials: 'include' });
+        if (!res.ok) {
+            showNotification(res.status === 404 ? 'Script not found' : 'Failed to load script', 'error');
+            return;
+        }
+        var data = await res.json();
+        var script = data.script || data;
+        var flat = {
+            course: script.course_id || script.title || '',
+            topic: script.topic || '',
+            duration_minutes: script.duration_minutes != null ? script.duration_minutes : 90,
+            mode: 'sync',
+            class_size: 30,
+            course_context: script.topic ? 'Activity: ' + script.topic : '',
+            learning_objectives: Array.isArray(script.learning_objectives) ? script.learning_objectives : (script.learning_objectives ? [script.learning_objectives] : []),
+            task_type: script.task_type || 'structured_debate',
+            teaching_stage: 'concept_exploration',
+            collaboration_purpose: 'compare_ideas',
+            group_size: 4,
+            grouping_strategy: 'random',
+            role_structure: 'no_roles',
+            whole_class_reporting: true,
+            scaffolding_options: [],
+            student_difficulties: '',
+            output_format: ['student_worksheet', 'student_slides', 'teacher_facilitation_sheet'],
+            task_requirements: '',
+            initial_idea: ''
+        };
+        currentScriptId = scriptId;
+        if (typeof fillSpecForm === 'function') fillSpecForm(flat);
+        goToStep(2);
+        showNotification(typeof t === 'function' ? t('teacher.scripts.edit_ready') : 'Edit the form and run generation again.', 'success');
+    } catch (e) {
+        console.error('editScript error', e);
+        showNotification('Failed to load script', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+/** Create a copy of the script */
+async function duplicateScript(scriptId) {
+    try {
+        showLoading(true);
+        var res = await fetch(API_BASE + '/scripts/' + scriptId, { credentials: 'include' });
+        if (!res.ok) {
+            showNotification('Failed to load script', 'error');
+            return;
+        }
+        var data = await res.json();
+        var script = data.script || data;
+        var copyTitle = (script.title || 'Untitled') + (typeof t === 'function' ? t('teacher.scripts.copy_suffix') : ' (Copy)');
+        var createRes = await fetch(API_BASE + '/scripts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: copyTitle,
+                topic: script.topic || '',
+                course_id: script.course_id || null,
+                task_type: script.task_type || 'structured_debate',
+                duration_minutes: script.duration_minutes != null ? script.duration_minutes : 60,
+                learning_objectives: script.learning_objectives || []
+            }),
+            credentials: 'include'
+        });
+        if (!createRes.ok) {
+            var errData = await createRes.json().catch(function() { return {}; });
+            showNotification(errData.error || errData.message || 'Failed to duplicate', 'error');
+            return;
+        }
+        var createData = await createRes.json();
+        var newScript = createData.script;
+        showNotification(typeof t === 'function' ? t('teacher.scripts.duplicate_success') : 'Script duplicated. You can edit it from the list.', 'success');
+        loadScripts();
+    } catch (e) {
+        console.error('duplicateScript error', e);
+        showNotification('Failed to duplicate script', 'error');
+    } finally {
+        showLoading(false);
+    }
 }
 
 function viewScriptQuality(scriptId) {
@@ -2546,14 +2745,9 @@ async function loadDocuments() {
                     </div>
                 `;
             } else {
+                /* Issue #10: Do not show extracted text preview; show only title, type, uploaded time, chunks */
                 container.innerHTML = documents.map(doc => {
-                    // Only show extracted_text_preview, never raw file bytes; hide if looks like PDF binary
-                    var preview = doc.extracted_text_preview;
-                    if (preview && typeof preview === 'string' && looksLikePdfBinary(preview)) preview = null;
-                    const previewHtml = preview
-                        ? `<div class="document-preview"><pre>${escapeHtml(preview)}</pre></div>`
-                        : `<div class="document-preview empty"><p><i class="fas fa-info-circle"></i> ${typeof t === 'function' ? t('teacher.doc.no_text_extracted') : 'No text extracted'}</p></div>`;
-                    
+                    var uploadedLabel = typeof t === 'function' ? t('teacher.wizard.step1.uploaded_at') : 'Uploaded';
                     return `
                     <div class="document-card">
                         <div class="document-header">
@@ -2561,9 +2755,8 @@ async function loadDocuments() {
                             <span class="document-type">${doc.mime_type || 'text/plain'}</span>
                         </div>
                         <div class="document-content">
-                            <p><strong>Uploaded:</strong> ${formatTime(doc.created_at)}</p>
+                            <p><strong>${uploadedLabel}:</strong> ${formatTime(doc.created_at)}</p>
                             <p><strong>Chunks:</strong> ${doc.chunks_count || 0}</p>
-                            ${previewHtml}
                         </div>
                         <div class="document-actions">
                             <button class="btn-primary btn-sm" onclick="applyPrefillFromDoc('${doc.id}')" title="Use this document to suggest form fields">

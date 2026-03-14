@@ -442,7 +442,8 @@ IMPORTANT:
 - Do NOT generate a full lesson flow (no "introduction → activity → presentation → reflection").
 - Focus on ONE concrete group task with 3-6 clear steps. Every step must tell students exactly what to do.
 - Teaching stage: """ + str(teaching_stage) + """. Collaboration purpose: """ + str(collaboration_purpose) + """. Design for groups of """ + str(group_size) + """ students.
-- If the payload includes "retrieved_chunks", use that content to ground the activity in the course material."""
+- If the payload includes "retrieved_chunks", use that content to ground the activity in the course material.
+- If the payload includes "initial_idea", the teacher has given a free-text idea, preference, or concern for this activity; use it to guide the design (e.g. compare two examples, keep it simple, fit 15 minutes)."""
             messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Design one CSCL group activity from this specification. Return JSON with key 'activity' only.\n\n{user_text}"}
@@ -598,10 +599,11 @@ IMPORTANT:
             "You generate classroom-ready CSCL activity materials. Return ONLY valid JSON with these keys: "
             "roles (list), scenes (list), "
             "student_worksheet (object with: title, goal, roles_summary, steps with title/description/duration_minutes/prompts, timing_summary, output_instructions, reporting_instructions), "
+            "student_slides (object with: title, slides array of {slide_number, title, content} for a small set of student-facing instructional slides explaining the activity goal, key steps, timing, and expected output), "
             "teacher_guide (object with: overview, alignment_with_objectives, rationale, implementation_steps, monitoring_points, expected_difficulties, debrief_questions, adaptation_suggestions). "
             "Each scene must include: order_index, scene_type, purpose, transition_rule, scriptlets. "
             "Each scriptlet: prompt_text, prompt_type, role_id (nullable). "
-            "student_worksheet and teacher_guide must be ready for teachers and students to use directly."
+            "student_worksheet, student_slides, and teacher_guide must be ready for teachers and students to use directly."
         )
         r = self._chat_json(system_prompt, input_payload)
         if not r['success']:
@@ -655,7 +657,7 @@ IMPORTANT:
         system_prompt = (
             "You are a CSCL activity refiner. Fix the issues and return ONLY JSON with keys: "
             "roles (list), scenes (list), refinements_applied (object). "
-            "If student_worksheet and teacher_guide are present in the input, include them in the output unchanged or improved. "
+            "If student_worksheet, student_slides, or teacher_guide are present in the input, include them in the output unchanged or improved. "
             "Ensure at least one scene/step with non-empty scriptlets or prompts."
         )
         r = self._chat_json(system_prompt, input_payload)

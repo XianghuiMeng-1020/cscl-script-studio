@@ -61,6 +61,7 @@ class MaterialGeneratorStage:
             roles = self._normalize_roles(materials.get("roles", []))
             scenes = self._normalize_scenes(materials.get("scenes", []))
             student_worksheet = materials.get("student_worksheet")
+            student_slides = materials.get("student_slides")
             teacher_guide = materials.get("teacher_guide")
             role_cards = materials.get("role_cards", [])
             
@@ -71,6 +72,7 @@ class MaterialGeneratorStage:
                 'roles': roles,
                 'materials_generated': len(scenes),
                 'student_worksheet': student_worksheet,
+                'student_slides': student_slides,
                 'teacher_guide': teacher_guide,
                 'role_cards': role_cards
             }

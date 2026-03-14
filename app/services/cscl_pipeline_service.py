@@ -639,6 +639,8 @@ class CSCLPipelineService:
             mat_snap = material_result.get('output_snapshot') or {}
             if mat_snap.get('student_worksheet') and not final_output.get('student_worksheet'):
                 final_output['student_worksheet'] = mat_snap['student_worksheet']
+            if mat_snap.get('student_slides') and not final_output.get('student_slides'):
+                final_output['student_slides'] = mat_snap['student_slides']
             if mat_snap.get('teacher_guide') and not final_output.get('teacher_guide'):
                 final_output['teacher_guide'] = mat_snap['teacher_guide']
             if mat_snap.get('role_cards') and not final_output.get('role_cards'):

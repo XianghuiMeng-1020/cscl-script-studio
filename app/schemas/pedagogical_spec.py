@@ -221,6 +221,7 @@ class PedagogicalSpec:
     output_preferences: Optional[OutputPreferences] = None
     diversity_considerations: Optional[str] = None
     accessibility_considerations: Optional[str] = None
+    initial_idea: Optional[str] = None  # Teacher's optional free-text idea/preference for the activity
     
     def to_dict(self) -> Dict[str, Any]:
         result = {
@@ -251,6 +252,8 @@ class PedagogicalSpec:
             result['diversity_considerations'] = self.diversity_considerations
         if self.accessibility_considerations:
             result['accessibility_considerations'] = self.accessibility_considerations
+        if self.initial_idea:
+            result['initial_idea'] = self.initial_idea
         return result
     
     @classmethod
@@ -282,5 +285,6 @@ class PedagogicalSpec:
             scaffolding_preferences=scaffolding_preferences,
             output_preferences=output_preferences,
             diversity_considerations=data.get('diversity_considerations'),
-            accessibility_considerations=data.get('accessibility_considerations')
+            accessibility_considerations=data.get('accessibility_considerations'),
+            initial_idea=(data.get('initial_idea') or '').strip() or None
         )

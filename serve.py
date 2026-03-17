@@ -10,8 +10,10 @@ log = logging.getLogger("serve")
 
 os.makedirs("data/course_documents", exist_ok=True)
 
-# Run migrations on startup (e.g. Railway deploy)
-if os.environ.get("RUN_MIGRATIONS", "1") == "1":
+# Run Alembic migrations on startup when a real DATABASE_URL is configured.
+# For SQLite / in-memory DB the app uses db.create_all() instead.
+_db_url = os.environ.get("DATABASE_URL", "")
+if os.environ.get("RUN_MIGRATIONS", "1") == "1" and _db_url:
     try:
         result = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
@@ -26,6 +28,8 @@ if os.environ.get("RUN_MIGRATIONS", "1") == "1":
             log.warning("Migration exit code %s: %s", result.returncode, result.stderr or result.stdout)
     except Exception as e:
         log.warning("Migration run failed (continuing): %s", e)
+elif not _db_url:
+    log.info("No DATABASE_URL set; skipping Alembic migrations (will use db.create_all)")
 
 port = int(os.environ.get("PORT", 8080))
 

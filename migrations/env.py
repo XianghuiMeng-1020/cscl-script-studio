@@ -25,10 +25,25 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Get database URL from environment
-database_url = os.getenv('DATABASE_URL', config.get_main_option('sqlalchemy.url'))
-if database_url and database_url != 'driver://user:pass@localhost/dbname':
-    config.set_main_option('sqlalchemy.url', database_url)
+
+def _resolve_database_url():
+    """Return a usable SQLAlchemy URL, preferring DATABASE_URL env var."""
+    url = os.environ.get('DATABASE_URL', '') or ''
+    if not url or url == 'driver://user:pass@localhost/dbname':
+        return None
+    # Railway / Render give postgresql:// but psycopg3 needs postgresql+psycopg://
+    if url.startswith('postgresql://') and 'postgresql+' not in url:
+        try:
+            import psycopg  # noqa: F401
+            url = url.replace('postgresql://', 'postgresql+psycopg://', 1)
+        except ImportError:
+            pass
+    return url
+
+
+_db_url = _resolve_database_url()
+if _db_url:
+    config.set_main_option('sqlalchemy.url', _db_url)
 
 # Set target metadata from Flask-SQLAlchemy
 app = create_app()
@@ -72,11 +87,10 @@ def run_migrations_online() -> None:
 
     """
     with app.app_context():
-        # Get database URL from environment or config
-        database_url = os.getenv('DATABASE_URL', config.get_main_option('sqlalchemy.url'))
-        if database_url and database_url != 'driver://user:pass@localhost/dbname':
-            config.set_main_option('sqlalchemy.url', database_url)
-        
+        url = _resolve_database_url()
+        if url:
+            config.set_main_option('sqlalchemy.url', url)
+
         connectable = engine_from_config(
             config.get_section(config.config_ini_section, {}),
             prefix="sqlalchemy.",

@@ -449,21 +449,21 @@
                         </div>
                     </div>
 
-                    <!-- Step 2: Activity Brief (one specific collaborative activity) -->
+                    <!-- Step 2: Create Activity -->
                     <div id="wizardStep2" class="wizard-step-content">
                         <div class="wizard-header">
-                            <h2 data-i18n="teacher.wizard.step2.title">第 2 步：定义协作活动</h2>
-                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step2.subtitle">填写本项活动的目标、阶段与协作方式（定义一项具体活动，非整节课流程）</p>
+                            <h2 data-i18n="teacher.wizard.step2.title">第 2 步：创建活动</h2>
+                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step2.subtitle">在该课程中创建某一次具体活动，上传这节课的材料（PPT、阅读材料、案例等）</p>
                         </div>
                         <div class="wizard-body">
                             <div class="wizard-help">
                                 <i class="fas fa-info-circle"></i>
-                                <p><strong data-i18n="common.info">信息</strong> <span data-i18n="teacher.wizard.spec_why">定义一项具体的小组协作活动：教学阶段、协作目的、分组与支架需求。</span></p>
+                                <p><strong data-i18n="common.info">信息</strong> <span data-i18n="teacher.wizard.spec_why">定义一项具体的小组协作活动：教学目标、阶段、协作方式与附加说明。</span></p>
                             </div>
                             <form id="specForm" class="spec-form">
                                 <div class="form-group form-group-initial-idea">
-                                    <label for="specInitialIdea" data-i18n="teacher.form.initial_idea">对本次活动有什么初步想法？（选填）</label>
-                                    <p class="form-help" data-i18n="teacher.form.initial_idea_help">简单描述你的想法、偏好或顾虑即可，不必写很长。</p>
+                                    <label for="specInitialIdea" data-i18n="teacher.form.initial_idea">对本次活动的初步想法（选填）</label>
+                                    <p class="form-help" data-i18n="teacher.form.initial_idea_help">简单描述你对这次活动的想法、偏好或顾虑。</p>
                                     <textarea id="specInitialIdea" rows="4" data-i18n-placeholder="teacher.form.initial_idea_placeholder" placeholder="例如：希望学生分组比较两个例子并达成共识；希望人人参与，活动简单一些，15 分钟内完成。"></textarea>
                                 </div>
                                 <div class="form-row">
@@ -527,39 +527,15 @@
                                             <option value="self_selected" data-i18n="teacher.form.grouping_self">自选</option>
                                         </select>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="specRoleStructure" data-i18n="teacher.form.role_structure">角色结构</label>
-                                        <select id="specRoleStructure">
-                                            <option value="no_roles" data-i18n="teacher.form.roles_none">无固定角色</option>
-                                            <option value="assigned_roles" data-i18n="teacher.form.roles_assigned">指定角色</option>
-                                            <option value="rotating_roles" data-i18n="teacher.form.roles_rotating">轮换角色</option>
-                                            <option value="self_selected_roles" data-i18n="teacher.form.roles_self">自选角色</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-group" id="specWholeClassReportingGroup">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="specWholeClassReporting" checked aria-describedby="specWholeClassReportingHelp">
-                                        <span data-i18n="teacher.form.whole_class_reporting">需要全班汇报/分享</span>
-                                    </label>
-                                    <p id="specWholeClassReportingHelp" class="form-help" data-i18n="teacher.form.whole_class_reporting_help">活动结束后是否需要全班汇报或分享小组结论（如口头汇报、张贴结论、投票等）。</p>
-                                </div>
-                                <div class="form-group">
-                                    <label for="specCourseContext" data-i18n="teacher.form.course_context">课程背景 *</label>
-                                    <textarea id="specCourseContext" required rows="3" data-i18n-placeholder="teacher.form.course_context_placeholder" placeholder="描述课程设置、学习者画像和教学情境。"></textarea>
                                 </div>
                                 <div class="form-group">
                                     <label for="specObjectives" data-i18n="teacher.form.objectives">学习目标 *（每行一个）</label>
                                     <textarea id="specObjectives" required rows="4" data-i18n-placeholder="teacher.form.objectives_placeholder" placeholder="解释基本公平性指标&#10;比较准确性与公平性之间的权衡"></textarea>
                                 </div>
                                 <div class="form-group">
-                                    <label data-i18n="teacher.form.default_outputs">默认输出材料</label>
-                                    <div class="checkbox-group" id="specOutputFormat">
-                                        <label class="checkbox-label"><input type="checkbox" name="output_format" value="student_worksheet" checked> <span data-i18n="teacher.form.output_worksheet">学生工作表</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="output_format" value="student_slides" checked> <span data-i18n="teacher.form.output_slides">学生幻灯片</span></label>
-                                        <label class="checkbox-label"><input type="checkbox" name="output_format" value="teacher_facilitation_sheet" checked> <span data-i18n="teacher.form.output_teacher_guide">教师引导单</span></label>
-                                    </div>
-                                    <p class="form-help" data-i18n="teacher.form.default_outputs_help">学生工作表：学生端活动工作表，含任务说明、记录区、引导问题。学生幻灯片：活动说明幻灯片（非全课 PPT），聚焦活动步骤与目标。教师引导单：教师端引导手册，含实施方式、对齐目标、关注要点。</p>
+                                    <label for="specAdditionalNotes" data-i18n="teacher.form.additional_notes">附加说明（选填）</label>
+                                    <p class="form-help" data-i18n="teacher.form.additional_notes_help">包括课程背景、学生常见困难、教师顾虑或活动具体要求。</p>
+                                    <textarea id="specAdditionalNotes" rows="4" data-i18n-placeholder="teacher.form.additional_notes_placeholder" placeholder="例如：学生背景、常见困难、教师顾虑，或具体的活动要求"></textarea>
                                 </div>
                                 <div class="form-group">
                                     <label data-i18n="teacher.form.support_features">可选支持功能</label>
@@ -569,14 +545,6 @@
                                         <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="timing_guidance"> <span data-i18n="teacher.form.support_timing">包含时间指引</span></label>
                                         <label class="checkbox-label"><input type="checkbox" name="scaffolding" value="reporting_templates"> <span data-i18n="teacher.form.support_reporting">包含汇报模板</span></label>
                                     </div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="specStudentDifficulties" data-i18n="teacher.form.student_difficulties">学生常见困难/教师顾虑（选填）</label>
-                                    <textarea id="specStudentDifficulties" rows="2" data-i18n-placeholder="teacher.form.student_difficulties_placeholder" placeholder="例如：学生容易混淆的概念、需要额外支持的环节"></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label for="specTaskRequirements" data-i18n="teacher.form.task_requirements">活动具体要求（选填）</label>
-                                    <textarea id="specTaskRequirements" rows="3" data-i18n-placeholder="teacher.form.task_requirements_placeholder" placeholder="指定具体的协作和证据要求。"></textarea>
                                 </div>
                                 <div class="form-actions">
                                     <button type="button" class="btn-secondary" onclick="fillDemoSpec()"><i class="fas fa-magic" aria-hidden="true"></i> <span data-i18n="teacher.demo.fill">填充示例数据</span></button>

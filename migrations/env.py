@@ -2,106 +2,48 @@ from logging.config import fileConfig
 import os
 import sys
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
 
-# Add parent directory to path
+# Add parent directory to path so `app` package is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-# Import Flask app and models
-from app import create_app
-from app.config import Config
-from app.db import db
-from app.models import User, Assignment, Submission, Feedback
+# Tell create_app() to skip demo seeding (tables may not exist yet)
+os.environ["_ALEMBIC_RUNNING"] = "1"
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+from app import create_app
+from app.db import db
+
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-
-def _resolve_database_url():
-    """Return a usable SQLAlchemy URL, preferring DATABASE_URL env var."""
-    url = os.environ.get('DATABASE_URL', '') or ''
-    if not url or url == 'driver://user:pass@localhost/dbname':
-        return None
-    # Railway / Render give postgresql:// but psycopg3 needs postgresql+psycopg://
-    if url.startswith('postgresql://') and 'postgresql+' not in url:
-        try:
-            import psycopg  # noqa: F401
-            url = url.replace('postgresql://', 'postgresql+psycopg://', 1)
-        except ImportError:
-            pass
-    return url
-
-
-_db_url = _resolve_database_url()
-if _db_url:
-    config.set_main_option('sqlalchemy.url', _db_url)
-
-# Set target metadata from Flask-SQLAlchemy
 app = create_app()
 target_metadata = db.metadata
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
-
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
-    url = config.get_main_option("sqlalchemy.url")
+    """Run migrations in 'offline' mode (emit SQL without connecting)."""
+    url = app.config.get("SQLALCHEMY_DATABASE_URI") or config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
-
     with context.begin_transaction():
         context.run_migrations()
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
+    """Run migrations in 'online' mode using Flask-SQLAlchemy's engine."""
     with app.app_context():
-        url = _resolve_database_url()
-        if url:
-            config.set_main_option('sqlalchemy.url', url)
-
-        connectable = engine_from_config(
-            config.get_section(config.config_ini_section, {}),
-            prefix="sqlalchemy.",
-            poolclass=pool.NullPool,
-        )
+        connectable = db.engine
 
         with connectable.connect() as connection:
             context.configure(
                 connection=connection, target_metadata=target_metadata
             )
-
             with context.begin_transaction():
                 context.run_migrations()
 

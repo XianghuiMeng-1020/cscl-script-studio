@@ -63,16 +63,17 @@ def create_app(config_class=Config):
         except Exception:
             logger.exception("Failed to bootstrap in-memory DB (non-fatal, app will still start)")
 
-    # Always ensure demo users exist (idempotent). Fixes "Invalid username or password" when
-    # DATABASE_URL is set on Railway/Render but no seed was run, or in-memory DB was just created.
-    try:
-        with app.app_context():
-            from app.seed_demo import seed_demo_users, seed_demo_published_activity
-            seed_demo_users()
-            seed_demo_published_activity()
-            logger.info("Demo users and demo activity ensured (teacher_demo, student_demo, admin_demo / Demo@12345)")
-    except Exception:
-        logger.exception("Failed to seed demo users (non-fatal)")
+    # Seed demo users unless we're inside an Alembic migration (tables may not exist yet).
+    if not os.environ.get("_ALEMBIC_RUNNING"):
+        try:
+            with app.app_context():
+                from app.seed_demo import seed_demo_users, seed_demo_published_activity
+                seed_demo_users()
+                seed_demo_published_activity()
+                logger.info("Demo users and demo activity ensured (teacher_demo, student_demo, admin_demo / Demo@12345)")
+        except Exception:
+            db.session.rollback()
+            logger.exception("Failed to seed demo users (non-fatal)")
 
     # S2.14: inject static_version for cache busting in templates
     @app.context_processor

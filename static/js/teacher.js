@@ -330,11 +330,16 @@ function switchView(viewName) {
             case 'dashboard':
                 loadDashboardData();
                 break;
+            case 'folders':
+                loadFolders();
+                break;
+            case 'folder-detail':
+                // loaded by openFolder()
+                break;
             case 'scripts':
                 loadScripts();
                 break;
             case 'spec-validation':
-                // Standalone spec validation view - already visible
                 break;
             case 'pipeline-runs':
                 loadPipelineRuns();
@@ -352,7 +357,6 @@ function switchView(viewName) {
                 loadPublishView();
                 break;
             case 'settings':
-                // Settings view - placeholder page is fine
                 break;
             case 'wizard':
                 resetWizard();
@@ -391,6 +395,121 @@ async function loadTaskTypes() {
 }
 
 // Dashboard
+// ── Course Folder functions ──────────────────────────────────────────
+var currentFolderId = null;
+
+async function loadFolders() {
+    var container = document.getElementById('foldersList');
+    if (!container) return;
+    container.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
+    try {
+        var res = await fetch(API_BASE + '/folders', { credentials: 'include' });
+        var data = await res.json();
+        var folders = data.folders || [];
+        if (folders.length === 0) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-folder"></i><h4>暂无课程文件夹</h4><p>创建你的第一个课程文件夹</p><button class="btn-primary" onclick="createNewFolder()"><i class="fas fa-plus"></i> 创建课程文件夹</button></div>';
+            return;
+        }
+        var html = '';
+        folders.forEach(function(f) {
+            html += '<div class="script-card folder-card" onclick="openFolder(\'' + f.id + '\')">';
+            html += '<div class="script-card-header"><i class="fas fa-folder" style="color: var(--primary-color); margin-right: 0.5rem;"></i><h4>' + _esc(f.name) + '</h4></div>';
+            if (f.description) html += '<p class="script-card-meta">' + _esc(f.description) + '</p>';
+            html += '<div class="script-card-footer"><span>' + (f.activity_count || 0) + ' 个活动</span>';
+            html += '<span>' + (f.created_at ? new Date(f.created_at).toLocaleDateString() : '') + '</span></div>';
+            html += '</div>';
+        });
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><p>加载失败: ' + e.message + '</p></div>';
+    }
+}
+
+async function createNewFolder() {
+    var name = prompt('请输入课程文件夹名称：');
+    if (!name || !name.trim()) return;
+    try {
+        var res = await fetch(API_BASE + '/folders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name.trim() }),
+            credentials: 'include'
+        });
+        var data = await res.json();
+        if (data.success) {
+            showNotification('课程文件夹已创建', 'success');
+            loadFolders();
+            // Auto-set as current folder and course_id for wizard
+            currentFolderId = data.folder.id;
+        } else {
+            showNotification(data.error || '创建失败', 'error');
+        }
+    } catch (e) {
+        showNotification('创建失败: ' + e.message, 'error');
+    }
+}
+
+async function openFolder(folderId) {
+    currentFolderId = folderId;
+    switchView('folder-detail');
+    var nameEl = document.getElementById('folderDetailName');
+    var descEl = document.getElementById('folderDetailDesc');
+    var docsEl = document.getElementById('folderDocsList');
+    var actsEl = document.getElementById('folderActivitiesList');
+    if (docsEl) docsEl.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
+    if (actsEl) actsEl.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
+    try {
+        var res = await fetch(API_BASE + '/folders/' + folderId, { credentials: 'include' });
+        var data = await res.json();
+        if (!data.success) { showNotification(data.error || '加载失败', 'error'); return; }
+        var folder = data.folder;
+        if (nameEl) nameEl.textContent = folder.name;
+        if (descEl) descEl.textContent = folder.description || '查看该课程下的活动和文档';
+
+        // Documents
+        var docs = data.documents || [];
+        if (docsEl) {
+            if (docs.length === 0) {
+                docsEl.innerHTML = '<div class="empty-state"><p>暂无课程文档，请在 Step 1 上传。</p></div>';
+            } else {
+                var dhtml = '<div class="documents-list">';
+                docs.forEach(function(d) {
+                    dhtml += '<div class="document-item"><i class="fas fa-file-alt"></i> <span>' + _esc(d.filename || d.original_filename || 'document') + '</span></div>';
+                });
+                dhtml += '</div>';
+                docsEl.innerHTML = dhtml;
+            }
+        }
+
+        // Activities
+        var activities = data.activities || [];
+        if (actsEl) {
+            if (activities.length === 0) {
+                actsEl.innerHTML = '<div class="empty-state"><p>暂无活动，点击上方按钮创建。</p></div>';
+            } else {
+                var ahtml = '';
+                activities.forEach(function(a) {
+                    ahtml += '<div class="script-card" onclick="openScriptProject(\'' + a.id + '\')">';
+                    ahtml += '<div class="script-card-header"><h4>' + _esc(a.title) + '</h4>';
+                    ahtml += '<span class="status-badge status-' + (a.status || 'draft') + '">' + (a.status || 'draft') + '</span></div>';
+                    ahtml += '<p class="script-card-meta">' + _esc(a.topic || '') + '</p>';
+                    ahtml += '<div class="script-card-footer"><span>' + _esc(a.task_type || '') + '</span>';
+                    ahtml += '<span>' + (a.updated_at ? new Date(a.updated_at).toLocaleDateString() : '') + '</span></div>';
+                    ahtml += '</div>';
+                });
+                actsEl.innerHTML = ahtml;
+            }
+        }
+    } catch (e) {
+        showNotification('加载失败: ' + e.message, 'error');
+    }
+}
+
+function createActivityInFolder() {
+    if (!currentFolderId) { showNotification('请先选择一个课程文件夹', 'warning'); return; }
+    startNewActivity();
+}
+
 async function loadDashboardData() {
     try {
         showLoading(true);
@@ -796,17 +915,31 @@ async function loadScriptPreview() {
             return;
         }
 
-        var output = null;
-        var stageOrder = ['refiner', 'critic', 'material_generator', 'planner'];
-        for (var i = 0; i < stageOrder.length; i++) {
-            var st = stages.find(function(s) { return s.stage_name === stageOrder[i] && s.status === 'success' && s.output_json; });
-            if (st) { output = st.output_json; break; }
+        // Prefer final_output_json saved on the pipeline run (includes merged materials)
+        var output = run.final_output_json || null;
+
+        if (!output) {
+            var stageOrder = ['refiner', 'critic', 'material_generator', 'planner'];
+            for (var i = 0; i < stageOrder.length; i++) {
+                var st = stages.find(function(s) { return s.stage_name === stageOrder[i] && s.status === 'success' && s.output_json; });
+                if (st) { output = st.output_json; break; }
+            }
         }
 
         if (!output) {
             var errMsg = run.error_message || 'No output was generated';
             container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Pipeline did not produce output: ' + errMsg + '</p></div>';
             return;
+        }
+
+        // Always merge classroom-ready materials from material_generator stage as fallback
+        var matStage = stages.find(function(s) { return s.stage_name === 'material_generator' && s.status === 'success' && s.output_json; });
+        if (matStage && matStage.output_json) {
+            var mat = matStage.output_json;
+            if (mat.student_worksheet && !output.student_worksheet) output.student_worksheet = mat.student_worksheet;
+            if (mat.student_slides && !output.student_slides) output.student_slides = mat.student_slides;
+            if (mat.teacher_guide && !output.teacher_guide) output.teacher_guide = mat.teacher_guide;
+            if (mat.role_cards && !output.role_cards) output.role_cards = mat.role_cards;
         }
 
         var hasWorksheet = output.student_worksheet && (output.student_worksheet.title || output.student_worksheet.goal);

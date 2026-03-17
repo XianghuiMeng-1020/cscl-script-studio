@@ -46,6 +46,7 @@ const I18N = {
         // ===== Teacher page =====
         // Sidebar
         'teacher.sidebar.dashboard': '工作台',
+        'teacher.sidebar.folders': '课程文件夹',
         'teacher.sidebar.scripts': '活动项目',
         'teacher.sidebar.spec': '教学目标检查',
         'teacher.sidebar.pipeline': '自动生成过程',
@@ -55,6 +56,9 @@ const I18N = {
         'teacher.sidebar.publish': '发布与导出',
         'teacher.sidebar.settings': '设置',
         'teacher.sidebar.logout': '退出登录',
+        'teacher.folders.title': '课程文件夹',
+        'teacher.folders.subtitle': '管理你的课程，每个课程可包含多个活动',
+        'teacher.folders.create': '创建课程文件夹',
 
         // Language option labels (for selector)
         'lang.zh-CN': '简体中文',
@@ -499,6 +503,7 @@ const I18N = {
         // ===== Teacher page =====
         // Sidebar
         'teacher.sidebar.dashboard': '工作台',
+        'teacher.sidebar.folders': '課程資料夾',
         'teacher.sidebar.scripts': '活動項目',
         'teacher.sidebar.spec': '教學目標檢查',
         'teacher.sidebar.pipeline': '自動生成過程',
@@ -508,6 +513,9 @@ const I18N = {
         'teacher.sidebar.publish': '發布與匯出',
         'teacher.sidebar.settings': '設定',
         'teacher.sidebar.logout': '登出',
+        'teacher.folders.title': '課程資料夾',
+        'teacher.folders.subtitle': '管理你的課程，每個課程可包含多個活動',
+        'teacher.folders.create': '建立課程資料夾',
 
         // Dashboard
         'lang.zh-CN': '簡體中文',
@@ -954,6 +962,7 @@ const I18N = {
         // ===== Teacher page =====
         // Sidebar
         'teacher.sidebar.dashboard': 'Dashboard',
+        'teacher.sidebar.folders': 'Course Folders',
         'teacher.sidebar.scripts': 'Activity Projects',
         'teacher.sidebar.spec': 'Teaching Plan Check',
         'teacher.sidebar.pipeline': 'Generation Pipeline',
@@ -963,6 +972,9 @@ const I18N = {
         'teacher.sidebar.publish': 'Publish & Export',
         'teacher.sidebar.settings': 'Settings',
         'teacher.sidebar.logout': 'Sign Out',
+        'teacher.folders.title': 'Course Folders',
+        'teacher.folders.subtitle': 'Manage your courses. Each course can hold multiple activities.',
+        'teacher.folders.create': 'Create Course Folder',
 
         // Dashboard
         'lang.zh-CN': 'Simplified Chinese',

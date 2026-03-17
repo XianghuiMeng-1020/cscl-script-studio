@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import current_user
 from app.db import db
-from app.models import CSCLScript, CSCLScene, CSCLRole, CSCLScriptlet, CSCLScriptRevision, CSCLPipelineRun, CSCLPipelineStageRun, CSCLCourseDocument, CSCLEvidenceBinding, CSCLDocumentChunk, CSCLTeacherDecision, StudentGroup
+from app.models import CSCLScript, CSCLScene, CSCLRole, CSCLScriptlet, CSCLScriptRevision, CSCLPipelineRun, CSCLPipelineStageRun, CSCLCourseDocument, CSCLEvidenceBinding, CSCLDocumentChunk, CSCLTeacherDecision, StudentGroup, CSCLCourseFolder
 from app.auth import role_required, log_audit
 from app.services.script_template_service import ScriptTemplateService
 from app.services.cscl_llm_provider import get_cscl_llm_provider
@@ -1719,3 +1719,104 @@ def get_script_pipeline_runs(script_id):
         'success': True,
         'runs': [r.to_dict() for r in runs]
     }), 200
+
+
+# ────────────────────────────────────────────────────────────────
+# Course Folder endpoints
+# ────────────────────────────────────────────────────────────────
+
+@cscl_bp.route('/folders', methods=['GET'])
+@role_required('teacher', 'admin')
+def list_folders():
+    """List course folders for the current teacher"""
+    folders = CSCLCourseFolder.query.filter_by(
+        created_by=current_user.id
+    ).order_by(CSCLCourseFolder.updated_at.desc()).all()
+    return jsonify({
+        'success': True,
+        'folders': [f.to_dict(include_activity_count=True) for f in folders]
+    }), 200
+
+
+@cscl_bp.route('/folders', methods=['POST'])
+@role_required('teacher', 'admin')
+def create_folder():
+    """Create a new course folder"""
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Folder name is required'}), 400
+
+    folder = CSCLCourseFolder(
+        name=name,
+        description=(data.get('description') or '').strip() or None,
+        created_by=current_user.id,
+    )
+    db.session.add(folder)
+    db.session.commit()
+    log_audit('course_folder_created', target_id=folder.id)
+    return jsonify({'success': True, 'folder': folder.to_dict()}), 201
+
+
+@cscl_bp.route('/folders/<folder_id>', methods=['GET'])
+@role_required('teacher', 'admin')
+def get_folder(folder_id):
+    """Get a course folder with its activities"""
+    folder = CSCLCourseFolder.query.filter_by(
+        id=folder_id, created_by=current_user.id
+    ).first()
+    if not folder:
+        return jsonify({'error': 'Folder not found'}), 404
+
+    activities = CSCLScript.query.filter_by(folder_id=folder_id).order_by(
+        CSCLScript.updated_at.desc()
+    ).all()
+    docs = CSCLCourseDocument.query.filter_by(course_id=folder_id).all()
+    return jsonify({
+        'success': True,
+        'folder': folder.to_dict(),
+        'activities': [a.to_dict() for a in activities],
+        'documents': [d.to_dict() for d in docs],
+    }), 200
+
+
+@cscl_bp.route('/folders/<folder_id>', methods=['PUT'])
+@role_required('teacher', 'admin')
+def update_folder(folder_id):
+    """Update a course folder"""
+    folder = CSCLCourseFolder.query.filter_by(
+        id=folder_id, created_by=current_user.id
+    ).first()
+    if not folder:
+        return jsonify({'error': 'Folder not found'}), 404
+
+    data = request.get_json() or {}
+    if 'name' in data:
+        name = (data['name'] or '').strip()
+        if not name:
+            return jsonify({'error': 'Folder name cannot be empty'}), 400
+        folder.name = name
+    if 'description' in data:
+        folder.description = (data['description'] or '').strip() or None
+
+    db.session.commit()
+    return jsonify({'success': True, 'folder': folder.to_dict()}), 200
+
+
+@cscl_bp.route('/folders/<folder_id>', methods=['DELETE'])
+@role_required('teacher', 'admin')
+def delete_folder(folder_id):
+    """Delete a course folder (only if no activities)"""
+    folder = CSCLCourseFolder.query.filter_by(
+        id=folder_id, created_by=current_user.id
+    ).first()
+    if not folder:
+        return jsonify({'error': 'Folder not found'}), 404
+
+    if folder.activities.count() > 0:
+        return jsonify({'error': 'Cannot delete folder with existing activities'}), 400
+
+    db.session.delete(folder)
+    db.session.commit()
+    log_audit('course_folder_deleted', target_id=folder_id)
+    return jsonify({'success': True}), 200

@@ -541,13 +541,12 @@ class CSCLPipelineService:
                     "pipeline run_id=%s critic failed (%s), skipping refiner, using material output",
                     run_id, critic_result.get('error', 'unknown')
                 )
-                # Use material output as final output
-                final_output = material_result.get('output_snapshot')
+                final_output = material_result.get('output_snapshot') or {}
                 evidence_binding_ratio = self._compute_evidence_binding_ratio(
-                    script_id, final_output or {}
+                    script_id, final_output
                 )
                 quality_report = compute_quality_report(
-                    final_output or {}, spec, evidence_binding_ratio=evidence_binding_ratio
+                    final_output, spec, evidence_binding_ratio=evidence_binding_ratio
                 )
                 if 'grounding' in quality_report:
                     quality_report['grounding']['status'] = grounding_status if has_docs else 'no_course_docs'
@@ -556,6 +555,7 @@ class CSCLPipelineService:
                 config_fingerprint = compute_config_fingerprint(options, provider_name, model_name)
                 pipeline_run.status = 'success'
                 pipeline_run.config_fingerprint = config_fingerprint
+                pipeline_run.final_output_json = final_output
                 pipeline_run.finished_at = datetime.now(timezone.utc)
                 db.session.commit()
                 return {
@@ -628,23 +628,19 @@ class CSCLPipelineService:
             # Commit evidence bindings
             db.session.flush()
             
-            # Update pipeline run
-            pipeline_run.status = 'success'
-            pipeline_run.config_fingerprint = config_fingerprint
-            pipeline_run.finished_at = datetime.now(timezone.utc)
-            db.session.commit()
-            
             final_output = dict(refiner_result['output_snapshot']) if refiner_result.get('output_snapshot') else {}
             # Pass through classroom-ready artefacts from material stage if refiner did not include them
             mat_snap = material_result.get('output_snapshot') or {}
-            if mat_snap.get('student_worksheet') and not final_output.get('student_worksheet'):
-                final_output['student_worksheet'] = mat_snap['student_worksheet']
-            if mat_snap.get('student_slides') and not final_output.get('student_slides'):
-                final_output['student_slides'] = mat_snap['student_slides']
-            if mat_snap.get('teacher_guide') and not final_output.get('teacher_guide'):
-                final_output['teacher_guide'] = mat_snap['teacher_guide']
-            if mat_snap.get('role_cards') and not final_output.get('role_cards'):
-                final_output['role_cards'] = mat_snap['role_cards']
+            for _key in ('student_worksheet', 'student_slides', 'teacher_guide', 'role_cards'):
+                if mat_snap.get(_key) and not final_output.get(_key):
+                    final_output[_key] = mat_snap[_key]
+
+            # Update pipeline run and persist final_output
+            pipeline_run.status = 'success'
+            pipeline_run.config_fingerprint = config_fingerprint
+            pipeline_run.final_output_json = final_output
+            pipeline_run.finished_at = datetime.now(timezone.utc)
+            db.session.commit()
             
             return {
                 'run_id': run_id,

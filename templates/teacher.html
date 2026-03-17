@@ -32,6 +32,10 @@
                     <i class="fas fa-home"></i>
                     <span data-i18n="teacher.sidebar.dashboard">工作台</span>
                 </a>
+                <a href="#" class="nav-item" data-view="folders" data-i18n-aria-label="teacher.sidebar.folders">
+                    <i class="fas fa-folder"></i>
+                    <span data-i18n="teacher.sidebar.folders">课程文件夹</span>
+                </a>
                 <a href="#" class="nav-item" data-view="scripts" data-i18n-aria-label="teacher.sidebar.scripts">
                     <i class="fas fa-file-code"></i>
                     <span data-i18n="teacher.sidebar.scripts">活动项目</span>
@@ -106,9 +110,9 @@
                         <h3 class="tutorial-title" data-i18n="teacher.tutorial.title">👋 欢迎使用教师工作台</h3>
                         <p class="tutorial-intro" data-i18n="teacher.tutorial.intro">我是你的协作学习活动生成小助手。按下面 4 步即可把课程大纲变成可用的活动方案：</p>
                         <ul class="tutorial-steps">
-                            <li data-i18n="teacher.tutorial.step1">1. 导入课程大纲 — 上传或粘贴大纲，系统会提取课程信息</li>
-                            <li data-i18n="teacher.tutorial.step2">2. 确认教学目标 — 填写学习目标、任务类型与预期产出</li>
-                            <li data-i18n="teacher.tutorial.step3">3. 生成活动流程 — 点击「开始生成」，系统自动生成活动方案</li>
+                            <li data-i18n="teacher.tutorial.step1">1. 创建课程文件夹 — 上传课程大纲和课程级材料，建立可复用的课程空间</li>
+                            <li data-i18n="teacher.tutorial.step2">2. 创建活动 — 在课程文件夹内创建具体活动，上传本节课材料</li>
+                            <li data-i18n="teacher.tutorial.step3">3. 生成活动包 — 系统自动生成学生工作表、学生幻灯片、教师指导手册</li>
                             <li data-i18n="teacher.tutorial.step4">4. 审阅并发布 — 检查无误后发布给学生</li>
                         </ul>
                         <button type="button" class="tutorial-dismiss" id="teacherTutorialDismiss" data-i18n="teacher.tutorial.dismiss">不再显示</button>
@@ -119,29 +123,29 @@
                 <div class="process-cards-grid">
                     <div class="process-card" data-step="1">
                         <div class="step-number">1</div>
-                        <div class="step-icon"><i class="fas fa-file-upload"></i></div>
-                        <h3 data-i18n="teacher.step1.title">导入课程大纲</h3>
-                        <p class="step-what" data-i18n="teacher.step1.what">这一步做什么：上传或粘贴课程大纲内容</p>
-                        <p class="step-why" data-i18n="teacher.step1.why">为什么要做：系统需要了解课程内容才能生成合适的活动方案</p>
-                        <p class="step-result" data-i18n="teacher.step1.result">完成后会得到：提取的课程信息（课程名、主题、目标等）</p>
-                        <button type="button" class="step-action-btn btn-import" id="btnImport" data-action="import-outline" data-i18n="teacher.step1.action">开始导入</button>
+                        <div class="step-icon"><i class="fas fa-folder-plus"></i></div>
+                        <h3 data-i18n="teacher.step1.title">创建课程文件夹</h3>
+                        <p class="step-what" data-i18n="teacher.step1.what">这一步做什么：创建课程文件夹，上传课程大纲和其他课程级材料</p>
+                        <p class="step-why" data-i18n="teacher.step1.why">为什么要做：建立可复用的课程空间，供后续多个活动共用</p>
+                        <p class="step-result" data-i18n="teacher.step1.result">完成后会得到：一个课程文件夹，包含课程级的上下文材料</p>
+                        <button type="button" class="step-action-btn btn-import" id="btnImport" data-action="import-outline" data-i18n="teacher.step1.action">创建文件夹</button>
                     </div>
                     <div class="process-card" data-step="2">
                         <div class="step-number">2</div>
-                        <div class="step-icon"><i class="fas fa-check-circle"></i></div>
-                        <h3 data-i18n="teacher.step2.title">确认教学目标</h3>
-                        <p class="step-what" data-i18n="teacher.step2.what">这一步做什么：确认或补充学习目标、任务类型、预期产出</p>
-                        <p class="step-why" data-i18n="teacher.step2.why">为什么要做：明确的教学目标确保生成的活动符合你的教学需求</p>
-                        <p class="step-result" data-i18n="teacher.step2.result">完成后会得到：完整的教学目标检查结果</p>
-                        <button type="button" class="step-action-btn btn-validate" id="btnValidate" data-action="validate-goals" data-i18n="teacher.step2.action">确认目标</button>
+                        <div class="step-icon"><i class="fas fa-plus-circle"></i></div>
+                        <h3 data-i18n="teacher.step2.title">创建活动</h3>
+                        <p class="step-what" data-i18n="teacher.step2.what">这一步做什么：在课程文件夹内创建某一次具体活动，上传本节课的 PPT、阅读材料等</p>
+                        <p class="step-why" data-i18n="teacher.step2.why">为什么要做：让系统基于这节课的真实材料来生成活动</p>
+                        <p class="step-result" data-i18n="teacher.step2.result">完成后会得到：一项具体的课堂活动设计</p>
+                        <button type="button" class="step-action-btn btn-validate" id="btnValidate" data-action="validate-goals" data-i18n="teacher.step2.action">创建活动</button>
                     </div>
                     <div class="process-card" data-step="3">
                         <div class="step-number">3</div>
                         <div class="step-icon"><i class="fas fa-cogs"></i></div>
-                        <h3 data-i18n="teacher.step3.title">生成活动流程</h3>
-                        <p class="step-what" data-i18n="teacher.step3.what">这一步做什么：系统自动生成协作学习活动方案</p>
-                        <p class="step-why" data-i18n="teacher.step3.why">为什么要做：基于课程内容和教学目标，生成结构化的活动流程</p>
-                        <p class="step-result" data-i18n="teacher.step3.result">完成后会得到：完整的活动方案，包括场景、角色、任务等</p>
+                        <h3 data-i18n="teacher.step3.title">生成活动包</h3>
+                        <p class="step-what" data-i18n="teacher.step3.what">这一步做什么：系统自动生成学生工作表、学生幻灯片、教师指导手册</p>
+                        <p class="step-why" data-i18n="teacher.step3.why">为什么要做：输出真正可直接用于课堂的材料，而不只是内部脚本</p>
+                        <p class="step-result" data-i18n="teacher.step3.result">完成后会得到：Student Worksheet、Student Slides、Teacher Facilitation Sheet</p>
                         <button type="button" class="step-action-btn btn-generate" id="btnGenerate" data-action="run-pipeline" data-i18n="teacher.step3.action">开始生成</button>
                     </div>
                     <div class="process-card" data-step="4">
@@ -192,6 +196,56 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Folders View -->
+            <div id="foldersView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-folder"></i> <span data-i18n="teacher.folders.title">课程文件夹</span></h2>
+                        <p class="view-subtitle" data-i18n="teacher.folders.subtitle">管理你的课程，每个课程可包含多个活动</p>
+                    </div>
+                    <button class="btn-primary" onclick="createNewFolder()">
+                        <i class="fas fa-plus"></i>
+                        <span data-i18n="teacher.folders.create">创建课程文件夹</span>
+                    </button>
+                </div>
+                <div id="foldersList" class="folders-grid">
+                    <div class="loading-placeholder">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p data-i18n="common.loading">加载中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Folder Detail View -->
+            <div id="folderDetailView" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2><i class="fas fa-folder-open"></i> <span id="folderDetailName">课程文件夹</span></h2>
+                        <p class="view-subtitle" id="folderDetailDesc">查看该课程下的活动和文档</p>
+                    </div>
+                    <div class="view-header-actions">
+                        <button class="btn-secondary" onclick="switchView('folders')">
+                            <i class="fas fa-arrow-left"></i>
+                            <span>返回文件夹列表</span>
+                        </button>
+                        <button class="btn-primary" onclick="createActivityInFolder()">
+                            <i class="fas fa-plus"></i>
+                            <span>创建新活动</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="folder-detail-content">
+                    <div class="folder-section">
+                        <h3><i class="fas fa-book-open"></i> 课程文档</h3>
+                        <div id="folderDocsList" class="documents-container"></div>
+                    </div>
+                    <div class="folder-section">
+                        <h3><i class="fas fa-tasks"></i> 活动列表</h3>
+                        <div id="folderActivitiesList" class="scripts-grid"></div>
                     </div>
                 </div>
             </div>
@@ -387,15 +441,15 @@
                     <div class="wizard-progress">
                         <div class="wizard-step active" data-step="1">
                             <div class="step-number">1</div>
-                            <div class="step-label"><i class="fas fa-file-upload" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step1">上传材料</span></div>
+                            <div class="step-label"><i class="fas fa-folder-plus" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step1">创建课程文件夹</span></div>
                         </div>
                         <div class="wizard-step" data-step="2">
                             <div class="step-number">2</div>
-                            <div class="step-label"><i class="fas fa-check-circle" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step2">定义活动</span></div>
+                            <div class="step-label"><i class="fas fa-plus-circle" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step2">创建活动</span></div>
                         </div>
                         <div class="wizard-step" data-step="3">
                             <div class="step-number">3</div>
-                            <div class="step-label"><i class="fas fa-cogs" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step3">生成</span></div>
+                            <div class="step-label"><i class="fas fa-cogs" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step3">生成活动包</span></div>
                         </div>
                         <div class="wizard-step" data-step="4">
                             <div class="step-number">4</div>
@@ -403,16 +457,16 @@
                         </div>
                     </div>
 
-                    <!-- Step 1: Upload Teaching Materials -->
+                    <!-- Step 1: Create Course Folder -->
                     <div id="wizardStep1" class="wizard-step-content active">
                         <div class="wizard-header">
-                            <h2 data-i18n="teacher.wizard.step1.title">第 1 步：上传教学材料</h2>
-                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step1.subtitle">上传与本节课相关的任何材料，系统将用于检索增强生成</p>
+                            <h2 data-i18n="teacher.wizard.step1.title">第 1 步：创建课程文件夹</h2>
+                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step1.subtitle">创建课程文件夹，上传课程大纲和其他课程级材料（如 assessment brief、课程概述等）</p>
                         </div>
                         <div class="wizard-body">
                             <div class="wizard-help">
                                 <i class="fas fa-info-circle"></i>
-                                <p><strong data-i18n="common.why">为什么要做：</strong><span data-i18n="teacher.wizard.step1.why">课程与课堂材料用于检索增强生成，使活动方案贴合你的课程与本节内容。</span></p>
+                                <p><strong data-i18n="common.why">为什么要做：</strong><span data-i18n="teacher.wizard.step1.why">建立可复用的课程空间，课程大纲和课程级材料将供后续多个活动共用，用于检索增强生成。</span></p>
                             </div>
                             <div class="upload-section">
                                 <div class="upload-area" id="uploadArea">
@@ -453,12 +507,24 @@
                     <div id="wizardStep2" class="wizard-step-content">
                         <div class="wizard-header">
                             <h2 data-i18n="teacher.wizard.step2.title">第 2 步：创建活动</h2>
-                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step2.subtitle">在该课程中创建某一次具体活动，上传这节课的材料（PPT、阅读材料、案例等）</p>
+                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step2.subtitle">在课程文件夹内创建一次具体的课堂活动，上传本节课专用材料（PPT、阅读材料、案例等）</p>
                         </div>
                         <div class="wizard-body">
                             <div class="wizard-help">
                                 <i class="fas fa-info-circle"></i>
-                                <p><strong data-i18n="common.info">信息</strong> <span data-i18n="teacher.wizard.spec_why">定义一项具体的小组协作活动：教学目标、阶段、协作方式与附加说明。</span></p>
+                                <p><strong data-i18n="common.info">信息</strong> <span data-i18n="teacher.wizard.spec_why">定义一项具体的小组协作活动。你可以上传本节课的 PPT、阅读材料等，系统将基于课程上下文和课堂材料生成活动。</span></p>
+                            </div>
+                            <!-- Lesson-specific file upload -->
+                            <div class="lesson-upload-section" style="margin-bottom: 1.5rem;">
+                                <h4 style="margin-bottom: 0.5rem;"><i class="fas fa-file-upload"></i> 上传本节课材料（选填）</h4>
+                                <p class="form-help" style="margin-bottom: 0.75rem;">上传本节课的 PPT、阅读材料、工作表、案例、教师笔记等。这些材料将用于生成更贴合课堂的活动。</p>
+                                <div class="upload-area upload-area-sm" id="lessonUploadArea">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>拖放文件或点击浏览</p>
+                                    <input type="file" id="lessonFile" accept=".txt,.md,.pdf,.pptx,.docx,.xlsx,.csv,.png,.jpg,.jpeg" multiple style="display: none;">
+                                    <button class="btn-secondary btn-sm" onclick="document.getElementById('lessonFile').click()"><i class="fas fa-folder-open" aria-hidden="true"></i> 浏览文件</button>
+                                </div>
+                                <div id="lessonUploadedFilesList" class="uploaded-files-list" style="margin-top: 0.5rem;"></div>
                             </div>
                             <form id="specForm" class="spec-form">
                                 <div class="form-group form-group-initial-idea">
@@ -559,11 +625,11 @@
                         </div>
                     </div>
 
-                    <!-- Step 3: Run Pipeline -->
+                    <!-- Step 3: Generate Activity Package -->
                     <div id="wizardStep3" class="wizard-step-content">
                         <div class="wizard-header">
-                            <h2 data-i18n="teacher.wizard.step3.title">第 3 步：运行生成流程</h2>
-                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step3.subtitle">通过多阶段流程生成 CSCL 活动方案</p>
+                            <h2 data-i18n="teacher.wizard.step3.title">第 3 步：生成活动包</h2>
+                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step3.subtitle">系统将生成 Student Worksheet、Student Slides、Teacher Facilitation Sheet</p>
                         </div>
                         <div class="wizard-body">
                             <div class="wizard-help">

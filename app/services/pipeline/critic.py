@@ -103,6 +103,10 @@ class CriticStage:
                 'validation': validation,
                 'quality_indicators': quality_indicators
             }
+            # Pass through classroom-ready artefacts from material_output
+            for key in ('student_worksheet', 'student_slides', 'teacher_guide', 'role_cards'):
+                if material_output.get(key):
+                    output_snapshot[key] = material_output[key]
             
             status = 'success' if validation.get('is_valid', True) else 'failed'
             error_msg = '; '.join(validation.get('issues', [])) if validation.get('issues') else None

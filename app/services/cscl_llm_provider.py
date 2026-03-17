@@ -301,14 +301,7 @@ class MockProvider(BaseLLMProvider):
     
     def is_ready(self) -> bool:
         return True
-    
-    def generate_materials(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        plan = self.generate_script_plan(input_payload)
-        if not plan.get('success'):
-            return {'success': False, 'error': plan.get('error'), 'provider': 'mock', 'model': Config.MOCK_MODEL, 'materials': None}
-        materials = plan.get('plan', {})
-        return {'success': True, 'error': None, 'provider': 'mock', 'model': Config.MOCK_MODEL, 'materials': materials}
-    
+
     def critique_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
         material_output = input_payload.get('material_output', {})
         scenes = material_output.get('scenes', [])
@@ -325,7 +318,7 @@ class MockProvider(BaseLLMProvider):
             'scenes': scenes
         }
         return {'success': True, 'error': None, 'provider': 'mock', 'model': Config.MOCK_MODEL, 'critique': critique}
-    
+
     def refine_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
         critic_output = input_payload.get('critic_output', {})
         scenes = critic_output.get('scenes', [])
@@ -336,56 +329,94 @@ class MockProvider(BaseLLMProvider):
             'refinements_applied': {}
         }
         return {'success': True, 'error': None, 'provider': 'mock', 'model': Config.MOCK_MODEL, 'refined': refined}
-    
-    def is_ready(self) -> bool:
-        return True
-    
+
     def generate_materials(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        plan = input_payload.get('planner_output', {}).get('plan', {})
+        planner_output = input_payload.get('planner_output', {})
+        plan = planner_output.get('plan', {})
+        activity = planner_output.get('activity') or plan.get('activity', {})
+        spec = input_payload.get('spec', {})
+        cc = spec.get('course_context', {})
+        topic = cc.get('topic', 'Unknown Topic')
+
+        roles = plan.get('roles', [])
+        scenes = plan.get('scenes', [])
+
+        steps = activity.get('steps', []) if isinstance(activity, dict) else []
+        roles_summary = ', '.join(
+            r.get('role_name', '') for r in (activity.get('roles') or roles) if isinstance(r, dict)
+        ) or 'No specific roles assigned'
+
+        worksheet_steps = []
+        for i, s in enumerate(steps):
+            worksheet_steps.append({
+                'step_order': s.get('step_order', i + 1),
+                'title': s.get('title', f'Step {i + 1}'),
+                'description': s.get('description', ''),
+                'duration_minutes': s.get('duration_minutes', 5),
+                'prompts': s.get('prompts', [])
+            })
+        if not worksheet_steps:
+            for i, sc in enumerate(scenes):
+                worksheet_steps.append({
+                    'step_order': i + 1,
+                    'title': sc.get('purpose', f'Step {i + 1}')[:80],
+                    'description': sc.get('purpose', ''),
+                    'duration_minutes': 5,
+                    'prompts': [sl.get('prompt_text', '') for sl in (sc.get('scriptlets') or [])]
+                })
+
+        student_worksheet = {
+            'title': activity.get('title', f'{topic} – Collaborative Activity') if isinstance(activity, dict) else f'{topic} – Collaborative Activity',
+            'goal': activity.get('objective', f'Collaboratively explore {topic}') if isinstance(activity, dict) else f'Collaboratively explore {topic}',
+            'roles_summary': roles_summary,
+            'steps': worksheet_steps,
+            'timing_summary': f'Total: {sum(s.get("duration_minutes", 5) for s in worksheet_steps)} minutes',
+            'output_instructions': activity.get('expected_output', 'A shared group response document') if isinstance(activity, dict) else 'A shared group response document',
+            'reporting_instructions': activity.get('reporting_instructions', 'Present key findings to the class') if isinstance(activity, dict) else 'Present key findings to the class',
+        }
+
+        slide_items = [
+            {'slide_number': 1, 'title': 'Activity Overview', 'content': student_worksheet['goal']},
+        ]
+        for ws in worksheet_steps[:6]:
+            slide_items.append({
+                'slide_number': len(slide_items) + 1,
+                'title': ws['title'],
+                'content': ws.get('description', '') + (' (' + str(ws.get('duration_minutes', '')) + ' min)' if ws.get('duration_minutes') else ''),
+            })
+        slide_items.append({
+            'slide_number': len(slide_items) + 1,
+            'title': 'Expected Output',
+            'content': student_worksheet['output_instructions'],
+        })
+
+        student_slides = {
+            'title': student_worksheet['title'],
+            'slides': slide_items,
+        }
+
+        teacher_guide = {
+            'overview': activity.get('overview', f'A collaborative activity about {topic}') if isinstance(activity, dict) else f'A collaborative activity about {topic}',
+            'alignment_with_objectives': 'This activity aligns with the stated learning objectives through structured group collaboration.',
+            'rationale': 'Group work promotes deeper engagement with the material and develops collaborative skills.',
+            'implementation_steps': 'Divide students into groups, distribute the worksheet, monitor progress, and facilitate debrief.',
+            'monitoring_points': 'Check that all group members are participating. Listen for misconceptions during discussions.',
+            'expected_difficulties': 'Students may struggle with time management or distributing work evenly among group members.',
+            'debrief_questions': 'What was the most surprising finding? How did your group resolve disagreements?',
+            'adaptation_suggestions': 'For larger classes, use jigsaw method. For online, use breakout rooms with shared docs.',
+        }
+
         return {
             'success': True,
             'error': None,
             'provider': 'mock',
             'model': Config.MOCK_MODEL,
             'materials': {
-                'roles': plan.get('roles', []),
-                'scenes': plan.get('scenes', [])
-            }
-        }
-    
-    def critique_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        scenes = input_payload.get('material_output', {}).get('scenes', [])
-        roles = input_payload.get('material_output', {}).get('roles', [])
-        scriptlet_count = sum(len(s.get('scriptlets', [])) for s in scenes)
-        return {
-            'success': True,
-            'error': None,
-            'provider': 'mock',
-            'model': Config.MOCK_MODEL,
-            'critique': {
-                'validation': {'is_valid': True, 'issues': [], 'warnings': []},
-                'quality_indicators': {
-                    'scene_count': len(scenes),
-                    'role_count': len(roles),
-                    'scriptlet_count': scriptlet_count
-                },
-                'roles': roles,
-                'scenes': scenes
-            }
-        }
-    
-    def refine_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        scenes = input_payload.get('critic_output', {}).get('scenes', [])
-        roles = input_payload.get('critic_output', {}).get('roles', [])
-        return {
-            'success': True,
-            'error': None,
-            'provider': 'mock',
-            'model': Config.MOCK_MODEL,
-            'refined': {
                 'roles': roles,
                 'scenes': scenes,
-                'refinements_applied': {}
+                'student_worksheet': student_worksheet,
+                'student_slides': student_slides,
+                'teacher_guide': teacher_guide,
             }
         }
 
@@ -779,21 +810,93 @@ class QwenProvider(BaseLLMProvider):
                 'model': model
             }
     
+    def _qwen_chat_json(self, system_prompt: str, user_payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Generic Qwen chat JSON call (mirrors OpenAI._chat_json)"""
+        model = str(_get_config_value('QWEN_MODEL', 'qwen-plus'))
+        base_url = str(_get_config_value('QWEN_BASE_URL', 'https://dashscope.aliyuncs.com/compatible-mode/v1')).rstrip('/')
+        timeout_s = int(_as_int(_get_config_value('QWEN_TIMEOUT_SECONDS', 120), 120))
+        api_key = (
+            os.getenv('QWEN_API_KEY', '') or str(_get_config_value('QWEN_API_KEY', '')) or
+            os.getenv('DASHSCOPE_API_KEY', '') or str(_get_config_value('DASHSCOPE_API_KEY', ''))
+        )
+        if not api_key or not str(api_key).strip():
+            return {'success': False, 'error': 'QWEN_API_KEY not configured', 'provider': 'qwen', 'model': model, 'output': None}
+        try:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)}
+            ]
+            resp = requests.post(
+                f"{base_url}/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={"model": model, "messages": messages, "temperature": 0, "max_tokens": 4096},
+                timeout=timeout_s
+            )
+            if resp.status_code >= 400:
+                return {'success': False, 'error': f"Qwen API HTTP {resp.status_code}: {(resp.text or '')[:500]}", 'provider': 'qwen', 'model': model, 'output': None}
+            data = resp.json()
+            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            if not content:
+                return {'success': False, 'error': 'Qwen API returned empty content', 'provider': 'qwen', 'model': model, 'output': None}
+            try:
+                parsed = json.loads(content)
+            except Exception:
+                txt = content.strip()
+                if "```" in txt:
+                    parts = txt.split("```")
+                    if len(parts) >= 3:
+                        txt = parts[-2]
+                    txt = txt.replace("json", "", 1).strip()
+                try:
+                    parsed = json.loads(txt)
+                except Exception:
+                    parsed = {"raw_text": content}
+            return {'success': True, 'error': None, 'provider': 'qwen', 'model': model, 'output': parsed}
+        except Exception as e:
+            return {'success': False, 'error': f"Qwen request failed: {type(e).__name__}: {e}", 'provider': 'qwen', 'model': model, 'output': None}
+
     def generate_materials(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Qwen generate_materials - forward to generate_script_plan for now"""
-        plan_result = self.generate_script_plan(input_payload)
-        if not plan_result.get('success'):
-            return {'success': False, 'error': plan_result.get('error'), 'provider': 'qwen', 'model': plan_result.get('model', 'qwen-plus'), 'materials': None}
-        materials = plan_result.get('plan', {})
-        return {'success': True, 'error': None, 'provider': 'qwen', 'model': plan_result.get('model', 'qwen-plus'), 'materials': materials}
-    
+        system_prompt = (
+            "You generate classroom-ready CSCL activity materials. Return ONLY valid JSON with these keys: "
+            "roles (list), scenes (list), "
+            "student_worksheet (object with: title, goal, roles_summary, steps with title/description/duration_minutes/prompts, timing_summary, output_instructions, reporting_instructions), "
+            "student_slides (object with: title, slides array of {slide_number, title, content} for a small set of student-facing instructional slides explaining the activity goal, key steps, timing, and expected output), "
+            "teacher_guide (object with: overview, alignment_with_objectives, rationale, implementation_steps, monitoring_points, expected_difficulties, debrief_questions, adaptation_suggestions). "
+            "Each scene must include: order_index, scene_type, purpose, transition_rule, scriptlets. "
+            "Each scriptlet: prompt_text, prompt_type, role_id (nullable). "
+            "student_worksheet, student_slides, and teacher_guide must be ready for teachers and students to use directly."
+        )
+        r = self._qwen_chat_json(system_prompt, input_payload)
+        if not r['success']:
+            return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'materials': None}
+        out = r['output'] or {}
+        return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'materials': out}
+
     def critique_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Qwen critique_script - return structured failure for now"""
-        return {'success': False, 'error': 'Qwen critique_script not implemented', 'provider': 'qwen', 'model': str(_get_config_value('QWEN_MODEL', 'qwen-plus')), 'critique': None}
-    
+        system_prompt = (
+            "You are a CSCL activity quality critic. Evaluate whether this is ONE specific collaborative activity (not a full lesson flow). "
+            "Return ONLY JSON with keys: validation {is_valid:boolean, issues:list[str], warnings:list[str]}, "
+            "quality_indicators {scene_count:int, role_count:int, scriptlet_count:int}, roles (list), scenes (list). "
+            "Set is_valid to true if: (1) there is at least one clear task with steps, (2) students know what to do each step, (3) roles/scenes are consistent."
+        )
+        r = self._qwen_chat_json(system_prompt, input_payload)
+        if not r['success']:
+            return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'critique': None}
+        out = r['output'] or {}
+        return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'critique': out}
+
     def refine_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Qwen refine_script - return structured failure for now"""
-        return {'success': False, 'error': 'Qwen refine_script not implemented', 'provider': 'qwen', 'model': str(_get_config_value('QWEN_MODEL', 'qwen-plus')), 'refined': None}
+        system_prompt = (
+            "You are a CSCL activity refiner. Fix the issues and return ONLY JSON with keys: "
+            "roles (list), scenes (list), refinements_applied (object). "
+            "If student_worksheet, student_slides, or teacher_guide are present in the input, include them in the output unchanged or improved. "
+            "Ensure at least one scene/step with non-empty scriptlets or prompts."
+        )
+        r = self._qwen_chat_json(system_prompt, input_payload)
+        if not r['success']:
+            return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'refined': None}
+        out = r['output'] or {}
+        return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'refined': out}
 
 class FallbackLLMProvider(BaseLLMProvider):
     """S2.10: Primary then fallback; fallback only on timeout/429/5xx/connection. Structured logging.

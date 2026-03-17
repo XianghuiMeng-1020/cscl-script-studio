@@ -69,6 +69,12 @@ class RefinerStage:
                 'roles': roles,
                 'refinements_applied': refinements_applied
             }
+            # Pass through classroom-ready artefacts (from refined output or critic input)
+            for key in ('student_worksheet', 'student_slides', 'teacher_guide', 'role_cards'):
+                if refined.get(key):
+                    output_snapshot[key] = refined[key]
+                elif critic_output.get(key):
+                    output_snapshot[key] = critic_output[key]
             
             result = {
                 'stage_name': 'refiner',

@@ -217,6 +217,33 @@ class AuditLog(db.Model):
         }
 
 
+class CSCLCourseFolder(db.Model):
+    """Course-level container that holds syllabus, course docs, and multiple activities"""
+    __tablename__ = 'cscl_course_folders'
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = db.Column(db.String(500), nullable=False)
+    description = db.Column(Text, nullable=True)
+    created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    activities = db.relationship('CSCLScript', backref='folder', lazy='dynamic')
+
+    def to_dict(self, include_activity_count=False):
+        d = {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'created_by': self.created_by,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+        if include_activity_count:
+            d['activity_count'] = self.activities.count()
+        return d
+
+
 class CSCLScript(db.Model):
     """CSCL Script model"""
     __tablename__ = 'cscl_scripts'
@@ -225,12 +252,13 @@ class CSCLScript(db.Model):
     title = db.Column(db.String(500), nullable=False)
     topic = db.Column(db.String(500), nullable=False)
     course_id = db.Column(db.String(100), nullable=True)
-    learning_objectives = db.Column(JSON, nullable=True)  # Array of objectives
-    task_type = db.Column(db.String(100), nullable=False)  # e.g., "debate", "collaborative_writing"
+    folder_id = db.Column(db.String(36), db.ForeignKey('cscl_course_folders.id'), nullable=True)
+    learning_objectives = db.Column(JSON, nullable=True)
+    task_type = db.Column(db.String(100), nullable=False)
     duration_minutes = db.Column(db.Integer, nullable=False, default=60)
-    status = db.Column(db.String(50), nullable=False, default='draft')  # draft, final
-    published_at = db.Column(db.DateTime, nullable=True)  # when teacher published for students
-    share_code = db.Column(db.String(12), unique=True, nullable=True, index=True)  # short code for student access
+    status = db.Column(db.String(50), nullable=False, default='draft')
+    published_at = db.Column(db.DateTime, nullable=True)
+    share_code = db.Column(db.String(12), unique=True, nullable=True, index=True)
     created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -241,6 +269,7 @@ class CSCLScript(db.Model):
             'title': self.title,
             'topic': self.topic,
             'course_id': self.course_id,
+            'folder_id': self.folder_id,
             'learning_objectives': self.learning_objectives,
             'task_type': self.task_type,
             'duration_minutes': self.duration_minutes,
@@ -354,6 +383,7 @@ class CSCLPipelineRun(db.Model):
     config_fingerprint = db.Column(db.String(128), nullable=True)
     status = db.Column(db.String(50), nullable=False, default='running')  # running, success, partial_failed, failed
     error_message = db.Column(Text, nullable=True)
+    final_output_json = db.Column(JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     finished_at = db.Column(db.DateTime, nullable=True)
     
@@ -368,6 +398,7 @@ class CSCLPipelineRun(db.Model):
             'config_fingerprint': self.config_fingerprint,
             'status': self.status,
             'error_message': self.error_message,
+            'final_output_json': self.final_output_json,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'finished_at': self.finished_at.isoformat() if self.finished_at else None
         }

@@ -1293,6 +1293,125 @@ document.getElementById('syllabusFile')?.addEventListener('change', async functi
     e.target.value = '';
 });
 
+// Step 2: Lesson-specific file upload handler
+var LESSON_UPLOAD_EXTENSIONS = ['pdf', 'pptx', 'docx', 'png', 'jpg', 'jpeg', 'xlsx'];
+document.getElementById('lessonFile')?.addEventListener('change', async function(e) {
+    var files = e.target.files;
+    if (!files || !files.length) return;
+    var materialLevel = 'lesson';
+    var courseId = typeof DEFAULT_COURSE_ID !== 'undefined' ? DEFAULT_COURSE_ID : 'default-course';
+    var baseUrl = (typeof API_BASE !== 'undefined' ? API_BASE : '/api/cscl') + '/courses/' + courseId + '/docs/upload';
+    var okCount = 0;
+    var errCount = 0;
+    try {
+        showLoading(true);
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var ext = (file.name || '').split('.').pop().toLowerCase();
+            if (LESSON_UPLOAD_EXTENSIONS.indexOf(ext) === -1) {
+                if (ext === 'txt' || ext === 'md' || ext === 'csv') {
+                    // Text files - read locally and add to initial idea field
+                    try {
+                        var text = await new Promise(function(resolve, reject) {
+                            var r = new FileReader();
+                            r.onload = function() { resolve(r.result || ''); };
+                            r.onerror = reject;
+                            r.readAsText(file);
+                        });
+                        var ta = document.getElementById('specInitialIdea');
+                        if (ta) {
+                            ta.value = (ta.value ? ta.value + '\n\n' : '') + '[From ' + file.name + ']:\n' + text.substring(0, 2000);
+                        }
+                        okCount++;
+                    } catch (err) { console.warn('Read text file failed', file.name, err); }
+                }
+                continue;
+            }
+            var formData = new FormData();
+            formData.append('file', file);
+            formData.append('title', file.name);
+            formData.append('material_level', materialLevel);
+            formData.append('extract_text', 'false'); // Lesson files: don't extract, just store for RAG
+            // Associate with current folder if available
+            if (typeof currentFolderId !== 'undefined' && currentFolderId) {
+                formData.append('folder_id', currentFolderId);
+            }
+            var res = await fetch(baseUrl, { method: 'POST', body: formData, credentials: 'include' });
+            var result = await res.json();
+            if (res.ok) {
+                okCount++;
+            } else {
+                errCount++;
+                var msg = (result.code === 'PDF_PARSE_FAILED')
+                    ? 'Unable to extract text from this PDF. Please try a text-based PDF or paste text manually.'
+                    : (result.error || result.message || 'Upload failed.');
+                showNotification((file.name || 'File') + ': ' + msg, 'error');
+            }
+        }
+        if (okCount > 0) {
+            showNotification(okCount === 1 ? 'File uploaded successfully' : okCount + ' files uploaded', 'success');
+            loadLessonUploadedFiles();
+        }
+    } catch (err) {
+        console.error('Lesson upload error:', err);
+        showNotification('Failed to upload file(s).', 'error');
+    } finally {
+        showLoading(false);
+    }
+    e.target.value = '';
+});
+
+// Step 2: Load and display lesson-specific uploaded files
+async function loadLessonUploadedFiles() {
+    var container = document.getElementById('lessonUploadedFilesList');
+    if (!container) return;
+    var courseId = typeof DEFAULT_COURSE_ID !== 'undefined' ? DEFAULT_COURSE_ID : 'default-course';
+    try {
+        // Build URL with folder filter if available
+        var url = (typeof API_BASE !== 'undefined' ? API_BASE : '/api/cscl') + '/courses/' + courseId + '/docs';
+        if (typeof currentFolderId !== 'undefined' && currentFolderId) {
+            url += '?folder_id=' + encodeURIComponent(currentFolderId);
+        }
+        var res = await fetch(url, { credentials: 'include' });
+        if (!res.ok) {
+            container.innerHTML = '';
+            return;
+        }
+        var data = await res.json();
+        var documents = data.documents || [];
+        // Filter only lesson-level documents
+        var lessonDocs = documents.filter(function(doc) { return doc.material_level === 'lesson'; });
+        if (lessonDocs.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+        var labelDelete = typeof t === 'function' ? t('common.delete') : 'Delete';
+        container.innerHTML = lessonDocs.map(function(doc) {
+            return '<div class="uploaded-file-item" style="padding: 0.5rem; background: #f8f9fa; border-radius: 4px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">' +
+                '<span class="uploaded-file-name"><i class="fas fa-file"></i> ' + escapeHtml(doc.title || 'Untitled') + '</span>' +
+                ' <span class="uploaded-file-meta" style="color: #6c757d; font-size: 0.85rem;">' + (doc.mime_type || '') + '</span>' +
+                ' <button type="button" class="btn-secondary btn-sm" onclick="deleteLessonDocument(\'' + doc.id + '\')" aria-label="' + labelDelete + '"><i class="fas fa-trash"></i></button>' +
+                '</div>';
+        }).join('');
+    } catch (e) {
+        console.warn('[teacher] loadLessonUploadedFiles error', e);
+        container.innerHTML = '';
+    }
+}
+
+function deleteLessonDocument(docId) {
+    if (!confirm(typeof t === 'function' ? t('teacher.doc.confirm_delete') : 'Delete this document?')) return;
+    var courseId = typeof DEFAULT_COURSE_ID !== 'undefined' ? DEFAULT_COURSE_ID : 'default-course';
+    fetch((typeof API_BASE !== 'undefined' ? API_BASE : '/api/cscl') + '/courses/' + courseId + '/docs/' + docId, {
+        method: 'DELETE',
+        credentials: 'include'
+    }).then(function(res) {
+        if (res.ok) {
+            loadLessonUploadedFiles();
+        }
+    }).catch(function() {});
+}
+
 // Step 2: Validate Spec — canonical payload matches backend (course_context, learning_objectives, task_requirements)
 function fillDemoSpec() {
     const demoSpec = {
@@ -2841,28 +2960,43 @@ async function validateStandaloneSpec() {
     }
 }
 
-// Document Management
+// Document Management - Organized by Activity/Folder
 async function loadDocuments() {
     const container = document.getElementById('documentsList');
     try {
         showLoading(true);
         const courseId = DEFAULT_COURSE_ID;
-        const res = await fetch(`${API_BASE}/courses/${courseId}/docs`, {
-            credentials: 'include'
-        });
         
-        if (res.status === 401) {
+        // Load both folders and documents in parallel
+        const [foldersRes, docsRes] = await Promise.all([
+            fetch(`${API_BASE}/folders`, { credentials: 'include' }),
+            fetch(`${API_BASE}/courses/${courseId}/docs`, { credentials: 'include' })
+        ]);
+        
+        if (docsRes.status === 401) {
             container.innerHTML = '<div class="empty-state"><p>Please login first</p></div>';
             return;
         }
         
-        if (res.status === 403) {
+        if (docsRes.status === 403) {
             container.innerHTML = '<div class="empty-state"><p>Current role has no permission</p></div>';
             return;
         }
         
-        if (res.ok) {
-            const data = await res.json();
+        // Get folders data
+        let folders = [];
+        let folderMap = {};
+        if (foldersRes.ok) {
+            const foldersData = await foldersRes.json();
+            folders = foldersData.folders || [];
+            folderMap = folders.reduce(function(acc, f) {
+                acc[f.id] = f;
+                return acc;
+            }, {});
+        }
+        
+        if (docsRes.ok) {
+            const data = await docsRes.json();
             const documents = data.documents || [];
             
             if (documents.length === 0) {
@@ -2878,32 +3012,72 @@ async function loadDocuments() {
                     </div>
                 `;
             } else {
-                /* Issue #10: Do not show extracted text preview; show only title, type, uploaded time, chunks */
-                container.innerHTML = documents.map(doc => {
-                    var uploadedLabel = typeof t === 'function' ? t('teacher.wizard.step1.uploaded_at') : 'Uploaded';
-                    return `
-                    <div class="document-card">
-                        <div class="document-header">
-                            <h4>${escapeHtml(doc.title || 'Untitled')}</h4>
-                            <span class="document-type">${doc.mime_type || 'text/plain'}</span>
-                        </div>
-                        <div class="document-content">
-                            <p><strong>${uploadedLabel}:</strong> ${formatTime(doc.created_at)}</p>
-                            <p><strong>Chunks:</strong> ${doc.chunks_count || 0}</p>
-                        </div>
-                        <div class="document-actions">
-                            <button class="btn-primary btn-sm" onclick="applyPrefillFromDoc('${doc.id}')" title="Use this document to suggest form fields">
-                                <i class="fas fa-magic"></i>
-                                ${typeof t === 'function' ? t('teacher.doc.prefill_btn') : 'Fill suggestion'}
-                            </button>
-                            <button class="btn-secondary btn-sm" onclick="deleteDocument('${doc.id}')">
-                                <i class="fas fa-trash"></i>
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                `;
-                }).join('');
+                // Group documents by folder_id
+                var courseDocs = documents.filter(function(d) { return !d.folder_id; });
+                var groupedDocs = {};
+                documents.forEach(function(doc) {
+                    if (doc.folder_id) {
+                        if (!groupedDocs[doc.folder_id]) {
+                            groupedDocs[doc.folder_id] = [];
+                        }
+                        groupedDocs[doc.folder_id].push(doc);
+                    }
+                });
+                
+                var uploadedLabel = typeof t === 'function' ? t('teacher.wizard.step1.uploaded_at') : 'Uploaded';
+                var html = '';
+                
+                // Helper function to render a document card
+                function renderDocCard(doc) {
+                    return '<div class="document-card" style="margin-bottom: 0.75rem; border: 1px solid #e9ecef; border-radius: 6px; padding: 0.75rem;">' +
+                        '<div class="document-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">' +
+                            '<h4 style="margin: 0; font-size: 0.95rem;">' + escapeHtml(doc.title || 'Untitled') + '</h4>' +
+                            '<span class="document-type" style="font-size: 0.75rem; color: #6c757d; background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px;">' + (doc.mime_type || 'text/plain') + '</span>' +
+                        '</div>' +
+                        '<div class="document-content" style="font-size: 0.85rem; color: #6c757d; margin-bottom: 0.5rem;">' +
+                            '<span><i class="fas fa-clock"></i> ' + uploadedLabel + ': ' + formatTime(doc.created_at) + '</span>' +
+                            ' · <span><i class="fas fa-puzzle-piece"></i> ' + (doc.chunks_count || 0) + ' chunks</span>' +
+                        '</div>' +
+                        '<div class="document-actions" style="display: flex; gap: 0.5rem;">' +
+                            '<button class="btn-primary btn-sm" onclick="applyPrefillFromDoc(\'' + doc.id + '\')" title="Use this document to suggest form fields" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">' +
+                                '<i class="fas fa-magic"></i> ' + (typeof t === 'function' ? t('teacher.doc.prefill_btn') : 'Fill') +
+                            '</button>' +
+                            '<button class="btn-secondary btn-sm" onclick="deleteDocument(\'' + doc.id + '\')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">' +
+                                '<i class="fas fa-trash"></i>' +
+                            '</button>' +
+                        '</div>' +
+                    '</div>';
+                }
+                
+                // 1. Course-level documents section
+                if (courseDocs.length > 0) {
+                    html += '<div class="docs-section" style="margin-bottom: 1.5rem;">';
+                    html += '<h3 style="font-size: 1.1rem; color: #495057; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid #dee2e6;">' +
+                        '<i class="fas fa-graduation-cap"></i> Course-Level Materials</h3>';
+                    html += '<div class="docs-list">';
+                    courseDocs.forEach(function(doc) {
+                        html += renderDocCard(doc);
+                    });
+                    html += '</div></div>';
+                }
+                
+                // 2. Activity/Folder documents sections
+                Object.keys(groupedDocs).forEach(function(folderId) {
+                    var folder = folderMap[folderId];
+                    var folderName = folder ? folder.name : 'Activity ' + folderId.substring(0, 8);
+                    var folderDocs = groupedDocs[folderId];
+                    
+                    html += '<div class="docs-section" style="margin-bottom: 1.5rem;">';
+                    html += '<h3 style="font-size: 1.1rem; color: #495057; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid #007bff;">' +
+                        '<i class="fas fa-folder-open"></i> ' + escapeHtml(folderName) + '</h3>';
+                    html += '<div class="docs-list">';
+                    folderDocs.forEach(function(doc) {
+                        html += renderDocCard(doc);
+                    });
+                    html += '</div></div>';
+                });
+                
+                container.innerHTML = html || '<div class="empty-state"><p>No documents found</p></div>';
             }
         } else {
             container.innerHTML = '<div class="empty-state"><p>Failed to load documents</p></div>';

@@ -543,11 +543,13 @@ class DocumentService:
     
     def upload_document(self, course_id: str, title: str, file_content: bytes,
                        filename: str, mime_type: str, uploaded_by: str,
-                       material_level: str = 'course', extract_text: bool = True) -> Dict[str, Any]:
+                       material_level: str = 'course', extract_text: bool = True,
+                       folder_id: str = None) -> Dict[str, Any]:
         """
         Upload and process a document.
         material_level: 'course' | 'lesson'
         extract_text: if False, only store file and metadata; no text extraction or chunks (for RAG storage only).
+        folder_id: optional folder/activity to associate this document with
         Returns:
             {
                 'document': {...},
@@ -623,6 +625,7 @@ class DocumentService:
             document = CSCLCourseDocument(
                 id=file_id,
                 course_id=course_id,
+                folder_id=folder_id,
                 title=title or safe_filename,
                 source_type='file',
                 storage_uri=file_path,
@@ -766,6 +769,7 @@ class DocumentService:
         document = CSCLCourseDocument(
             id=file_id,
             course_id=course_id,
+            folder_id=folder_id,
             title=title or safe_filename,
             source_type='file',
             storage_uri=file_path,
@@ -858,10 +862,12 @@ class DocumentService:
         }
     
     def upload_text_document(self, course_id: str, title: str, text: str,
-                            uploaded_by: str, material_level: str = 'course') -> Dict[str, Any]:
+                            uploaded_by: str, material_level: str = 'course',
+                            folder_id: str = None) -> Dict[str, Any]:
         """
         Upload a text document directly (paste text).
         material_level: 'course' | 'lesson'
+        folder_id: optional folder/activity to associate this document with
         Text is cleaned and normalized before processing.
         """
         if material_level not in ('course', 'lesson'):
@@ -902,6 +908,7 @@ class DocumentService:
         # Create document record
         document = CSCLCourseDocument(
             course_id=course_id,
+            folder_id=folder_id,
             title=title,
             source_type='text',
             storage_uri=None,
@@ -944,11 +951,12 @@ class DocumentService:
             }
         }
     
-    def get_course_documents(self, course_id: str) -> List[Dict[str, Any]]:
-        """Get all documents for a course"""
-        documents = CSCLCourseDocument.query.filter_by(course_id=course_id).order_by(
-            CSCLCourseDocument.created_at.desc()
-        ).all()
+    def get_course_documents(self, course_id: str, folder_id: str = None) -> List[Dict[str, Any]]:
+        """Get all documents for a course, optionally filtered by folder_id"""
+        query = CSCLCourseDocument.query.filter_by(course_id=course_id)
+        if folder_id:
+            query = query.filter_by(folder_id=folder_id)
+        documents = query.order_by(CSCLCourseDocument.created_at.desc()).all()
         
         result = []
         for doc in documents:

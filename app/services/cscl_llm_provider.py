@@ -320,13 +320,79 @@ class MockProvider(BaseLLMProvider):
         return {'success': True, 'error': None, 'provider': 'mock', 'model': Config.MOCK_MODEL, 'critique': critique}
 
     def refine_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
+        import copy
         critic_output = input_payload.get('critic_output', {})
-        scenes = critic_output.get('scenes', [])
-        roles = critic_output.get('roles', [])
+        scenes = copy.deepcopy(critic_output.get('scenes', []))
+        roles = copy.deepcopy(critic_output.get('roles', []))
+        
+        # Apply realistic refinements
+        refinements_applied = {
+            'scenes_added': 0,
+            'roles_added': 0,
+            'scriptlets_fixed': 0
+        }
+        
+        # Refinement 1: Ensure at least one opening scene exists
+        has_opening = any(s.get('scene_type') == 'opening' for s in scenes)
+        if not has_opening and scenes:
+            scenes.insert(0, {
+                'order_index': 1,
+                'scene_type': 'opening',
+                'purpose': 'Introduce the activity and clarify expectations',
+                'transition_rule': 'Teacher announces group assignments and distributes materials',
+                'scriptlets': [
+                    {'prompt_text': 'Review the activity goals and expected output with your group', 'prompt_type': 'instruction', 'role_id': None}
+                ]
+            })
+            # Reorder indices
+            for i, s in enumerate(scenes):
+                s['order_index'] = i + 1
+            refinements_applied['scenes_added'] += 1
+        
+        # Refinement 2: Ensure at least one conclusion scene exists
+        has_conclusion = any(s.get('scene_type') == 'conclusion' for s in scenes)
+        if not has_conclusion and len(scenes) > 1:
+            scenes.append({
+                'order_index': len(scenes) + 1,
+                'scene_type': 'conclusion',
+                'purpose': 'Synthesize findings and prepare for whole-class sharing',
+                'transition_rule': 'Groups finalize their outputs and prepare to report',
+                'scriptlets': [
+                    {'prompt_text': 'Prepare a 2-minute summary of your group\'s key findings to share with the class', 'prompt_type': 'synthesis', 'role_id': None}
+                ]
+            })
+            refinements_applied['scenes_added'] += 1
+        
+        # Refinement 3: Add role-specific scriptlets where missing
+        for scene in scenes:
+            scriptlets = scene.get('scriptlets', [])
+            if len(scriptlets) < 2 and roles:
+                # Add a role-specific prompt
+                for role in roles[:1]:
+                    scriptlets.append({
+                        'prompt_text': f"As {role.get('role_name', 'your role')}, identify one key evidence point that supports or challenges the main claim",
+                        'prompt_type': 'evidence',
+                        'role_id': role.get('role_name')
+                    })
+                    refinements_applied['scriptlets_fixed'] += 1
+            scene['scriptlets'] = scriptlets
+        
+        # Refinement 4: Ensure at least 2 roles exist for group work
+        if len(roles) < 2:
+            default_roles = [
+                {'role_name': 'facilitator', 'responsibilities': ['Keep discussion on track', 'Ensure all voices are heard']},
+                {'role_name': 'recorder', 'responsibilities': ['Document key points and decisions', 'Prepare summary for sharing']},
+                {'role_name': 'evidence_checker', 'responsibilities': ['Verify claims against sources', 'Request citations when needed']}
+            ]
+            for role in default_roles:
+                if len(roles) < 3:
+                    roles.append(role)
+                    refinements_applied['roles_added'] += 1
+        
         refined = {
             'roles': roles,
             'scenes': scenes,
-            'refinements_applied': {}
+            'refinements_applied': refinements_applied
         }
         return {'success': True, 'error': None, 'provider': 'mock', 'model': Config.MOCK_MODEL, 'refined': refined}
 

@@ -445,6 +445,7 @@ class CSCLCourseDocument(db.Model):
     
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     course_id = db.Column(db.String(100), nullable=False)
+    folder_id = db.Column(db.String(36), db.ForeignKey('cscl_course_folders.id'), nullable=True)  # Associated folder/activity
     title = db.Column(db.String(500), nullable=False)
     source_type = db.Column(db.String(50), nullable=False)  # file, url, text
     storage_uri = db.Column(db.String(1000), nullable=True)
@@ -456,11 +457,13 @@ class CSCLCourseDocument(db.Model):
     
     # Relationships
     chunks = db.relationship('CSCLDocumentChunk', backref='document', lazy=True, cascade='all, delete-orphan')
+    folder = db.relationship('CSCLCourseFolder', backref='documents', lazy=True)
     
     def to_dict(self):
         return {
             'id': self.id,
             'course_id': self.course_id,
+            'folder_id': self.folder_id,
             'title': self.title,
             'source_type': self.source_type,
             'storage_uri': self.storage_uri,

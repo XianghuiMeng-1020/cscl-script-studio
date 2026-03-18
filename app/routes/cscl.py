@@ -904,6 +904,7 @@ def upload_course_document(course_id):
         if material_level not in ('course', 'lesson'):
             material_level = 'course'
         extract_text = (request.form.get('extract_text', 'true') or 'true').strip().lower() not in ('false', '0', 'no')
+        folder_id = request.form.get('folder_id') or None
         
         result = document_service.upload_document(
             course_id=course_id,
@@ -913,7 +914,8 @@ def upload_course_document(course_id):
             mime_type=mime_type,
             uploaded_by=current_user.id,
             material_level=material_level,
-            extract_text=extract_text
+            extract_text=extract_text,
+            folder_id=folder_id
         )
     elif request.is_json:
         data = request.get_json()
@@ -929,12 +931,15 @@ def upload_course_document(course_id):
                 'code': 'MISSING_FIELDS'
             }), 400
         
+        folder_id = data.get('folder_id') or None
+        
         result = document_service.upload_text_document(
             course_id=course_id,
             title=title,
             text=text,
             uploaded_by=current_user.id,
-            material_level=material_level
+            material_level=material_level,
+            folder_id=folder_id
         )
     else:
         return jsonify({
@@ -1026,9 +1031,10 @@ def upload_course_document(course_id):
 @cscl_bp.route('/courses/<course_id>/docs', methods=['GET'])
 @role_required('teacher', 'admin', 'student')
 def list_course_documents(course_id):
-    """List all documents for a course"""
+    """List all documents for a course, optionally filtered by folder_id"""
+    folder_id = request.args.get('folder_id') or None
     document_service = DocumentService()
-    documents = document_service.get_course_documents(course_id)
+    documents = document_service.get_course_documents(course_id, folder_id=folder_id)
     resp = jsonify({
         'success': True,
         'documents': documents,

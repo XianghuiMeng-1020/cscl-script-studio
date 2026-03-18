@@ -516,13 +516,13 @@
                             </div>
                             <!-- Lesson-specific file upload -->
                             <div class="lesson-upload-section" style="margin-bottom: 1.5rem;">
-                                <h4 style="margin-bottom: 0.5rem;"><i class="fas fa-file-upload"></i> 上传本节课材料（选填）</h4>
-                                <p class="form-help" style="margin-bottom: 0.75rem;">上传本节课的 PPT、阅读材料、工作表、案例、教师笔记等。这些材料将用于生成更贴合课堂的活动。</p>
+                                <h4 style="margin-bottom: 0.5rem;"><i class="fas fa-file-upload"></i> <span data-i18n="teacher.wizard.step2.upload_title">Upload Lesson Materials (Optional)</span></h4>
+                                <p class="form-help" style="margin-bottom: 0.75rem;" data-i18n="teacher.wizard.step2.upload_help">Upload PPT, readings, worksheets, case studies, or teacher notes for this lesson. These materials help generate activities tailored to your classroom.</p>
                                 <div class="upload-area upload-area-sm" id="lessonUploadArea">
                                     <i class="fas fa-cloud-upload-alt"></i>
-                                    <p>拖放文件或点击浏览</p>
+                                    <p data-i18n="teacher.wizard.step2.upload_drag">Drag files here or click to browse</p>
                                     <input type="file" id="lessonFile" accept=".txt,.md,.pdf,.pptx,.docx,.xlsx,.csv,.png,.jpg,.jpeg" multiple style="display: none;">
-                                    <button class="btn-secondary btn-sm" onclick="document.getElementById('lessonFile').click()"><i class="fas fa-folder-open" aria-hidden="true"></i> 浏览文件</button>
+                                    <button class="btn-secondary btn-sm" onclick="document.getElementById('lessonFile').click()"><i class="fas fa-folder-open" aria-hidden="true"></i> <span data-i18n="teacher.wizard.step2.upload_browse">Browse Files</span></button>
                                 </div>
                                 <div id="lessonUploadedFilesList" class="uploaded-files-list" style="margin-top: 0.5rem;"></div>
                             </div>

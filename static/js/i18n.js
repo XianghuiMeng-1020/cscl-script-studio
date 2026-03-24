@@ -45,15 +45,15 @@ const I18N = {
 
         // ===== Teacher page =====
         // Sidebar
-        'teacher.sidebar.dashboard': '工作台',
-        'teacher.sidebar.folders': '课程文件夹',
-        'teacher.sidebar.scripts': '活动项目',
+        'teacher.sidebar.dashboard': '首页',
+        'teacher.sidebar.folders': '课程',
+        'teacher.sidebar.scripts': '活动',
         'teacher.sidebar.spec': '教学目标检查',
         'teacher.sidebar.pipeline': '自动生成过程',
-        'teacher.sidebar.documents': '课程文档',
+        'teacher.sidebar.documents': '教学材料',
         'teacher.sidebar.decisions': '教师调整记录',
-        'teacher.sidebar.quality': '质量检查结果',
-        'teacher.sidebar.publish': '发布与导出',
+        'teacher.sidebar.quality': '审阅',
+        'teacher.sidebar.publish': '发布',
         'teacher.sidebar.settings': '设置',
         'teacher.sidebar.logout': '退出登录',
         'teacher.folders.title': '课程文件夹',
@@ -65,7 +65,7 @@ const I18N = {
         'lang.zh-TW': '繁體中文',
         'lang.en': 'English',
 
-        // Dashboard
+        // Dashboard (legacy keys kept for compatibility)
         'teacher.dashboard.title': '教师工作台',
         'teacher.dashboard.step_indicator': '你现在在第 {step}/4 步',
         'teacher.dashboard.step_before': '你现在在第 ',
@@ -73,6 +73,16 @@ const I18N = {
         'teacher.dashboard.new_activity': '新建活动',
         'teacher.dashboard.current_status': '当前状态：',
         'teacher.dashboard.ready': '准备开始',
+
+        // Home (Start Page) - new simplified dashboard
+        'teacher.home.title': '教师工作台',
+        'teacher.home.subtitle': '创建一个课程文件夹，开始生成 CSCL 协作学习活动。',
+        'teacher.home.create_folder': '创建课程文件夹',
+        'teacher.home.steps_heading': '接下来你可以：',
+        'teacher.home.step1': '创建课程文件夹',
+        'teacher.home.step2': '为具体课时创建活动',
+        'teacher.home.step3': '生成活动包',
+        'teacher.home.step4': '审阅并发布',
         'teacher.tutorial.title': '👋 欢迎使用教师工作台',
         'teacher.tutorial.intro': '我是你的协作学习活动生成小助手。按下面 4 步即可把课程大纲变成可用的活动方案：',
         'teacher.tutorial.step1': '1. 创建课程文件夹 — 上传课程大纲、课程说明等课程级材料，建立可复用的课程空间',
@@ -506,22 +516,22 @@ const I18N = {
 
         // ===== Teacher page =====
         // Sidebar
-        'teacher.sidebar.dashboard': '工作台',
-        'teacher.sidebar.folders': '課程資料夾',
-        'teacher.sidebar.scripts': '活動項目',
+        'teacher.sidebar.dashboard': '首頁',
+        'teacher.sidebar.folders': '課程',
+        'teacher.sidebar.scripts': '活動',
         'teacher.sidebar.spec': '教學目標檢查',
         'teacher.sidebar.pipeline': '自動生成過程',
-        'teacher.sidebar.documents': '課程文檔',
+        'teacher.sidebar.documents': '教學材料',
         'teacher.sidebar.decisions': '教師調整記錄',
-        'teacher.sidebar.quality': '品質檢查結果',
-        'teacher.sidebar.publish': '發布與匯出',
+        'teacher.sidebar.quality': '審閱',
+        'teacher.sidebar.publish': '發布',
         'teacher.sidebar.settings': '設定',
         'teacher.sidebar.logout': '登出',
         'teacher.folders.title': '課程資料夾',
         'teacher.folders.subtitle': '管理你的課程，每個課程可包含多個活動',
         'teacher.folders.create': '建立課程資料夾',
 
-        // Dashboard
+        // Dashboard (legacy keys kept for compatibility)
         'lang.zh-CN': '簡體中文',
         'lang.zh-TW': '繁體中文',
         'lang.en': 'English',
@@ -533,6 +543,16 @@ const I18N = {
         'teacher.dashboard.new_activity': '新建活動',
         'teacher.dashboard.current_status': '目前狀態：',
         'teacher.dashboard.ready': '準備開始',
+
+        // Home (Start Page) - new simplified dashboard
+        'teacher.home.title': '教師工作台',
+        'teacher.home.subtitle': '建立一個課程資料夾，開始生成 CSCL 協作學習活動。',
+        'teacher.home.create_folder': '建立課程資料夾',
+        'teacher.home.steps_heading': '接下來你可以：',
+        'teacher.home.step1': '建立課程資料夾',
+        'teacher.home.step2': '為具體課時建立活動',
+        'teacher.home.step3': '生成活動包',
+        'teacher.home.step4': '審閱並發布',
         'teacher.tutorial.title': '👋 歡迎使用教師工作台',
         'teacher.tutorial.intro': '我是你的協作學習活動生成小助手。按下面 4 步即可把課程大綱變成可用的活動方案：',
         'teacher.tutorial.step1': '1. 創建課程文件夾 — 上傳課程大綱、課程說明等課程級材料，建立可複用的課程空間',
@@ -969,22 +989,22 @@ const I18N = {
 
         // ===== Teacher page =====
         // Sidebar
-        'teacher.sidebar.dashboard': 'Dashboard',
-        'teacher.sidebar.folders': 'Course Folders',
-        'teacher.sidebar.scripts': 'Activity Projects',
+        'teacher.sidebar.dashboard': 'Home',
+        'teacher.sidebar.folders': 'Courses',
+        'teacher.sidebar.scripts': 'Activities',
         'teacher.sidebar.spec': 'Teaching Plan Check',
         'teacher.sidebar.pipeline': 'Generation Pipeline',
-        'teacher.sidebar.documents': 'Course Documents',
+        'teacher.sidebar.documents': 'Materials',
         'teacher.sidebar.decisions': 'Decision Records',
-        'teacher.sidebar.quality': 'Quality Reports',
-        'teacher.sidebar.publish': 'Publish & Export',
+        'teacher.sidebar.quality': 'Review',
+        'teacher.sidebar.publish': 'Publish',
         'teacher.sidebar.settings': 'Settings',
         'teacher.sidebar.logout': 'Sign Out',
         'teacher.folders.title': 'Course Folders',
         'teacher.folders.subtitle': 'Manage your courses. Each course can hold multiple activities.',
         'teacher.folders.create': 'Create Course Folder',
 
-        // Dashboard
+        // Dashboard (legacy keys kept for compatibility)
         'lang.zh-CN': 'Simplified Chinese',
         'lang.zh-TW': 'Traditional Chinese',
         'lang.en': 'English',
@@ -994,6 +1014,16 @@ const I18N = {
         'teacher.dashboard.step_before': 'You are on step ',
         'teacher.dashboard.step_after': '/4',
         'teacher.dashboard.new_activity': 'New Activity',
+
+        // Home (Start Page) - new simplified dashboard
+        'teacher.home.title': 'Teacher Dashboard',
+        'teacher.home.subtitle': 'Create a course folder to get started with CSCL activity generation.',
+        'teacher.home.create_folder': 'Create Course Folder',
+        'teacher.home.steps_heading': 'You will then be able to:',
+        'teacher.home.step1': 'Create Course Folder',
+        'teacher.home.step2': 'Create Activity for a Lesson',
+        'teacher.home.step3': 'Generate Activity Package',
+        'teacher.home.step4': 'Review and Publish',
         'teacher.dashboard.current_status': 'Current Status:',
         'teacher.dashboard.ready': 'Ready to Start',
         'teacher.tutorial.title': '👋 Welcome to the Teacher Dashboard',

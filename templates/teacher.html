@@ -30,31 +30,27 @@
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-view="dashboard" data-i18n-aria-label="teacher.sidebar.dashboard">
                     <i class="fas fa-home"></i>
-                    <span data-i18n="teacher.sidebar.dashboard">工作台</span>
+                    <span data-i18n="teacher.sidebar.dashboard">首页</span>
                 </a>
                 <a href="#" class="nav-item" data-view="folders" data-i18n-aria-label="teacher.sidebar.folders">
                     <i class="fas fa-folder"></i>
-                    <span data-i18n="teacher.sidebar.folders">课程文件夹</span>
+                    <span data-i18n="teacher.sidebar.folders">课程</span>
                 </a>
                 <a href="#" class="nav-item" data-view="scripts" data-i18n-aria-label="teacher.sidebar.scripts">
-                    <i class="fas fa-file-code"></i>
-                    <span data-i18n="teacher.sidebar.scripts">活动项目</span>
+                    <i class="fas fa-tasks"></i>
+                    <span data-i18n="teacher.sidebar.scripts">活动</span>
                 </a>
                 <a href="#" class="nav-item" data-view="documents" data-i18n-aria-label="teacher.sidebar.documents">
                     <i class="fas fa-book-open"></i>
-                    <span data-i18n="teacher.sidebar.documents">课程文档</span>
-                </a>
-                <a href="#" class="nav-item" data-view="decisions" data-i18n-aria-label="teacher.sidebar.decisions">
-                    <i class="fas fa-history"></i>
-                    <span data-i18n="teacher.sidebar.decisions">教师调整记录</span>
+                    <span data-i18n="teacher.sidebar.documents">教学材料</span>
                 </a>
                 <a href="#" class="nav-item" data-view="quality-reports" data-i18n-aria-label="teacher.sidebar.quality">
-                    <i class="fas fa-chart-line"></i>
-                    <span data-i18n="teacher.sidebar.quality">质量检查结果</span>
+                    <i class="fas fa-clipboard-check"></i>
+                    <span data-i18n="teacher.sidebar.quality">审阅</span>
                 </a>
                 <a href="#" class="nav-item" data-view="publish" data-i18n-aria-label="teacher.sidebar.publish">
                     <i class="fas fa-rocket"></i>
-                    <span data-i18n="teacher.sidebar.publish">发布与导出</span>
+                    <span data-i18n="teacher.sidebar.publish">发布</span>
                 </a>
                 <a href="#" class="nav-item" data-view="settings" data-i18n-aria-label="teacher.sidebar.settings">
                     <i class="fas fa-cog"></i>
@@ -84,118 +80,43 @@
         <!-- Main Content -->
         <main class="main-content">
             <!-- Dashboard View -->
+            <!-- Home View (Start Page) -->
             <div id="dashboardView" class="view active">
-                <div class="view-header">
-                    <div>
-                        <h2><i class="fas fa-chalkboard-teacher"></i> <span data-i18n="teacher.dashboard.title">教师工作台</span></h2>
-                        <p class="view-subtitle"><span data-i18n="teacher.dashboard.step_before">你现在在第 </span><span id="currentStepIndicator">1</span><span data-i18n="teacher.dashboard.step_after">/4 步</span></p>
+                <div class="start-page">
+                    <div class="start-page-header">
+                        <h2><i class="fas fa-chalkboard-teacher"></i>
+                            <span data-i18n="teacher.home.title">教师工作台</span>
+                        </h2>
+                        <p class="start-page-subtitle" data-i18n="teacher.home.subtitle">
+                            创建一个课程文件夹，开始生成 CSCL 协作学习活动。
+                        </p>
                     </div>
-                    <button class="btn-primary" onclick="startNewActivity()" data-i18n-aria-label="teacher.dashboard.new_activity">
-                        <i class="fas fa-plus"></i>
-                        <span data-i18n="teacher.dashboard.new_activity">新建活动</span>
-                    </button>
-                </div>
 
-                <!-- Status Bar -->
-                <div class="status-bar">
-                    <div class="status-item">
-                        <span class="status-label" data-i18n="teacher.dashboard.current_status">当前状态：</span>
-                        <span id="currentStatus" class="status-value" data-i18n="teacher.dashboard.ready">准备开始</span>
+                    <!-- Primary CTA -->
+                    <div class="start-page-cta">
+                        <button class="btn-primary btn-lg" onclick="switchView('folders'); createNewFolder();"
+                                data-i18n="teacher.home.create_folder">
+                            <i class="fas fa-folder-plus"></i> 创建课程文件夹
+                        </button>
                     </div>
-                </div>
 
-                <!-- Post-login instruction / tutorial (dismissible) -->
-                <div id="teacherTutorial" class="tutorial-card" role="region" aria-label="Welcome tutorial">
-                    <div class="tutorial-inner">
-                        <h3 class="tutorial-title" data-i18n="teacher.tutorial.title">👋 欢迎使用教师工作台</h3>
-                        <p class="tutorial-intro" data-i18n="teacher.tutorial.intro">我是你的协作学习活动生成小助手。按下面 4 步即可把课程大纲变成可用的活动方案：</p>
-                        <ul class="tutorial-steps">
-                            <li data-i18n="teacher.tutorial.step1">1. 创建课程文件夹 — 上传课程大纲和课程级材料，建立可复用的课程空间</li>
-                            <li data-i18n="teacher.tutorial.step2">2. 创建活动 — 在课程文件夹内创建具体活动，上传本节课材料</li>
-                            <li data-i18n="teacher.tutorial.step3">3. 生成活动包 — 系统自动生成学生工作表、学生幻灯片、教师指导手册</li>
-                            <li data-i18n="teacher.tutorial.step4">4. 审阅并发布 — 检查无误后发布给学生</li>
-                        </ul>
-                        <button type="button" class="tutorial-dismiss" id="teacherTutorialDismiss" data-i18n="teacher.tutorial.dismiss">不再显示</button>
-                    </div>
-                </div>
-
-                <!-- Four-Step Process Cards -->
-                <div class="process-cards-grid">
-                    <div class="process-card" data-step="1">
-                        <div class="step-number">1</div>
-                        <div class="step-icon"><i class="fas fa-folder-plus"></i></div>
-                        <h3 data-i18n="teacher.step1.title">创建课程文件夹</h3>
-                        <p class="step-what" data-i18n="teacher.step1.what">这一步做什么：创建课程文件夹，上传课程大纲和其他课程级材料</p>
-                        <p class="step-why" data-i18n="teacher.step1.why">为什么要做：建立可复用的课程空间，供后续多个活动共用</p>
-                        <p class="step-result" data-i18n="teacher.step1.result">完成后会得到：一个课程文件夹，包含课程级的上下文材料</p>
-                        <button type="button" class="step-action-btn btn-import" id="btnImport" data-action="import-outline" data-i18n="teacher.step1.action">创建文件夹</button>
-                    </div>
-                    <div class="process-card" data-step="2">
-                        <div class="step-number">2</div>
-                        <div class="step-icon"><i class="fas fa-plus-circle"></i></div>
-                        <h3 data-i18n="teacher.step2.title">创建活动</h3>
-                        <p class="step-what" data-i18n="teacher.step2.what">这一步做什么：在课程文件夹内创建某一次具体活动，上传本节课的 PPT、阅读材料等</p>
-                        <p class="step-why" data-i18n="teacher.step2.why">为什么要做：让系统基于这节课的真实材料来生成活动</p>
-                        <p class="step-result" data-i18n="teacher.step2.result">完成后会得到：一项具体的课堂活动设计</p>
-                        <button type="button" class="step-action-btn btn-validate" id="btnValidate" data-action="validate-goals" data-i18n="teacher.step2.action">创建活动</button>
-                    </div>
-                    <div class="process-card" data-step="3">
-                        <div class="step-number">3</div>
-                        <div class="step-icon"><i class="fas fa-cogs"></i></div>
-                        <h3 data-i18n="teacher.step3.title">生成活动包</h3>
-                        <p class="step-what" data-i18n="teacher.step3.what">这一步做什么：系统自动生成学生工作表、学生幻灯片、教师指导手册</p>
-                        <p class="step-why" data-i18n="teacher.step3.why">为什么要做：输出真正可直接用于课堂的材料，而不只是内部脚本</p>
-                        <p class="step-result" data-i18n="teacher.step3.result">完成后会得到：Student Worksheet、Student Slides、Teacher Facilitation Sheet</p>
-                        <button type="button" class="step-action-btn btn-generate" id="btnGenerate" data-action="run-pipeline" data-i18n="teacher.step3.action">开始生成</button>
-                    </div>
-                    <div class="process-card" data-step="4">
-                        <div class="step-number">4</div>
-                        <div class="step-icon"><i class="fas fa-rocket"></i></div>
-                        <h3 data-i18n="teacher.step4.title">审阅并发布</h3>
-                        <p class="step-what" data-i18n="teacher.step4.what">这一步做什么：查看生成的活动方案，确认无误后发布给学生</p>
-                        <p class="step-why" data-i18n="teacher.step4.why">为什么要做：确保活动质量符合预期，再让学生开始使用</p>
-                        <p class="step-result" data-i18n="teacher.step4.result">完成后会得到：已发布的活动，学生可以开始参与</p>
-                        <button type="button" class="step-action-btn btn-publish" id="btnPublish" data-action="review-publish" data-i18n="teacher.step4.action">审阅发布</button>
-                    </div>
-                </div>
-
-                <!-- Technical Details Drawer -->
-                <div class="tech-drawer">
-                    <button class="drawer-toggle" onclick="toggleTechDrawer()">
-                        <i class="fas fa-chevron-down"></i>
-                        <span data-i18n="teacher.dashboard.view_tech">查看技术详情</span>
-                    </button>
-                    <div id="techDrawerContent" class="drawer-content hidden">
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-icon" style="background: var(--primary-color);"><i class="fas fa-folder-open"></i></div>
-                                <div class="stat-content">
-                                    <h3 id="statActiveProjects">0</h3>
-                                    <p data-i18n="teacher.dashboard.stat.projects">活动项目</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon" style="background: var(--secondary-color);"><i class="fas fa-project-diagram"></i></div>
-                                <div class="stat-content">
-                                    <h3 id="statRunningPipelines">0</h3>
-                                    <p data-i18n="teacher.dashboard.stat.pipelines">自动生成过程</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon" style="background: var(--accent-color);"><i class="fas fa-rocket"></i></div>
-                                <div class="stat-content">
-                                    <h3 id="statReadyToPublish">0</h3>
-                                    <p data-i18n="teacher.dashboard.stat.publish">待发布活动</p>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon" style="background: var(--success-color);"><i class="fas fa-star"></i></div>
-                                <div class="stat-content">
-                                    <h3 id="statAvgQuality">--</h3>
-                                    <p data-i18n="teacher.dashboard.stat.quality">质量检查结果</p>
-                                </div>
-                            </div>
-                        </div>
+                    <!-- 4-step overview (read-only guidance) -->
+                    <div class="start-page-steps">
+                        <h3 data-i18n="teacher.home.steps_heading">接下来你可以：</h3>
+                        <ol class="step-overview-list">
+                            <li class="step-overview-item current" data-i18n="teacher.home.step1">
+                                创建课程文件夹
+                            </li>
+                            <li class="step-overview-item" data-i18n="teacher.home.step2">
+                                为具体课时创建活动
+                            </li>
+                            <li class="step-overview-item" data-i18n="teacher.home.step3">
+                                生成活动包
+                            </li>
+                            <li class="step-overview-item" data-i18n="teacher.home.step4">
+                                审阅并发布
+                            </li>
+                        </ol>
                     </div>
                 </div>
             </div>

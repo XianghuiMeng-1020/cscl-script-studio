@@ -2482,3 +2482,78 @@
     margin-top: 1rem;
     width: 100%;
 }
+
+/* Start Page (Home Dashboard) Styles */
+.start-page {
+    max-width: 640px;
+    margin: 3rem auto;
+    text-align: center;
+    padding: 0 1rem;
+}
+
+.start-page-header h2 {
+    font-size: 1.75rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.start-page-header h2 i {
+    color: var(--primary-color);
+    margin-right: 0.5rem;
+}
+
+.start-page-subtitle {
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.start-page-cta {
+    margin: 2.5rem 0;
+}
+
+.start-page-cta .btn-lg {
+    padding: 0.875rem 2rem;
+    font-size: 1.1rem;
+}
+
+.start-page-cta .btn-lg i {
+    margin-right: 0.5rem;
+}
+
+.start-page-steps {
+    margin-top: 2rem;
+    text-align: left;
+}
+
+.start-page-steps h3 {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.step-overview-list {
+    list-style: none;
+    padding: 0;
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+.step-overview-item {
+    padding: 0.75rem 1rem;
+    border-left: 3px solid var(--border-light);
+    margin-bottom: 0.25rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    position: relative;
+}
+
+.step-overview-item.current {
+    border-left-color: var(--primary-color);
+    color: var(--text-primary);
+    font-weight: 600;
+    background: rgba(91, 117, 83, 0.04);
+}

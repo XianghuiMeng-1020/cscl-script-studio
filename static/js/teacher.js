@@ -348,7 +348,8 @@ function switchView(viewName) {
                 loadDocuments();
                 break;
             case 'decisions':
-                loadDecisionTimeline();
+                // Decision Records view is no longer in sidebar; kept for compatibility
+                // loadDecisionTimeline() is called when needed internally
                 break;
             case 'quality-reports':
                 loadQualityReports();
@@ -511,60 +512,13 @@ function createActivityInFolder() {
 }
 
 async function loadDashboardData() {
+    // Home page initialization - simplified, no longer shows stats or progress
+    // This function is called when entering the home dashboard view
     try {
-        showLoading(true);
-        
-        // Load scripts
-        const scriptsRes = await fetch(`${API_BASE}/scripts`, {
-            credentials: 'include'
-        });
-        
-        if (scriptsRes.status === 401) {
-            showNotification('请先登录', 'error');
-            showLoading(false);
-            return;
-        }
-        
-        if (scriptsRes.status === 403) {
-            showNotification('当前角色无权限', 'error');
-            showLoading(false);
-            return;
-        }
-        
-        if (scriptsRes.ok) {
-            const data = await scriptsRes.json();
-            scripts = data.scripts || [];
-        }
-        
-        // Update stats
-        const activeProjects = scripts.filter(s => s.status === 'draft' || s.status === 'final').length;
-        const readyToPublish = scripts.filter(s => s.status === 'final').length;
-        
-        const statActiveProjectsEl = document.getElementById('statActiveProjects');
-        const statRunningPipelinesEl = document.getElementById('statRunningPipelines');
-        const statReadyToPublishEl = document.getElementById('statReadyToPublish');
-        const statAvgQualityEl = document.getElementById('statAvgQuality');
-        
-        if (statActiveProjectsEl) statActiveProjectsEl.textContent = activeProjects;
-        if (statRunningPipelinesEl) statRunningPipelinesEl.textContent = '0';
-        if (statReadyToPublishEl) statReadyToPublishEl.textContent = readyToPublish;
-        if (statAvgQualityEl) statAvgQualityEl.textContent = '--';
-        
-        // Update current step indicator
+        // Just ensure wizard step tracking is consistent
         updateCurrentStep();
-        
-        // Load recent pipelines
-        await loadRecentPipelines();
-        
-        // Load recent decisions
-        await loadRecentDecisions();
-        
     } catch (error) {
-        console.error('Error loading dashboard:', error);
-        showNotification('Failed to load dashboard data', 'error');
-        showLoading(false);
-    } finally {
-        showLoading(false);
+        console.error('[teacher] Error in loadDashboardData:', error);
     }
 }
 
@@ -729,21 +683,7 @@ function goToStep(step) {
 }
 
 function updateCurrentStep() {
-    const indicator = document.getElementById('currentStepIndicator');
-    if (indicator) {
-        indicator.textContent = wizardStep || 1;
-    }
-    const statusEl = document.getElementById('currentStatus');
-    if (statusEl) {
-        const statusMap = {
-            1: typeof t === 'function' ? t('teacher.step1.title') : '导入课程大纲',
-            2: typeof t === 'function' ? t('teacher.step2.title') : '确认教学目标',
-            3: typeof t === 'function' ? t('teacher.step3.title') : '生成活动流程',
-            4: typeof t === 'function' ? t('teacher.step4.title') : '审阅并发布'
-        };
-        statusEl.textContent = statusMap[wizardStep] || (typeof t === 'function' ? t('teacher.dashboard.ready') : '准备开始');
-    }
-    // Update process cards active state
+    // Update process cards active state (used in wizard view)
     document.querySelectorAll('.process-card').forEach(card => {
         const cardStep = parseInt(card.dataset.step);
         card.classList.toggle('active', cardStep === wizardStep);

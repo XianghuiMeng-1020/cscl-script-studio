@@ -2557,3 +2557,158 @@
     font-weight: 600;
     background: rgba(91, 117, 83, 0.04);
 }
+
+/* ==================== Start Page Section Styles (S2.15 Enhanced) ==================== */
+
+.start-page {
+    max-width: 800px;
+    margin: 3rem auto;
+    text-align: center;
+    padding: 0 1rem;
+}
+
+.start-section {
+    margin-top: 2.5rem;
+    text-align: center;
+}
+
+.start-section h3 {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+/* Output Preview Section */
+.output-preview-section {
+    padding: 1.5rem;
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.output-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.output-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.25rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    transition: all 0.25s ease;
+}
+
+.output-card:hover {
+    border-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.output-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+}
+
+.output-label {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* How It Works Section */
+.how-it-works-section {
+    padding: 1.5rem;
+}
+
+.process-steps-horizontal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.process-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.step-name {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.process-connector {
+    width: 40px;
+    height: 2px;
+    background: var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+/* Why Section */
+.why-section {
+    padding: 1.5rem;
+    background: var(--info-bg);
+    border-left: 4px solid var(--primary-color);
+    border-radius: var(--radius-md);
+    text-align: left;
+}
+
+.why-section h3 {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    text-align: left;
+}
+
+.why-text {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    .output-preview-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .process-steps-horizontal {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .process-connector {
+        display: none;
+    }
+}

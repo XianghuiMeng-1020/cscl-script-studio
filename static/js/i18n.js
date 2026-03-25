@@ -83,6 +83,20 @@ const I18N = {
         'teacher.home.step2': '为具体课时创建活动',
         'teacher.home.step3': '生成活动包',
         'teacher.home.step4': '审阅并发布',
+
+        // Home (Start Page) - S2.15 enhanced sections
+        'teacher.home.outputs_heading': '本系统生成的材料',
+        'teacher.home.output_worksheet': '学生学习单',
+        'teacher.home.output_slides': '学生演示文稿',
+        'teacher.home.output_facilitation': '教师引导手册',
+        'teacher.home.process_heading': '工作流程',
+        'teacher.home.process_step1': '创建课程文件夹',
+        'teacher.home.process_step2': '创建活动',
+        'teacher.home.process_step3': '生成活动包',
+        'teacher.home.process_step4': '审阅并发布',
+        'teacher.home.why_heading': '为何从课程文件夹开始？',
+        'teacher.home.why_text': '课程级材料只需上传一次，即可在同一课程空间内创建多个课时活动。',
+
         'teacher.tutorial.title': '👋 欢迎使用教师工作台',
         'teacher.tutorial.intro': '我是你的协作学习活动生成小助手。按下面 4 步即可把课程大纲变成可用的活动方案：',
         'teacher.tutorial.step1': '1. 创建课程文件夹 — 上传课程大纲、课程说明等课程级材料，建立可复用的课程空间',
@@ -553,6 +567,20 @@ const I18N = {
         'teacher.home.step2': '為具體課時建立活動',
         'teacher.home.step3': '生成活動包',
         'teacher.home.step4': '審閱並發布',
+
+        // Home (Start Page) - S2.15 enhanced sections
+        'teacher.home.outputs_heading': '本系統生成的材料',
+        'teacher.home.output_worksheet': '學生學習單',
+        'teacher.home.output_slides': '學生簡報',
+        'teacher.home.output_facilitation': '教師引導手冊',
+        'teacher.home.process_heading': '工作流程',
+        'teacher.home.process_step1': '建立課程資料夾',
+        'teacher.home.process_step2': '建立活動',
+        'teacher.home.process_step3': '生成活動包',
+        'teacher.home.process_step4': '審閱並發布',
+        'teacher.home.why_heading': '為何從課程資料夾開始？',
+        'teacher.home.why_text': '課程級材料只需上傳一次，即可在同一課程空間內建立多個課時活動。',
+
         'teacher.tutorial.title': '👋 歡迎使用教師工作台',
         'teacher.tutorial.intro': '我是你的協作學習活動生成小助手。按下面 4 步即可把課程大綱變成可用的活動方案：',
         'teacher.tutorial.step1': '1. 創建課程文件夾 — 上傳課程大綱、課程說明等課程級材料，建立可複用的課程空間',
@@ -1024,6 +1052,20 @@ const I18N = {
         'teacher.home.step2': 'Create Activity for a Lesson',
         'teacher.home.step3': 'Generate Activity Package',
         'teacher.home.step4': 'Review and Publish',
+
+        // Home (Start Page) - S2.15 enhanced sections
+        'teacher.home.outputs_heading': 'What this system generates',
+        'teacher.home.output_worksheet': 'Student Worksheet',
+        'teacher.home.output_slides': 'Student Slides',
+        'teacher.home.output_facilitation': 'Teacher Facilitation Sheet',
+        'teacher.home.process_heading': 'How it works',
+        'teacher.home.process_step1': 'Create Course Folder',
+        'teacher.home.process_step2': 'Create Activity',
+        'teacher.home.process_step3': 'Generate Activity Package',
+        'teacher.home.process_step4': 'Review and Publish',
+        'teacher.home.why_heading': 'Why start with a course folder?',
+        'teacher.home.why_text': 'Store course-level materials once, then create multiple lesson-specific activities within the same course space.',
+
         'teacher.dashboard.current_status': 'Current Status:',
         'teacher.dashboard.ready': 'Ready to Start',
         'teacher.tutorial.title': '👋 Welcome to the Teacher Dashboard',

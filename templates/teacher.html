@@ -83,12 +83,13 @@
             <!-- Home View (Start Page) -->
             <div id="dashboardView" class="view active">
                 <div class="start-page">
+                    <!-- A. Hero Section -->
                     <div class="start-page-header">
                         <h2><i class="fas fa-chalkboard-teacher"></i>
                             <span data-i18n="teacher.home.title">教师工作台</span>
                         </h2>
                         <p class="start-page-subtitle" data-i18n="teacher.home.subtitle">
-                            创建一个课程文件夹，开始生成 CSCL 协作学习活动。
+                            创建课程文件夹，开始生成可直接用于课堂的 CSCL 协作学习活动材料。
                         </p>
                     </div>
 
@@ -100,23 +101,57 @@
                         </button>
                     </div>
 
-                    <!-- 4-step overview (read-only guidance) -->
-                    <div class="start-page-steps">
-                        <h3 data-i18n="teacher.home.steps_heading">接下来你可以：</h3>
-                        <ol class="step-overview-list">
-                            <li class="step-overview-item current" data-i18n="teacher.home.step1">
-                                创建课程文件夹
-                            </li>
-                            <li class="step-overview-item" data-i18n="teacher.home.step2">
-                                为具体课时创建活动
-                            </li>
-                            <li class="step-overview-item" data-i18n="teacher.home.step3">
-                                生成活动包
-                            </li>
-                            <li class="step-overview-item" data-i18n="teacher.home.step4">
-                                审阅并发布
-                            </li>
-                        </ol>
+                    <!-- B. Output Preview Section -->
+                    <div class="start-section output-preview-section">
+                        <h3 data-i18n="teacher.home.outputs_heading">本系统生成的材料</h3>
+                        <div class="output-preview-grid">
+                            <div class="output-card">
+                                <div class="output-icon"><i class="fas fa-file-alt"></i></div>
+                                <span class="output-label" data-i18n="teacher.home.output_worksheet">学生学习单</span>
+                            </div>
+                            <div class="output-card">
+                                <div class="output-icon"><i class="fas fa-chalkboard"></i></div>
+                                <span class="output-label" data-i18n="teacher.home.output_slides">学生演示文稿</span>
+                            </div>
+                            <div class="output-card">
+                                <div class="output-icon"><i class="fas fa-clipboard-list"></i></div>
+                                <span class="output-label" data-i18n="teacher.home.output_facilitation">教师引导手册</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- C. How It Works Section -->
+                    <div class="start-section how-it-works-section">
+                        <h3 data-i18n="teacher.home.process_heading">工作流程</h3>
+                        <div class="process-steps-horizontal">
+                            <div class="process-step">
+                                <div class="step-circle">1</div>
+                                <span class="step-name" data-i18n="teacher.home.process_step1">创建课程文件夹</span>
+                            </div>
+                            <div class="process-connector"></div>
+                            <div class="process-step">
+                                <div class="step-circle">2</div>
+                                <span class="step-name" data-i18n="teacher.home.process_step2">创建活动</span>
+                            </div>
+                            <div class="process-connector"></div>
+                            <div class="process-step">
+                                <div class="step-circle">3</div>
+                                <span class="step-name" data-i18n="teacher.home.process_step3">生成活动包</span>
+                            </div>
+                            <div class="process-connector"></div>
+                            <div class="process-step">
+                                <div class="step-circle">4</div>
+                                <span class="step-name" data-i18n="teacher.home.process_step4">审阅并发布</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- D. Why Start with Course Folder Section -->
+                    <div class="start-section why-section">
+                        <h3 data-i18n="teacher.home.why_heading">为何从课程文件夹开始？</h3>
+                        <p class="why-text" data-i18n="teacher.home.why_text">
+                            课程级材料只需上传一次，即可在同一课程空间内创建多个课时活动。
+                        </p>
                     </div>
                 </div>
             </div>

@@ -36,14 +36,6 @@
                     <i class="fas fa-folder"></i>
                     <span data-i18n="teacher.sidebar.folders">课程</span>
                 </a>
-                <a href="#" class="nav-item" data-view="scripts" data-i18n-aria-label="teacher.sidebar.scripts">
-                    <i class="fas fa-tasks"></i>
-                    <span data-i18n="teacher.sidebar.scripts">活动</span>
-                </a>
-                <a href="#" class="nav-item" data-view="documents" data-i18n-aria-label="teacher.sidebar.documents">
-                    <i class="fas fa-book-open"></i>
-                    <span data-i18n="teacher.sidebar.documents">教学材料</span>
-                </a>
                 <a href="#" class="nav-item" data-view="quality-reports" data-i18n-aria-label="teacher.sidebar.quality">
                     <i class="fas fa-clipboard-check"></i>
                     <span data-i18n="teacher.sidebar.quality">审阅</span>
@@ -194,14 +186,67 @@
                         </button>
                     </div>
                 </div>
+                <!-- Course Folder Workspace Secondary Navigation -->
+                <nav class="folder-nav">
+                    <a href="#" class="folder-nav-item active" data-folder-tab="overview" data-i18n="teacher.folder.nav.overview">Overview</a>
+                    <a href="#" class="folder-nav-item" data-folder-tab="activities" data-i18n="teacher.folder.nav.activities">Activities</a>
+                    <a href="#" class="folder-nav-item" data-folder-tab="materials" data-i18n="teacher.folder.nav.materials">Materials</a>
+                </nav>
+
                 <div class="folder-detail-content">
-                    <div class="folder-section">
-                        <h3><i class="fas fa-book-open"></i> 课程文档</h3>
-                        <div id="folderDocsList" class="documents-container"></div>
+                    <!-- Overview Tab (Default) -->
+                    <div id="folderOverviewTab" class="folder-tab-content active">
+                        <div class="folder-workspace-intro">
+                            <p data-i18n="teacher.folder.workspace_intro">Manage course materials and create activities for this course.</p>
+                        </div>
+                        <div class="folder-section">
+                            <div class="section-header">
+                                <h3><i class="fas fa-book-open"></i> <span data-i18n="teacher.folder.materials.title">Course Materials</span></h3>
+                                <button class="btn-secondary btn-sm" onclick="openFolderUploadModal()">
+                                    <i class="fas fa-upload"></i> <span data-i18n="teacher.folder.materials.upload">Upload</span>
+                                </button>
+                            </div>
+                            <div id="folderOverviewDocsList" class="documents-container"></div>
+                        </div>
+                        <div class="folder-section">
+                            <div class="section-header">
+                                <h3><i class="fas fa-tasks"></i> <span data-i18n="teacher.folder.activities.title">Activities</span></h3>
+                                <button class="btn-primary btn-sm" onclick="createActivityInFolder()">
+                                    <i class="fas fa-plus"></i> <span data-i18n="teacher.folder.activities.create">Create Activity</span>
+                                </button>
+                            </div>
+                            <div id="folderOverviewActivitiesList" class="scripts-grid"></div>
+                        </div>
                     </div>
-                    <div class="folder-section">
-                        <h3><i class="fas fa-tasks"></i> 活动列表</h3>
-                        <div id="folderActivitiesList" class="scripts-grid"></div>
+
+                    <!-- Activities Tab -->
+                    <div id="folderActivitiesTab" class="folder-tab-content">
+                        <div class="folder-section">
+                            <div class="section-header">
+                                <h3><i class="fas fa-tasks"></i> <span data-i18n="teacher.folder.activities.all">All Activities</span></h3>
+                                <button class="btn-primary" onclick="createActivityInFolder()">
+                                    <i class="fas fa-plus"></i> <span data-i18n="teacher.folder.activities.create">Create Activity</span>
+                                </button>
+                            </div>
+                            <div id="folderActivitiesList" class="scripts-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Materials Tab -->
+                    <div id="folderMaterialsTab" class="folder-tab-content">
+                        <div class="folder-section">
+                            <div class="section-header">
+                                <h3><i class="fas fa-book-open"></i> <span data-i18n="teacher.folder.materials.all">All Materials</span></h3>
+                                <div class="upload-area" id="folderUploadArea">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p data-i18n="teacher.folder.materials.drag">Drag files here or click to browse</p>
+                                    <button class="btn-secondary" onclick="openFolderUploadModal()">
+                                        <i class="fas fa-folder-open"></i> <span data-i18n="teacher.folder.materials.browse">Browse Files</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="folderMaterialsList" class="documents-container"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -330,6 +375,9 @@
                         <p class="view-subtitle" data-i18n="teacher.publish.subtitle">完成并发布你的 CSCL 活动</p>
                     </div>
                 </div>
+                <div class="cross-course-notice" data-i18n="teacher.publish.cross_course_notice">
+                    <i class="fas fa-info-circle"></i> 这是一个跨课程工作空间，显示所有课程中已准备发布的活动。
+                </div>
                 <div id="publishContent" class="publish-container">
                     <div class="empty-state">
                         <i class="fas fa-rocket"></i>
@@ -382,6 +430,9 @@
                         <h2><i class="fas fa-chart-line"></i> <span data-i18n="teacher.quality.title">质量报告</span></h2>
                         <p class="view-subtitle" data-i18n="teacher.quality.subtitle">基于证据的质量评估</p>
                     </div>
+                </div>
+                <div class="cross-course-notice" data-i18n="teacher.quality.cross_course_notice">
+                    <i class="fas fa-info-circle"></i> 这是一个跨课程工作空间，显示所有课程中的活动质量评估。
                 </div>
                 <div id="qualityReportContent" class="quality-report-container">
                     <div class="loading-placeholder">

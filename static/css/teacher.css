@@ -2712,3 +2712,107 @@
         display: none;
     }
 }
+
+/* ==================== Course Folder Workspace Styles ==================== */
+
+/* Folder Secondary Navigation */
+.folder-nav {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    margin: 0 -1.5rem 1.5rem -1.5rem;
+}
+
+.folder-nav-item {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.folder-nav-item:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.folder-nav-item.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Folder Tab Content */
+.folder-tab-content {
+    display: none;
+}
+
+.folder-tab-content.active {
+    display: block;
+}
+
+/* Workspace Intro */
+.folder-workspace-intro {
+    padding: 1rem 1.5rem;
+    background: var(--info-bg);
+    border-radius: var(--radius-md);
+    margin-bottom: 1.5rem;
+}
+
+.folder-workspace-intro p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+/* Section Header with Actions */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* Upload Area in Folder */
+.upload-area-sm {
+    padding: 1rem;
+    min-height: 120px;
+}
+
+/* Cross-course Notice Banner */
+.cross-course-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--info-bg);
+    border-left: 4px solid var(--info-color);
+    border-radius: var(--radius-md);
+    margin: 0 1.5rem 1.5rem 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.cross-course-notice i {
+    color: var(--info-color);
+    font-size: 1rem;
+}
+
+/* Folder Badge in Script Cards */
+.folder-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--primary-light);
+    color: white;
+    font-size: 0.8rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.5rem;
+}

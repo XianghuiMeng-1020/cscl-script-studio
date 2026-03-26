@@ -118,15 +118,15 @@ class ScaffoldingPreferences:
 
 @dataclass
 class OutputPreferences:
-    """Preferred output artefact formats."""
-    output_formats: List[str] = field(default_factory=lambda: ['student_worksheet', 'teacher_facilitation_sheet'])  # student_worksheet, student_slides, teacher_facilitation_sheet, full_package
+    """Preferred output artefact formats. Default package includes student worksheet, student slides, and teacher facilitation sheet."""
+    output_formats: List[str] = field(default_factory=lambda: ['student_worksheet', 'student_slides', 'teacher_facilitation_sheet'])  # Default output package
     
     def to_dict(self) -> Dict[str, Any]:
         return {'output_formats': self.output_formats}
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'OutputPreferences':
-        formats = data.get('output_format') or data.get('output_formats') or ['student_worksheet', 'teacher_facilitation_sheet']
+        formats = data.get('output_format') or data.get('output_formats') or ['student_worksheet', 'student_slides', 'teacher_facilitation_sheet']
         return cls(output_formats=list(formats) if isinstance(formats, (list, tuple)) else [formats])
 
 

@@ -394,6 +394,23 @@ const I18N = {
         'teacher.pipeline.missing_course_id': '请填写课程信息（Step 2 中的课程）后再运行。',
         'teacher.pipeline.llm_hint': '自建部署时请在环境中配置 OPENAI_API_KEY 或 Qwen API key。',
 
+        // Course Folder Workspace Navigation
+        'teacher.folder.nav.overview': '概览',
+        'teacher.folder.nav.activities': '活动',
+        'teacher.folder.nav.materials': '材料',
+        'teacher.folder.workspace_intro': '管理该课程的材料和活动。',
+        'teacher.folder.default_desc': '管理该课程下的活动和文档',
+        'teacher.folder.materials.title': '课程文档',
+        'teacher.folder.materials.upload': '上传',
+        'teacher.folder.materials.all': '所有材料',
+        'teacher.folder.materials.drag': '将文件拖放到此处，或点击浏览',
+        'teacher.folder.materials.browse': '浏览文件',
+        'teacher.folder.activities.title': '活动列表',
+        'teacher.folder.activities.all': '所有活动',
+        'teacher.folder.activities.create': '创建活动',
+        'teacher.folder.no_docs': '暂无课程文档，请上传文件。',
+        'teacher.folder.no_activities': '暂无活动，点击创建第一个活动。',
+
         // User info
         'teacher.user.role': '教师',
 
@@ -881,6 +898,23 @@ const I18N = {
         'teacher.pipeline.missing_course_id': '請填寫課程資訊（Step 2 中的課程）後再運行。',
         'teacher.pipeline.llm_hint': '自建部署時請在環境中配置 OPENAI_API_KEY 或 Qwen API key。',
 
+        // Course Folder Workspace Navigation
+        'teacher.folder.nav.overview': '概覽',
+        'teacher.folder.nav.activities': '活動',
+        'teacher.folder.nav.materials': '材料',
+        'teacher.folder.workspace_intro': '管理該課程的材料和活動。',
+        'teacher.folder.default_desc': '管理該課程下的活動和文檔',
+        'teacher.folder.materials.title': '課程文檔',
+        'teacher.folder.materials.upload': '上傳',
+        'teacher.folder.materials.all': '所有材料',
+        'teacher.folder.materials.drag': '將文件拖放到此處，或點擊瀏覽',
+        'teacher.folder.materials.browse': '瀏覽文件',
+        'teacher.folder.activities.title': '活動列表',
+        'teacher.folder.activities.all': '所有活動',
+        'teacher.folder.activities.create': '創建活動',
+        'teacher.folder.no_docs': '暫無課程文檔，請上傳文件。',
+        'teacher.folder.no_activities': '暫無活動，點擊創建第一個活動。',
+
         // User info
         'teacher.user.role': '教師',
 
@@ -1331,12 +1365,14 @@ const I18N = {
         'teacher.quality.dim_teacher': 'Teacher in Loop',
         'teacher.quality.dim_teacher_desc': 'Your edits and acceptances',
         'teacher.quality.back': 'Back',
+        'teacher.quality.cross_course_notice': 'This is a cross-course workspace showing quality assessments for activities from all courses.',
 
         // Settings
         'teacher.settings.title': 'Settings',
         'teacher.settings.subtitle': 'Configure your preferences',
         'teacher.settings.system': 'System Settings',
         'teacher.settings.coming_soon': 'Settings configuration coming soon.',
+        'teacher.publish.cross_course_notice': 'This is a cross-course workspace showing activities ready to publish from all courses.',
         'teacher.publish.share_title': 'Share with students',
         'teacher.publish.share_hint': 'Share the link or invite code below. Students can open the link and sign in to join the activity.',
         'teacher.publish.share_code': 'Invite code',
@@ -1367,6 +1403,23 @@ const I18N = {
         'teacher.pipeline.no_docs_title': 'Upload Course Documents First',
         'teacher.pipeline.missing_course_id': 'Please fill in the course (Step 2) before running.',
         'teacher.pipeline.llm_hint': 'If self-hosting, set OPENAI_API_KEY or Qwen API key in the environment.',
+
+        // Course Folder Workspace Navigation
+        'teacher.folder.nav.overview': 'Overview',
+        'teacher.folder.nav.activities': 'Activities',
+        'teacher.folder.nav.materials': 'Materials',
+        'teacher.folder.workspace_intro': 'Manage course materials and create activities for this course.',
+        'teacher.folder.default_desc': 'Manage activities and materials for this course',
+        'teacher.folder.materials.title': 'Course Materials',
+        'teacher.folder.materials.upload': 'Upload',
+        'teacher.folder.materials.all': 'All Materials',
+        'teacher.folder.materials.drag': 'Drag files here or click to browse',
+        'teacher.folder.materials.browse': 'Browse Files',
+        'teacher.folder.activities.title': 'Activities',
+        'teacher.folder.activities.all': 'All Activities',
+        'teacher.folder.activities.create': 'Create Activity',
+        'teacher.folder.no_docs': 'No course materials yet. Upload files to get started.',
+        'teacher.folder.no_activities': 'No activities yet. Create your first activity.',
 
         // User info
         'teacher.user.role': 'Teacher',

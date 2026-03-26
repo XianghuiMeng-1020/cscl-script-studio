@@ -194,11 +194,20 @@ def create_script():
 @cscl_bp.route('/scripts', methods=['GET'])
 @role_required('teacher', 'admin')
 def list_scripts():
-    """List all CSCL scripts (teacher/admin only)"""
+    """List all CSCL scripts (teacher/admin only) with folder info"""
     scripts = CSCLScript.query.filter_by(created_by=current_user.id).all()
+    result = []
+    for s in scripts:
+        script_dict = s.to_dict()
+        # Add folder name if folder_id exists
+        if s.folder_id:
+            folder = CSCLCourseFolder.query.get(s.folder_id)
+            if folder:
+                script_dict['folder_name'] = folder.name
+        result.append(script_dict)
     return jsonify({
         'success': True,
-        'scripts': [s.to_dict() for s in scripts]
+        'scripts': result
     }), 200
 
 

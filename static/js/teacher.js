@@ -228,6 +228,21 @@ function setupEventDelegation() {
             }
             return;
         }
+        // Folder navigation tab switching
+        if (btn.classList && btn.classList.contains('folder-nav-item')) {
+            var folderTab = btn.getAttribute('data-folder-tab');
+            if (folderTab) {
+                try {
+                    console.log('[teacher] action: folder-tab-' + folderTab);
+                    e.preventDefault();
+                    if (typeof switchFolderTab === 'function') switchFolderTab(folderTab);
+                } catch (err) {
+                    console.error('[teacher] handler error folder tab', err);
+                }
+                return;
+            }
+        }
+
         if (btn.getAttribute && btn.getAttribute('onclick') && (btn.getAttribute('onclick').indexOf('startNewActivity') !== -1 || btn.getAttribute('onclick').indexOf('goToStep') !== -1)) {
             var stepMatch = btn.getAttribute('onclick').match(/goToStep\s*\(\s*(\d+)\s*\)/);
             if (stepMatch) {
@@ -455,54 +470,155 @@ async function openFolder(folderId) {
     switchView('folder-detail');
     var nameEl = document.getElementById('folderDetailName');
     var descEl = document.getElementById('folderDetailDesc');
-    var docsEl = document.getElementById('folderDocsList');
+
+    // Initialize folder navigation to Overview tab
+    switchFolderTab('overview');
+
+    // Get all content containers
+    var overviewDocsEl = document.getElementById('folderOverviewDocsList');
+    var overviewActsEl = document.getElementById('folderOverviewActivitiesList');
     var actsEl = document.getElementById('folderActivitiesList');
-    if (docsEl) docsEl.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
-    if (actsEl) actsEl.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
+    var matsEl = document.getElementById('folderMaterialsList');
+
+    // Show loading state
+    var loadingHtml = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
+    if (overviewDocsEl) overviewDocsEl.innerHTML = loadingHtml;
+    if (overviewActsEl) overviewActsEl.innerHTML = loadingHtml;
+    if (actsEl) actsEl.innerHTML = loadingHtml;
+    if (matsEl) matsEl.innerHTML = loadingHtml;
+
     try {
         var res = await fetch(API_BASE + '/folders/' + folderId, { credentials: 'include' });
         var data = await res.json();
         if (!data.success) { showNotification(data.error || '加载失败', 'error'); return; }
         var folder = data.folder;
         if (nameEl) nameEl.textContent = folder.name;
-        if (descEl) descEl.textContent = folder.description || '查看该课程下的活动和文档';
+        if (descEl) descEl.textContent = folder.description || (typeof t === 'function' ? t('teacher.folder.default_desc') : 'Manage activities and materials for this course');
 
-        // Documents
-        var docs = data.documents || [];
-        if (docsEl) {
-            if (docs.length === 0) {
-                docsEl.innerHTML = '<div class="empty-state"><p>暂无课程文档，请在 Step 1 上传。</p></div>';
-            } else {
-                var dhtml = '<div class="documents-list">';
-                docs.forEach(function(d) {
-                    dhtml += '<div class="document-item"><i class="fas fa-file-alt"></i> <span>' + _esc(d.filename || d.original_filename || 'document') + '</span></div>';
-                });
-                dhtml += '</div>';
-                docsEl.innerHTML = dhtml;
-            }
-        }
+        // Store folder data for later use
+        window.currentFolderData = data;
 
-        // Activities
-        var activities = data.activities || [];
-        if (actsEl) {
-            if (activities.length === 0) {
-                actsEl.innerHTML = '<div class="empty-state"><p>暂无活动，点击上方按钮创建。</p></div>';
-            } else {
-                var ahtml = '';
-                activities.forEach(function(a) {
-                    ahtml += '<div class="script-card" onclick="openScriptProject(\'' + a.id + '\')">';
-                    ahtml += '<div class="script-card-header"><h4>' + _esc(a.title) + '</h4>';
-                    ahtml += '<span class="status-badge status-' + (a.status || 'draft') + '">' + (a.status || 'draft') + '</span></div>';
-                    ahtml += '<p class="script-card-meta">' + _esc(a.topic || '') + '</p>';
-                    ahtml += '<div class="script-card-footer"><span>' + _esc(a.task_type || '') + '</span>';
-                    ahtml += '<span>' + (a.updated_at ? new Date(a.updated_at).toLocaleDateString() : '') + '</span></div>';
-                    ahtml += '</div>';
-                });
-                actsEl.innerHTML = ahtml;
-            }
-        }
+        // Render all content areas
+        renderFolderDocuments(data.documents || []);
+        renderFolderActivities(data.activities || []);
     } catch (e) {
         showNotification('加载失败: ' + e.message, 'error');
+    }
+}
+
+function renderFolderDocuments(docs) {
+    var overviewDocsEl = document.getElementById('folderOverviewDocsList');
+    var matsEl = document.getElementById('folderMaterialsList');
+
+    var dhtml = '';
+    if (docs.length === 0) {
+        var emptyMsg = typeof t === 'function' ? t('teacher.folder.no_docs') : 'No course materials yet. Upload files to get started.';
+        dhtml = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>' + emptyMsg + '</p></div>';
+    } else {
+        dhtml = '<div class="documents-list">';
+        docs.forEach(function(d) {
+            dhtml += '<div class="document-item"><i class="fas fa-file-alt"></i> <span>' + _esc(d.filename || d.original_filename || 'document') + '</span></div>';
+        });
+        dhtml += '</div>';
+    }
+
+    if (overviewDocsEl) overviewDocsEl.innerHTML = dhtml;
+    if (matsEl) matsEl.innerHTML = dhtml;
+}
+
+function renderFolderActivities(activities) {
+    var overviewActsEl = document.getElementById('folderOverviewActivitiesList');
+    var actsEl = document.getElementById('folderActivitiesList');
+
+    var ahtml = '';
+    if (activities.length === 0) {
+        var emptyMsg = typeof t === 'function' ? t('teacher.folder.no_activities') : 'No activities yet. Create your first activity.';
+        ahtml = '<div class="empty-state"><i class="fas fa-tasks"></i><p>' + emptyMsg + '</p></div>';
+    } else {
+        ahtml = '';
+        activities.forEach(function(a) {
+            ahtml += '<div class="script-card" onclick="openScriptProject(\'' + a.id + '\')">';
+            ahtml += '<div class="script-card-header"><h4>' + _esc(a.title) + '</h4>';
+            ahtml += '<span class="status-badge status-' + (a.status || 'draft') + '">' + (a.status || 'draft') + '</span></div>';
+            ahtml += '<p class="script-card-meta">' + _esc(a.topic || '') + '</p>';
+            ahtml += '<div class="script-card-footer"><span>' + _esc(a.task_type || '') + '</span>';
+            ahtml += '<span>' + (a.updated_at ? new Date(a.updated_at).toLocaleDateString() : '') + '</span></div>';
+            ahtml += '</div>';
+        });
+    }
+
+    if (overviewActsEl) overviewActsEl.innerHTML = ahtml;
+    if (actsEl) actsEl.innerHTML = ahtml;
+}
+
+function switchFolderTab(tabName) {
+    // Update nav items
+    document.querySelectorAll('.folder-nav-item').forEach(function(item) {
+        item.classList.remove('active');
+        if (item.getAttribute('data-folder-tab') === tabName) {
+            item.classList.add('active');
+        }
+    });
+
+    // Update tab content visibility
+    document.querySelectorAll('.folder-tab-content').forEach(function(content) {
+        content.classList.remove('active');
+    });
+
+    var targetTab = document.getElementById('folder' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Tab');
+    if (targetTab) targetTab.classList.add('active');
+}
+
+function openFolderUploadModal() {
+    // Create a simple file input trigger
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '.txt,.md,.pdf,.pptx,.docx,.xlsx,.csv,.png,.jpg,.jpeg';
+    input.onchange = function(e) {
+        if (e.target.files && e.target.files.length > 0) {
+            uploadFilesToFolder(e.target.files);
+        }
+    };
+    input.click();
+}
+
+async function uploadFilesToFolder(files) {
+    if (!currentFolderId) {
+        showNotification('请先选择课程文件夹', 'warning');
+        return;
+    }
+
+    showNotification('正在上传文件...', 'info');
+
+    try {
+        var uploadedCount = 0;
+        for (var i = 0; i < files.length; i++) {
+            var formData = new FormData();
+            formData.append('file', files[i]);
+            formData.append('folder_id', currentFolderId);
+
+            var res = await fetch(API_BASE + '/courses/' + currentFolderId + '/docs/upload', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            var data = await res.json();
+            if (data.success || data.document_id) {
+                uploadedCount++;
+            }
+        }
+
+        showNotification('成功上传 ' + uploadedCount + ' 个文件', 'success');
+
+        // Refresh folder data
+        if (window.currentFolderData) {
+            // Re-fetch folder data to update the list
+            openFolder(currentFolderId);
+        }
+    } catch (e) {
+        showNotification('上传失败: ' + e.message, 'error');
     }
 }
 
@@ -624,16 +740,18 @@ function renderScripts(scriptsList) {
     var labelEdit = typeof t === 'function' ? t('common.edit') : 'Edit';
     var labelDuplicate = typeof t === 'function' ? t('teacher.scripts.duplicate') : 'Duplicate';
     var labelQuality = typeof t === 'function' ? t('teacher.scripts.quality_report') : 'Quality Report';
-    container.innerHTML = scriptsList.map(script => `
+    container.innerHTML = scriptsList.map(script => {
+        var folderInfo = script.folder_name ? `<span class="folder-badge"><i class="fas fa-folder"></i> ${escapeHtml(script.folder_name)}</span>` : '';
+        return `
         <div class="script-card" onclick="openScript('${script.id}')">
             <div class="script-card-header">
                 <h4>${escapeHtml(script.title || 'Untitled')}</h4>
                 <span class="status-badge ${script.status}">${script.status}</span>
             </div>
             <div class="script-card-content">
+                ${folderInfo}
                 <p><strong>Topic:</strong> ${escapeHtml(script.topic || 'N/A')}</p>
                 <p><strong>Duration:</strong> ${script.duration_minutes || 0} minutes</p>
-                <p><strong>Task Type:</strong> ${script.task_type || 'N/A'}</p>
             </div>
             <div class="script-card-footer">
                 <span class="script-time">Updated: ${formatTime(script.updated_at)}</span>
@@ -648,7 +766,7 @@ function renderScripts(scriptsList) {
                 </button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 // Four-Step Process Navigation
@@ -1860,12 +1978,11 @@ async function runPipeline() {
             var code = result.code || '';
             var errMsg = result.error || result.message || 'Request failed.';
             if (code === 'PREFLIGHT_NO_COURSE_DOCS') {
-                errMsg = typeof t === 'function' ? t('teacher.pipeline.no_course_docs') : '当前课程下还没有上传文档。请先在左侧「课程文档」中上传 PDF 或文本，再点击运行生成。';
+                errMsg = typeof t === 'function' ? t('teacher.pipeline.no_course_docs') : '当前课程下还没有上传文档。请先在 Step 1 中上传课程文档，再点击运行生成。';
                 showPipelineErrorPanel(errMsg, typeof t === 'function' ? t('teacher.pipeline.no_docs_title') : '请先上传课程文档', false);
                 showNotification(errMsg, 'error');
-                // Optionally open or highlight the course documents sidebar
-                var docsSection = document.querySelector('[data-docs-section]') || document.getElementById('documentsView');
-                if (docsSection) { docsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); var navItem = document.querySelector('[data-view="documents"]'); if (navItem) navItem.click(); }
+                // Go back to step 1 to upload documents
+                goToStep(1);
             } else if (code === 'PREFLIGHT_MISSING_COURSE_ID') {
                 showNotification(typeof t === 'function' ? t('teacher.pipeline.missing_course_id') : '请填写课程信息（Step 2 中的课程）后再运行。', 'error');
                 goToStep(2);
@@ -2434,10 +2551,10 @@ async function loadQualityReports() {
                 <div class="empty-state">
                     <i class="fas fa-chart-line"></i>
                     <h4>No Script Projects</h4>
-                    <p>Create a script project first to view quality reports.</p>
-                    <button class="btn-primary" onclick="switchView('scripts')">
-                        <i class="fas fa-plus"></i>
-                        Create Script Project
+                    <p>Create an activity in a course folder first to view quality reports.</p>
+                    <button class="btn-primary" onclick="switchView('folders')">
+                        <i class="fas fa-folder"></i>
+                        Go to Course Folders
                     </button>
                 </div>
             `;
@@ -3165,10 +3282,10 @@ async function loadDecisionTimeline() {
                 <div class="empty-state">
                     <i class="fas fa-history"></i>
                     <h4>No Decisions Yet</h4>
-                    <p>Decision timeline will appear here after you create and modify script projects.</p>
-                    <button class="btn-primary" onclick="switchView('scripts')">
-                        <i class="fas fa-folder-open"></i>
-                        Create Script Project
+                    <p>Decision timeline will appear here after you create and modify activities in course folders.</p>
+                    <button class="btn-primary" onclick="switchView('folders')">
+                        <i class="fas fa-folder"></i>
+                        Go to Course Folders
                     </button>
                 </div>
             `;
@@ -3238,10 +3355,10 @@ async function loadPublishView() {
                 <div class="empty-state">
                     <i class="fas fa-rocket"></i>
                     <h4>No Scripts Ready to Publish</h4>
-                    <p>Finalize a script project to make it available for publishing.</p>
-                    <button class="btn-primary" onclick="switchView('scripts')">
-                        <i class="fas fa-folder-open"></i>
-                        View Script Projects
+                    <p>Finalize an activity to make it available for publishing.</p>
+                    <button class="btn-primary" onclick="switchView('folders')">
+                        <i class="fas fa-folder"></i>
+                        Go to Course Folders
                     </button>
                 </div>
             `;

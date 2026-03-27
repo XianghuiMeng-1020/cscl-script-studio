@@ -49,6 +49,7 @@ let wizardStep = 1;
 let currentSpec = null;
 let scripts = [];
 let pipelineRuns = [];
+let wizardFolderId = null;  // Track current folder context when creating activities from within a folder
 
 // Initialize - S2.14.2: phased init, full stack on error, event delegation
 document.addEventListener('DOMContentLoaded', function() {
@@ -624,7 +625,8 @@ async function uploadFilesToFolder(files) {
 
 function createActivityInFolder() {
     if (!currentFolderId) { showNotification('请先选择一个课程文件夹', 'warning'); return; }
-    startNewActivity();
+    wizardFolderId = currentFolderId;
+    goToStep(2);
 }
 
 async function loadDashboardData() {
@@ -772,6 +774,7 @@ function renderScripts(scriptsList) {
 // Four-Step Process Navigation
 function startNewActivity() {
     wizardStep = 1;
+    wizardFolderId = null;  // Clear folder context when starting from global entry point
     switchView('wizard');
     resetWizard();
     if (typeof loadUploadedFilesListForStep1 === 'function') loadUploadedFilesListForStep1();
@@ -1893,7 +1896,8 @@ async function runPipeline() {
                 body: JSON.stringify({
                     title: (flat && flat.topic) ? flat.topic : 'New Script',
                     topic: (flat && flat.topic) ? flat.topic : '',
-                    course_id: DEFAULT_COURSE_ID,
+                    course_id: wizardFolderId || DEFAULT_COURSE_ID,
+                    folder_id: wizardFolderId,
                     learning_objectives: (flat && flat.learning_objectives) ? flat.learning_objectives : [],
                     task_type: (flat && flat.task_type) ? flat.task_type : 'structured_debate',
                     duration_minutes: (flat && flat.duration_minutes) ? flat.duration_minutes : 90
@@ -2494,10 +2498,10 @@ async function exportScript(format) {
     try {
         var res = await fetch(urlExport, { credentials: 'include' });
         if (res.ok) {
-            if (format === 'html' || format === 'markdown') {
+            if (format === 'html' || format === 'markdown' || format === 'docx') {
                 var blob = await res.blob();
                 var disp = res.headers.get('Content-Disposition');
-                var filename = 'activity.' + (format === 'html' ? 'html' : 'md');
+                var filename = 'activity.' + (format === 'html' ? 'html' : format === 'docx' ? 'docx' : 'md');
                 if (disp) {
                     var m = disp.match(/filename="?([^";\n]+)"?/);
                     if (m && m[1]) filename = m[1].trim();
@@ -2532,6 +2536,18 @@ async function exportScript(format) {
     } catch (error) {
         console.error('Error exporting script:', error);
         showNotification('Failed to export', 'error');
+    }
+}
+
+// Toggle advanced actions panel visibility in Step 4
+function toggleAdvancedActions() {
+    var panel = document.getElementById('advancedActionsPanel');
+    var icon = document.getElementById('advancedToggleIcon');
+    if (!panel) return;
+    var isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'flex' : 'none';
+    if (icon) {
+        icon.className = isHidden ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
     }
 }
 

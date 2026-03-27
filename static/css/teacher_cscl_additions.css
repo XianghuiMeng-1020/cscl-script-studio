@@ -375,3 +375,79 @@
     font-style: italic;
     padding: 1rem 0;
 }
+
+/* ===== Step 4 Publish Actions: Primary and Advanced Actions ===== */
+.publish-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary, #f8f8f4);
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid var(--border-light, #e0e0e0);
+}
+
+.primary-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.advanced-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.advanced-actions .btn-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--text-secondary, #666);
+    font-size: 0.85rem;
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.advanced-actions .btn-text:hover {
+    color: var(--primary-color, #4a7c59);
+}
+
+.advanced-actions-panel {
+    display: none;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: white;
+    border-radius: var(--radius-md, 8px);
+    border: 1px solid var(--border-light, #e0e0e0);
+}
+
+.advanced-actions-panel[style*="flex"] {
+    display: flex !important;
+}
+
+.advanced-actions-panel .btn-sm {
+    min-width: auto;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .primary-actions,
+    .advanced-actions-panel {
+        justify-content: center;
+    }
+
+    .primary-actions button,
+    .advanced-actions-panel button {
+        flex: 1 1 auto;
+        min-width: 140px;
+    }
+}

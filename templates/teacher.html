@@ -765,34 +765,51 @@
                                 </div>
                             </div>
                             <div class="publish-actions">
-                                <button class="btn-secondary" id="editRegenerateBtn" onclick="editAndRegenerate()" title="">
-                                    <i class="fas fa-edit"></i>
-                                    <span data-i18n="teacher.wizard.edit_regenerate">修改并重新生成</span>
-                                </button>
-                                <button class="btn-secondary" onclick="viewQualityReport()">
-                                    <i class="fas fa-chart-line"></i>
-                                    <span data-i18n="teacher.wizard.view_quality">查看质量报告</span>
-                                </button>
-                                <button class="btn-secondary" onclick="exportScript()" data-i18n-title="teacher.wizard.export_tooltip_json" title="">
-                                    <i class="fas fa-download"></i>
-                                    <span data-i18n="teacher.wizard.export">下载 JSON 数据</span>
-                                </button>
-                                <button class="btn-secondary" onclick="exportScript('html')" data-i18n-title="teacher.wizard.export_tooltip_html" title="">
-                                    <i class="fas fa-file-code"></i>
-                                    <span data-i18n="teacher.wizard.export_html">下载为网页</span>
-                                </button>
-                                <button class="btn-secondary" onclick="exportScript('markdown')" data-i18n-title="teacher.wizard.export_tooltip_md" title="">
-                                    <i class="fas fa-file-alt"></i>
-                                    <span data-i18n="teacher.wizard.export_md">下载为文本</span>
-                                </button>
-                                <button class="btn-primary" id="finalizeBtn" onclick="finalizeScript()">
-                                    <i class="fas fa-check"></i>
-                                    <span data-i18n="teacher.wizard.finalize_script">确认方案</span>
-                                </button>
-                                <button class="btn-primary" id="publishBtn" onclick="publishScript()" disabled>
-                                    <i class="fas fa-rocket"></i>
-                                    <span data-i18n="teacher.wizard.publish_activity">发布活动</span>
-                                </button>
+                                <!-- Primary Actions: Most important teacher-facing actions -->
+                                <div class="primary-actions">
+                                    <button class="btn-secondary" id="editRegenerateBtn" onclick="editAndRegenerate()" title="">
+                                        <i class="fas fa-edit"></i>
+                                        <span data-i18n="teacher.wizard.edit_regenerate">修改并重新生成</span>
+                                    </button>
+                                    <button class="btn-secondary" onclick="exportScript('docx')" data-i18n-title="teacher.wizard.export_tooltip_docx" title="">
+                                        <i class="fas fa-file-word"></i>
+                                        <span data-i18n="teacher.wizard.export_docx">导出为 Word</span>
+                                    </button>
+                                    <button class="btn-primary" id="finalizeBtn" onclick="finalizeScript()">
+                                        <i class="fas fa-check"></i>
+                                        <span data-i18n="teacher.wizard.finalize_script">确认方案</span>
+                                    </button>
+                                    <button class="btn-primary" id="publishBtn" onclick="publishScript()" disabled>
+                                        <i class="fas fa-rocket"></i>
+                                        <span data-i18n="teacher.wizard.publish_activity">发布活动</span>
+                                    </button>
+                                </div>
+
+                                <!-- Advanced Actions: Technical/system-level options -->
+                                <div class="advanced-actions">
+                                    <button class="btn-text btn-sm" onclick="toggleAdvancedActions()">
+                                        <span data-i18n="teacher.wizard.more_options">更多选项</span>
+                                        <i class="fas fa-chevron-down" id="advancedToggleIcon"></i>
+                                    </button>
+                                    <div class="advanced-actions-panel" id="advancedActionsPanel" style="display: none;">
+                                        <button class="btn-secondary btn-sm" onclick="viewQualityReport()">
+                                            <i class="fas fa-chart-line"></i>
+                                            <span data-i18n="teacher.wizard.view_quality">查看质量报告</span>
+                                        </button>
+                                        <button class="btn-secondary btn-sm" onclick="exportScript()" data-i18n-title="teacher.wizard.export_tooltip_json" title="">
+                                            <i class="fas fa-download"></i>
+                                            <span data-i18n="teacher.wizard.export">下载 JSON 数据</span>
+                                        </button>
+                                        <button class="btn-secondary btn-sm" onclick="exportScript('html')" data-i18n-title="teacher.wizard.export_tooltip_html" title="">
+                                            <i class="fas fa-file-code"></i>
+                                            <span data-i18n="teacher.wizard.export_html">下载为网页</span>
+                                        </button>
+                                        <button class="btn-secondary btn-sm" onclick="exportScript('markdown')" data-i18n-title="teacher.wizard.export_tooltip_md" title="">
+                                            <i class="fas fa-file-alt"></i>
+                                            <span data-i18n="teacher.wizard.export_md">下载为文本</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="wizard-footer">

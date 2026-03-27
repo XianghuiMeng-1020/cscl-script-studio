@@ -18,6 +18,13 @@ from app.services.cscl_llm_provider import select_runnable_provider
 from datetime import datetime
 import json
 import secrets
+from io import BytesIO
+
+try:
+    from docx import Document as DocxDocument
+    DOCX_SUPPORT = True
+except ImportError:
+    DOCX_SUPPORT = False
 
 cscl_bp = Blueprint('cscl', __name__, url_prefix='/api/cscl')
 
@@ -126,6 +133,7 @@ def create_script():
         title=data.get('title', ''),
         topic=data.get('topic', ''),
         course_id=data.get('course_id'),
+        folder_id=data.get('folder_id'),
         learning_objectives=data.get('learning_objectives', []),
         task_type=data.get('task_type', 'structured_debate'),
         duration_minutes=data.get('duration_minutes', 60),
@@ -484,6 +492,79 @@ def _build_worksheet_teacher_guide_markdown(script_title: str, student_worksheet
     return ''.join(lines)
 
 
+def _build_worksheet_teacher_guide_docx(script_title: str, student_worksheet: dict, teacher_guide: dict) -> bytes:
+    """Build a Word document with student worksheet and teacher guide, return bytes."""
+    sw = student_worksheet or {}
+    tg = teacher_guide or {}
+
+    doc = DocxDocument()
+
+    # Student Worksheet Section
+    title = sw.get('title') or script_title or 'Activity'
+    doc.add_heading(title, level=0)
+
+    if sw.get('goal'):
+        p = doc.add_paragraph()
+        p.add_run('Goal: ').bold = True
+        p.add_run(str(sw['goal']))
+
+    if sw.get('roles_summary'):
+        doc.add_heading('Roles', level=1)
+        doc.add_paragraph(str(sw['roles_summary']))
+
+    if sw.get('steps'):
+        doc.add_heading('Steps', level=1)
+        for s in sw['steps']:
+            step_title = 'Step {}: {}'.format(s.get('step_order', ''), s.get('title', ''))
+            if s.get('duration_minutes'):
+                step_title += ' ({} min)'.format(s['duration_minutes'])
+            doc.add_heading(step_title, level=2)
+            if s.get('description'):
+                doc.add_paragraph(str(s['description']))
+            if s.get('prompts'):
+                for p in s['prompts']:
+                    doc.add_paragraph(str(p), style='List Bullet')
+
+    if sw.get('output_instructions'):
+        doc.add_heading('Expected output', level=1)
+        doc.add_paragraph(str(sw['output_instructions']))
+
+    if sw.get('reporting_instructions'):
+        doc.add_paragraph(str(sw['reporting_instructions']))
+
+    # Page break before teacher guide
+    doc.add_page_break()
+
+    # Teacher Guide Section
+    doc.add_heading('Teacher guide', level=0)
+
+    if tg.get('overview'):
+        doc.add_heading('Overview', level=1)
+        doc.add_paragraph(str(tg['overview']))
+
+    if tg.get('rationale'):
+        doc.add_heading('Rationale', level=1)
+        doc.add_paragraph(str(tg['rationale']))
+
+    if tg.get('implementation_steps'):
+        doc.add_heading('Implementation', level=1)
+        doc.add_paragraph(str(tg['implementation_steps']))
+
+    if tg.get('monitoring_points'):
+        doc.add_heading('Monitoring', level=1)
+        doc.add_paragraph(str(tg['monitoring_points']))
+
+    if tg.get('debrief_questions'):
+        doc.add_heading('Debrief questions', level=1)
+        doc.add_paragraph(str(tg['debrief_questions']))
+
+    # Save to bytes
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
 def _escape_html(s: str) -> str:
     if not s:
         return ''
@@ -493,13 +574,13 @@ def _escape_html(s: str) -> str:
 @cscl_bp.route('/scripts/<script_id>/export', methods=['GET'])
 @role_required('teacher', 'admin')
 def export_script(script_id):
-    """Export a CSCL script as JSON (default), HTML, or Markdown (teacher/admin only). Use ?format=html or ?format=markdown."""
+    """Export a CSCL script as JSON (default), HTML, Markdown, or Word (teacher/admin only). Use ?format=html or ?format=markdown or ?format=docx."""
     script = CSCLScript.query.filter_by(id=script_id, created_by=current_user.id).first()
     if not script:
         return jsonify({'error': 'Script not found'}), 404
 
     export_format = (request.args.get('format') or 'json').strip().lower()
-    if export_format in ('html', 'markdown'):
+    if export_format in ('html', 'markdown', 'docx'):
         latest_run = CSCLPipelineRun.query.filter_by(script_id=script_id).order_by(
             CSCLPipelineRun.created_at.desc()
         ).first()
@@ -537,6 +618,18 @@ def export_script(script_id):
             from flask import Response
             resp = Response(body, mimetype='text/markdown; charset=utf-8')
             resp.headers['Content-Disposition'] = 'attachment; filename="{}_activity.md"'.format(title[:50])
+            return resp
+        if export_format == 'docx':
+            if not DOCX_SUPPORT:
+                return jsonify({'error': 'Word export is not available (python-docx not installed)'}), 501
+            docx_bytes = _build_worksheet_teacher_guide_docx(
+                title,
+                pipeline_output.get('student_worksheet'),
+                pipeline_output.get('teacher_guide')
+            )
+            from flask import Response
+            resp = Response(docx_bytes, mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            resp.headers['Content-Disposition'] = 'attachment; filename="{}_activity.docx"'.format(title[:50])
             return resp
 
     # Load full structure (JSON export)

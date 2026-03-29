@@ -116,15 +116,17 @@ def compute_quality_report(refiner_output: Dict[str, Any], spec: Dict[str, Any],
 
 
 class CSCLPipelineService:
-    """Service for orchestrating multi-stage CSCL script generation"""
+    """Service for orchestrating multi-stage CSCL script generation with optional web retrieval and image generation"""
     
-    def __init__(self, enable_rag: bool = True, force_provider: Optional[str] = None):
+    def __init__(self, enable_rag: bool = True, force_provider: Optional[str] = None, enable_web_retrieval: bool = False, enable_image_generation: bool = False):
         """
         Initialize pipeline service
         
         Args:
             enable_rag: Whether to enable RAG retrieval (default: True)
             force_provider: Optional provider name to force (for retry scenarios)
+            enable_web_retrieval: Whether to enable web retrieval for external examples
+            enable_image_generation: Whether to enable AI image generation for visuals
         """
         self.force_provider = force_provider
         self.provider = get_cscl_llm_provider(force_provider=force_provider)
@@ -133,6 +135,22 @@ class CSCLPipelineService:
         self.critic = CriticStage(self.provider)
         self.refiner = RefinerStage(self.provider)
         self.retriever = CSCLRetriever(k=5) if enable_rag else None
+        
+        # B1/B2: AI Enhancement services
+        self.enable_web_retrieval = enable_web_retrieval
+        self.enable_image_generation = enable_image_generation
+        
+        if enable_web_retrieval:
+            from app.services.web_retrieval_service import get_web_retrieval_service
+            self.web_retrieval_service = get_web_retrieval_service()
+        else:
+            self.web_retrieval_service = None
+            
+        if enable_image_generation:
+            from app.services.image_generation_service import get_image_generation_service
+            self.image_generation_service = get_image_generation_service()
+        else:
+            self.image_generation_service = None
     
     def _retrieve_evidence(self, spec: Dict[str, Any], stage_name: str, script_id: str) -> List[Dict[str, Any]]:
         """
@@ -483,13 +501,40 @@ class CSCLPipelineService:
                     script_id
                 )
             
+            # B2: Web Retrieval Stage (optional, between Planner and Material Generator)
+            web_retrieval_result = None
+            if self.enable_web_retrieval and self.web_retrieval_service and self.web_retrieval_service.is_enabled():
+                try:
+                    web_retrieval_result = self.web_retrieval_service.retrieve_lesson_materials(
+                        spec=spec,
+                        retrieval_type="all"
+                    )
+                    if web_retrieval_result.get('success'):
+                        # Add retrieved materials to material_options for the generator to use
+                        material_options = (options or {}).copy()
+                        material_options['run_id'] = run_id
+                        material_options['web_retrieval_results'] = web_retrieval_result
+                        material_options['web_retrieval_formatted'] = self.web_retrieval_service.format_for_prompt(web_retrieval_result)
+                        logger.info(f"[Pipeline] Web retrieval completed for run {run_id}")
+                    else:
+                        logger.warning(f"[Pipeline] Web retrieval failed: {web_retrieval_result.get('error')}")
+                except Exception as e:
+                    logger.error(f"[Pipeline] Web retrieval error: {str(e)}")
+            
             # Stage 2: Material Generator (with RAG retrieval)
             evidence_chunks_material = self._retrieve_evidence(spec, 'material_generator', script_id) if self.retriever else []
             material_options = (options or {}).copy()
             material_options['run_id'] = run_id
+            
+            # B2: Include web retrieval results if available
+            if web_retrieval_result and web_retrieval_result.get('success'):
+                material_options['web_retrieval_results'] = web_retrieval_result
+                material_options['web_retrieval_formatted'] = self.web_retrieval_service.format_for_prompt(web_retrieval_result)
+            
             material_result = self.material_generator.run(planner_result['output_snapshot'], spec, material_options)
             material_result['retrieved_chunks_count'] = len(evidence_chunks_material)
             material_result['retrieved_chunk_ids'] = [c['chunk_id'] for c in evidence_chunks_material]
+            material_result['web_retrieval_used'] = web_retrieval_result is not None and web_retrieval_result.get('success', False)
             stages.append(material_result)
             self._save_stage_run(run_id, material_result)
             
@@ -522,6 +567,34 @@ class CSCLPipelineService:
                     script_id,
                     id_mapping=id_mapping,
                 )
+            
+            # B1: Image Generation Stage (optional, after Material Generator)
+            generated_images = []
+            if self.enable_image_generation and self.image_generation_service and self.image_generation_service.is_enabled():
+                try:
+                    generated_images = self.image_generation_service.generate_instructional_visuals(
+                        spec=spec,
+                        planner_output=planner_result['output_snapshot'],
+                        script_id=script_id
+                    )
+                    if generated_images:
+                        logger.info(f"[Pipeline] Generated {len(generated_images)} images for run {run_id}")
+                        # Add generated images to material output
+                        material_result['output_snapshot']['generated_images'] = [
+                            {
+                                'image_id': img['image_id'],
+                                'filename': img['filename'],
+                                'purpose': img['metadata'].get('purpose', 'general'),
+                                'target': img['metadata'].get('target', 'general'),
+                                'revised_prompt': img.get('revised_prompt', '')
+                            }
+                            for img in generated_images
+                        ]
+                        material_result['generated_images_count'] = len(generated_images)
+                    else:
+                        logger.info(f"[Pipeline] No images generated for run {run_id}")
+                except Exception as e:
+                    logger.error(f"[Pipeline] Image generation error: {str(e)}")
             
             # Stage 3: Critic (with RAG retrieval)
             evidence_chunks_critic = self._retrieve_evidence(spec, 'critic', script_id) if self.retriever else []

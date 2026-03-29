@@ -1928,3 +1928,189 @@ def delete_folder(folder_id):
     db.session.commit()
     log_audit('course_folder_deleted', target_id=folder_id)
     return jsonify({'success': True}), 200
+
+
+# B1/B2: AI Enhancement API Routes
+
+@cscl_bp.route('/ai/enhancement/status', methods=['GET'])
+@role_required('teacher', 'admin')
+def get_ai_enhancement_status():
+    """Get the status of AI enhancement features (image generation and web retrieval)"""
+    from app.config import Config
+    from app.services.image_generation_service import get_image_generation_service
+    from app.services.web_retrieval_service import get_web_retrieval_service
+    
+    image_service = get_image_generation_service()
+    web_service = get_web_retrieval_service()
+    
+    return jsonify({
+        'success': True,
+        'image_generation': {
+            'enabled': Config.IMAGE_GENERATION_ENABLED,
+            'configured': image_service.is_enabled(),
+            'model': Config.OPENAI_IMAGE_MODEL if Config.IMAGE_GENERATION_ENABLED else None
+        },
+        'web_retrieval': {
+            'enabled': Config.WEB_RETRIEVAL_ENABLED,
+            'configured': web_service.is_enabled(),
+            'provider': Config.WEB_RETRIEVAL_PROVIDER if Config.WEB_RETRIEVAL_ENABLED else None
+        }
+    }), 200
+
+
+@cscl_bp.route('/images/generate', methods=['POST'])
+@role_required('teacher', 'admin')
+def generate_image():
+    """Generate an image using DALL-E"""
+    from app.services.image_generation_service import get_image_generation_service
+    
+    service = get_image_generation_service()
+    if not service.is_enabled():
+        return jsonify({
+            'success': False,
+            'error': 'Image generation is not enabled or not configured'
+        }), 503
+    
+    data = request.get_json() or {}
+    prompt = data.get('prompt', '').strip()
+    
+    if not prompt:
+        return jsonify({'error': 'Prompt is required'}), 400
+    
+    script_id = data.get('script_id')
+    size = data.get('size', '1024x1024')
+    quality = data.get('quality', 'standard')
+    style = data.get('style', 'vivid')
+    
+    result = service.generate_image(
+        prompt=prompt,
+        size=size,
+        quality=quality,
+        style=style,
+        script_id=script_id,
+        metadata=data.get('metadata', {})
+    )
+    
+    if result['success']:
+        return jsonify({
+            'success': True,
+            'image_id': result['image_id'],
+            'filename': result['filename'],
+            'revised_prompt': result.get('revised_prompt', ''),
+            'url': f'/generated_images/{result["filename"]}'
+        }), 200
+    else:
+        return jsonify({
+            'success': False,
+            'error': result.get('error', 'Image generation failed')
+        }), 500
+
+
+@cscl_bp.route('/scripts/<script_id>/images', methods=['GET'])
+@role_required('teacher', 'admin')
+def get_script_images(script_id):
+    """Get all generated images for a script/activity"""
+    from app.services.image_generation_service import get_image_generation_service
+    
+    service = get_image_generation_service()
+    images = service.get_images_for_script(script_id)
+    
+    return jsonify({
+        'success': True,
+        'script_id': script_id,
+        'images': [
+            {
+                'image_id': img['id'],
+                'filename': img['filename'],
+                'purpose': img.get('metadata', {}).get('purpose', 'general'),
+                'target': img.get('metadata', {}).get('target', 'general'),
+                'url': f'/generated_images/{img["filename"]}',
+                'created_at': img['created_at']
+            }
+            for img in images
+        ]
+    }), 200
+
+
+@cscl_bp.route('/web/search', methods=['POST'])
+@role_required('teacher', 'admin')
+def web_search():
+    """Search the web for lesson-relevant materials"""
+    from app.services.web_retrieval_service import get_web_retrieval_service
+    
+    service = get_web_retrieval_service()
+    if not service.is_enabled():
+        return jsonify({
+            'success': False,
+            'error': 'Web retrieval is not enabled or not configured'
+        }), 503
+    
+    data = request.get_json() or {}
+    query = data.get('query', '').strip()
+    
+    if not query:
+        return jsonify({'error': 'Search query is required'}), 400
+    
+    search_depth = data.get('search_depth', 'basic')
+    include_answer = data.get('include_answer', True)
+    max_results = data.get('max_results', 5)
+    
+    result = service.search_and_retrieve(
+        query=query,
+        search_depth=search_depth,
+        include_answer=include_answer,
+        max_results=max_results
+    )
+    
+    if result['success']:
+        return jsonify({
+            'success': True,
+            'query': result['query'],
+            'answer': result.get('answer', ''),
+            'results': result['results'],
+            'metadata': result.get('metadata', {})
+        }), 200
+    else:
+        return jsonify({
+            'success': False,
+            'error': result.get('error', 'Web search failed')
+        }), 500
+
+
+@cscl_bp.route('/web/retrieve-lesson-materials', methods=['POST'])
+@role_required('teacher', 'admin')
+def retrieve_lesson_materials():
+    """Retrieve lesson-relevant external materials based on activity specification"""
+    from app.services.web_retrieval_service import get_web_retrieval_service
+    
+    service = get_web_retrieval_service()
+    if not service.is_enabled():
+        return jsonify({
+            'success': False,
+            'error': 'Web retrieval is not enabled or not configured'
+        }), 503
+    
+    data = request.get_json() or {}
+    spec = data.get('spec', {})
+    retrieval_type = data.get('retrieval_type', 'all')
+    
+    if not spec:
+        return jsonify({'error': 'Activity specification is required'}), 400
+    
+    result = service.retrieve_lesson_materials(
+        spec=spec,
+        retrieval_type=retrieval_type
+    )
+    
+    if result['success']:
+        return jsonify({
+            'success': True,
+            'topic': result['metadata']['topic'],
+            'materials': result['materials'],
+            'metadata': result['metadata']
+        }), 200
+    else:
+        return jsonify({
+            'success': False,
+            'error': result.get('error', 'Material retrieval failed')
+        }), 500

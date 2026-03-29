@@ -72,7 +72,7 @@ class Config:
     SPEC_VALIDATE_PUBLIC = os.getenv('SPEC_VALIDATE_PUBLIC', 'false').lower() == 'true'
 
     # S2.14 static cache busting
-    STATIC_VERSION = os.getenv('STATIC_VERSION', '8')
+    STATIC_VERSION = os.getenv('STATIC_VERSION', '9')
 
     # Pipeline: require critic success for overall success (default conservative)
     PIPELINE_REQUIRE_CRITIC_SUCCESS = os.getenv('PIPELINE_REQUIRE_CRITIC_SUCCESS', 'true').lower() == 'true'
@@ -92,6 +92,20 @@ class Config:
     QUICK_DEMO_PUBLIC = os.getenv('QUICK_DEMO_PUBLIC', 'true').lower() == 'true'
     REQUIRE_LOGIN_FOR_TEACHER = os.getenv('REQUIRE_LOGIN_FOR_TEACHER', 'true').lower() == 'true'
     REQUIRE_LOGIN_FOR_STUDENT = os.getenv('REQUIRE_LOGIN_FOR_STUDENT', 'true').lower() == 'true'
+    
+    # B1: Image Generation (DALL-E) Configuration
+    IMAGE_GENERATION_ENABLED = os.getenv('IMAGE_GENERATION_ENABLED', 'false').lower() == 'true'
+    OPENAI_IMAGE_MODEL = os.getenv('OPENAI_IMAGE_MODEL', 'dall-e-3')
+    IMAGE_GENERATION_DEFAULT_SIZE = os.getenv('IMAGE_GENERATION_DEFAULT_SIZE', '1024x1024')
+    IMAGE_GENERATION_DEFAULT_QUALITY = os.getenv('IMAGE_GENERATION_DEFAULT_QUALITY', 'standard')
+    
+    # B2: Web Retrieval Configuration
+    WEB_RETRIEVAL_ENABLED = os.getenv('WEB_RETRIEVAL_ENABLED', 'false').lower() == 'true'
+    WEB_RETRIEVAL_PROVIDER = os.getenv('WEB_RETRIEVAL_PROVIDER', 'tavily').lower()
+    TAVILY_API_KEY = os.getenv('TAVILY_API_KEY', '')
+    TAVILY_MAX_RESULTS = int(os.getenv('TAVILY_MAX_RESULTS', '5'))
+    WEB_RETRIEVAL_TIMEOUT = int(os.getenv('WEB_RETRIEVAL_TIMEOUT', '30'))
+    WEB_RETRIEVAL_MAX_CONTENT_LENGTH = int(os.getenv('WEB_RETRIEVAL_MAX_CONTENT_LENGTH', '10000'))
     
     @staticmethod
     def validate():

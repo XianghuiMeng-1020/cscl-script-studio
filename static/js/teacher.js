@@ -48,6 +48,12 @@ let _pipelinePollingActive = false;
 let wizardStep = 1;
 let currentSpec = null;
 let scripts = [];
+
+// B1/B2: AI Enhancement Settings
+let aiEnhancementSettings = {
+    image_generation: false,
+    web_retrieval: false
+};
 let pipelineRuns = [];
 let wizardFolderId = null;  // Track current folder context when creating activities from within a folder
 
@@ -374,6 +380,7 @@ function switchView(viewName) {
                 loadPublishView();
                 break;
             case 'settings':
+                initSettingsPage();
                 break;
             case 'wizard':
                 resetWizard();
@@ -429,11 +436,16 @@ async function loadFolders() {
         }
         var html = '';
         folders.forEach(function(f) {
-            html += '<div class="script-card folder-card" onclick="openFolder(\'' + f.id + '\')">';
-            html += '<div class="script-card-header"><i class="fas fa-folder" style="color: var(--primary-color); margin-right: 0.5rem;"></i><h4>' + _esc(f.name) + '</h4></div>';
-            if (f.description) html += '<p class="script-card-meta">' + _esc(f.description) + '</p>';
-            html += '<div class="script-card-footer"><span>' + (f.activity_count || 0) + ' 个活动</span>';
+            html += '<div class="script-card folder-card">';
+            html += '<div class="script-card-header" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;"><i class="fas fa-folder" style="color: var(--primary-color); margin-right: 0.5rem;"></i><h4>' + _esc(f.name) + '</h4></div>';
+            if (f.description) html += '<p class="script-card-meta" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;">' + _esc(f.description) + '</p>';
+            html += '<div class="script-card-footer" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;"><span>' + (f.activity_count || 0) + ' 个活动</span>';
             html += '<span>' + (f.created_at ? new Date(f.created_at).toLocaleDateString() : '') + '</span></div>';
+            html += '<div class="folder-card-actions" style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">';
+            html += '<button class="btn-secondary btn-sm" onclick="event.stopPropagation(); deleteFolder(\'' + f.id + '\', \'' + _esc(f.name).replace(/\\/g, '\\\\').replace(/\'/g, "\\'") + '\', ' + (f.activity_count || 0) + ')" title="删除文件夹" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">';
+            html += '<i class="fas fa-trash"></i> 删除';
+            html += '</button>';
+            html += '</div>';
             html += '</div>';
         });
         container.innerHTML = html;
@@ -463,6 +475,43 @@ async function createNewFolder() {
         }
     } catch (e) {
         showNotification('创建失败: ' + e.message, 'error');
+    }
+}
+
+async function deleteFolder(folderId, folderName, activityCount) {
+    // Check if folder has activities
+    if (activityCount > 0) {
+        showNotification('该文件夹下还有 ' + activityCount + ' 个活动，无法删除。请先删除所有活动后再删除文件夹。', 'error');
+        return;
+    }
+    
+    // Confirm deletion
+    if (!confirm('确定要删除课程文件夹"' + folderName + '"吗？此操作不可撤销。')) {
+        return;
+    }
+    
+    try {
+        showLoading(true);
+        var res = await fetch(API_BASE + '/folders/' + folderId, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        
+        if (res.ok) {
+            showNotification('课程文件夹已删除', 'success');
+            loadFolders();
+        } else {
+            var data = await res.json();
+            if (res.status === 400 && data.error && data.error.includes('activities')) {
+                showNotification('该文件夹下还有活动，无法删除。请先删除所有活动。', 'error');
+            } else {
+                showNotification(data.error || '删除失败', 'error');
+            }
+        }
+    } catch (e) {
+        showNotification('删除失败: ' + e.message, 'error');
+    } finally {
+        showLoading(false);
     }
 }
 
@@ -3047,12 +3096,12 @@ async function loadDocuments() {
         ]);
         
         if (docsRes.status === 401) {
-            container.innerHTML = '<div class="empty-state"><p>Please login first</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>请先登录</p></div>';
             return;
         }
         
         if (docsRes.status === 403) {
-            container.innerHTML = '<div class="empty-state"><p>Current role has no permission</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>当前角色无权限</p></div>';
             return;
         }
         
@@ -3076,11 +3125,11 @@ async function loadDocuments() {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-book"></i>
-                        <h4>No Course Documents</h4>
-                        <p>Upload course documents to enable RAG retrieval for script generation.</p>
+                        <h4>暂无课程文档</h4>
+                        <p>上传课程文档以启用检索增强生成功能。</p>
                         <button class="btn-primary" onclick="uploadDocument()">
                             <i class="fas fa-upload"></i>
-                            Upload First Document
+                            上传第一份文档
                         </button>
                     </div>
                 `;
@@ -3097,23 +3146,22 @@ async function loadDocuments() {
                     }
                 });
                 
-                var uploadedLabel = typeof t === 'function' ? t('teacher.wizard.step1.uploaded_at') : 'Uploaded';
+                var uploadedLabel = typeof t === 'function' ? t('teacher.wizard.step1.uploaded_at') : '上传时间';
                 var html = '';
                 
                 // Helper function to render a document card
                 function renderDocCard(doc) {
                     return '<div class="document-card" style="margin-bottom: 0.75rem; border: 1px solid #e9ecef; border-radius: 6px; padding: 0.75rem;">' +
                         '<div class="document-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">' +
-                            '<h4 style="margin: 0; font-size: 0.95rem;">' + escapeHtml(doc.title || 'Untitled') + '</h4>' +
+                            '<h4 style="margin: 0; font-size: 0.95rem;">' + escapeHtml(doc.title || '未命名') + '</h4>' +
                             '<span class="document-type" style="font-size: 0.75rem; color: #6c757d; background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px;">' + (doc.mime_type || 'text/plain') + '</span>' +
                         '</div>' +
                         '<div class="document-content" style="font-size: 0.85rem; color: #6c757d; margin-bottom: 0.5rem;">' +
                             '<span><i class="fas fa-clock"></i> ' + uploadedLabel + ': ' + formatTime(doc.created_at) + '</span>' +
-                            ' · <span><i class="fas fa-puzzle-piece"></i> ' + (doc.chunks_count || 0) + ' chunks</span>' +
                         '</div>' +
                         '<div class="document-actions" style="display: flex; gap: 0.5rem;">' +
-                            '<button class="btn-primary btn-sm" onclick="applyPrefillFromDoc(\'' + doc.id + '\')" title="Use this document to suggest form fields" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">' +
-                                '<i class="fas fa-magic"></i> ' + (typeof t === 'function' ? t('teacher.doc.prefill_btn') : 'Fill') +
+                            '<button class="btn-primary btn-sm" onclick="applyPrefillFromDoc(\'' + doc.id + '\')" title="使用此文档建议表单内容" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">' +
+                                '<i class="fas fa-magic"></i> ' + (typeof t === 'function' ? t('teacher.doc.prefill_btn') : '填充') +
                             '</button>' +
                             '<button class="btn-secondary btn-sm" onclick="deleteDocument(\'' + doc.id + '\')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">' +
                                 '<i class="fas fa-trash"></i>' +
@@ -3126,7 +3174,7 @@ async function loadDocuments() {
                 if (courseDocs.length > 0) {
                     html += '<div class="docs-section" style="margin-bottom: 1.5rem;">';
                     html += '<h3 style="font-size: 1.1rem; color: #495057; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid #dee2e6;">' +
-                        '<i class="fas fa-graduation-cap"></i> Course-Level Materials</h3>';
+                        '<i class="fas fa-graduation-cap"></i> 课程级材料</h3>';
                     html += '<div class="docs-list">';
                     courseDocs.forEach(function(doc) {
                         html += renderDocCard(doc);
@@ -3137,7 +3185,7 @@ async function loadDocuments() {
                 // 2. Activity/Folder documents sections
                 Object.keys(groupedDocs).forEach(function(folderId) {
                     var folder = folderMap[folderId];
-                    var folderName = folder ? folder.name : 'Activity ' + folderId.substring(0, 8);
+                    var folderName = folder ? folder.name : '活动 ' + folderId.substring(0, 8);
                     var folderDocs = groupedDocs[folderId];
                     
                     html += '<div class="docs-section" style="margin-bottom: 1.5rem;">';
@@ -3150,14 +3198,14 @@ async function loadDocuments() {
                     html += '</div></div>';
                 });
                 
-                container.innerHTML = html || '<div class="empty-state"><p>No documents found</p></div>';
+                container.innerHTML = html || '<div class="empty-state"><p>未找到文档</p></div>';
             }
         } else {
-            container.innerHTML = '<div class="empty-state"><p>Failed to load documents</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>加载文档失败</p></div>';
         }
     } catch (error) {
         console.error('Error loading documents:', error);
-        container.innerHTML = '<div class="empty-state"><p>Error loading documents</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>加载文档时出错</p></div>';
     } finally {
         showLoading(false);
     }
@@ -3170,7 +3218,7 @@ async function applyPrefillFromDoc(docId) {
         const res = await fetch(`${API_BASE}/courses/${courseId}/docs/${docId}/prefill`, { credentials: 'include' });
         const data = await res.json();
         if (!res.ok) {
-            showNotification(data.message || 'Failed to get suggestions', 'error');
+            showNotification(data.message || '获取建议失败', 'error');
             return;
         }
         const sug = data.suggestions || {};
@@ -3189,11 +3237,11 @@ async function applyPrefillFromDoc(docId) {
         };
         if (typeof fillSpecForm === 'function') fillSpecForm(spec);
         if (data.warnings && data.warnings.length) showNotification(data.warnings[0], 'warning');
-        else showNotification(typeof t === 'function' ? t('teacher.doc.prefill_success') : 'Suggestions filled. Please confirm or edit, then validate.', 'success');
+        else showNotification(typeof t === 'function' ? t('teacher.doc.prefill_success') : '建议已填充。请确认或编辑，然后验证。', 'success');
         if (typeof goToStep === 'function') goToStep(2);
     } catch (e) {
         console.error('Prefill error:', e);
-        showNotification('Could not load suggestions. Try again.', 'error');
+        showNotification('无法加载建议，请重试。', 'error');
     } finally {
         showLoading(false);
     }
@@ -3229,10 +3277,10 @@ function uploadDocument() {
                 // Backend already filters binary content via safe_preview_or_none
                 // Double-check on frontend for safety
                 if (preview && typeof preview === 'string' && looksLikePdfBinary(preview)) {
-                    showNotification(typeof t === 'function' ? t('teacher.pdf.parse_failed_binary') : 'Parsing failed: binary PDF content detected. Please re-upload or use another file.', 'error');
+                    showNotification(typeof t === 'function' ? t('teacher.pdf.parse_failed_binary') : '解析失败：检测到二进制PDF内容。请重新上传或使用其他文件。', 'error');
                     return;
                 }
-                showNotification('Document uploaded successfully', 'success');
+                showNotification('文档上传成功', 'success');
                 loadDocuments(); // Will display extracted_text_preview or empty state
             } else {
                 var code = result.code || '';
@@ -3241,12 +3289,12 @@ function uploadDocument() {
                         : code === 'EMPTY_EXTRACTED_TEXT' ? t('teacher.pdf.parse_failed_empty')
                         : code === 'TEXT_TOO_SHORT' ? t('teacher.pdf.parse_failed_short')
                         : t('teacher.pdf.parse_failed_generic'))
-                    : 'Extraction failed. Please try again or use another file.';
+                    : '提取失败。请重试或使用其他文件。';
                 showNotification(msg, 'error');
             }
         } catch (error) {
             console.error('Error uploading document:', error);
-            showNotification(typeof t === 'function' ? t('teacher.pdf.parse_failed_generic') : 'Extraction failed. Please try again or use another file.', 'error');
+            showNotification(typeof t === 'function' ? t('teacher.pdf.parse_failed_generic') : '提取失败。请重试或使用其他文件。', 'error');
         } finally {
             showLoading(false);
         }
@@ -3255,7 +3303,7 @@ function uploadDocument() {
 }
 
 async function deleteDocument(docId) {
-    if (!confirm('Are you sure you want to delete this document?')) {
+    if (!confirm('确定要删除此文档吗？')) {
         return;
     }
     
@@ -3268,15 +3316,15 @@ async function deleteDocument(docId) {
         });
         
         if (res.ok) {
-            showNotification('Document deleted successfully', 'success');
+            showNotification('文档删除成功', 'success');
             loadDocuments();
         } else {
             const result = await res.json();
-            showNotification(result.error || 'Delete failed', 'error');
+            showNotification(result.error || '删除失败', 'error');
         }
     } catch (error) {
         console.error('Error deleting document:', error);
-        showNotification('Delete failed', 'error');
+        showNotification('删除失败', 'error');
     } finally {
         showLoading(false);
     }
@@ -3433,6 +3481,60 @@ async function publishScriptById(scriptId) {
     }
 }
 
+// B1/B2: AI Enhancement Settings Functions
+function loadAIEnhancementSettings() {
+    // Load settings from localStorage
+    try {
+        const saved = localStorage.getItem('ai_enhancement_settings');
+        if (saved) {
+            aiEnhancementSettings = JSON.parse(saved);
+        }
+    } catch (e) {
+        console.warn('[teacher] Failed to load AI enhancement settings:', e);
+    }
+    
+    // Update UI toggles
+    const imageToggle = document.getElementById('imageGenerationToggle');
+    const webToggle = document.getElementById('webRetrievalToggle');
+    
+    if (imageToggle) {
+        imageToggle.checked = aiEnhancementSettings.image_generation;
+        // Add change listener
+        imageToggle.addEventListener('change', function() {
+            aiEnhancementSettings.image_generation = this.checked;
+            saveAIEnhancementSettings();
+            showNotification(this.checked ? '图像生成功能已启用' : '图像生成功能已禁用', 'info');
+        });
+    }
+    
+    if (webToggle) {
+        webToggle.checked = aiEnhancementSettings.web_retrieval;
+        // Add change listener
+        webToggle.addEventListener('change', function() {
+            aiEnhancementSettings.web_retrieval = this.checked;
+            saveAIEnhancementSettings();
+            showNotification(this.checked ? '联网搜索功能已启用' : '联网搜索功能已禁用', 'info');
+        });
+    }
+}
+
+function saveAIEnhancementSettings() {
+    try {
+        localStorage.setItem('ai_enhancement_settings', JSON.stringify(aiEnhancementSettings));
+    } catch (e) {
+        console.warn('[teacher] Failed to save AI enhancement settings:', e);
+    }
+}
+
+function getAIEnhancementSettings() {
+    return aiEnhancementSettings;
+}
+
+// Initialize settings when settings view is loaded
+function initSettingsPage() {
+    loadAIEnhancementSettings();
+}
+
 // S2.16/S2.17: global compatibility fallback for any remaining inline handlers / old cache
 if (typeof goToStep !== 'undefined') { window.goToStep = goToStep; }
 if (typeof switchView !== 'undefined') { window.switchView = switchView; }
@@ -3441,3 +3543,6 @@ if (typeof uploadDocument !== 'undefined') { window.importCourseDocument = uploa
 if (typeof validateStandaloneSpec !== 'undefined') { window.validateObjectives = validateStandaloneSpec; }
 if (typeof validateSpec !== 'undefined' && !window.validateObjectives) { window.validateObjectives = validateSpec; }
 if (typeof runPipeline !== 'undefined') { window.generateScript = runPipeline; }
+if (typeof loadAIEnhancementSettings !== 'undefined') { window.loadAIEnhancementSettings = loadAIEnhancementSettings; }
+if (typeof saveAIEnhancementSettings !== 'undefined') { window.saveAIEnhancementSettings = saveAIEnhancementSettings; }
+if (typeof getAIEnhancementSettings !== 'undefined') { window.getAIEnhancementSettings = getAIEnhancementSettings; }

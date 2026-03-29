@@ -154,4 +154,14 @@ def create_app(config_class=Config):
         from flask import jsonify
         return jsonify({'error': 'Internal Server Error'}), 500
 
+    # B1: Add route for serving generated images
+    from flask import send_from_directory
+    generated_images_dir = os.path.join(Config.DATA_DIR, 'generated_images')
+    os.makedirs(generated_images_dir, exist_ok=True)
+    
+    @app.route('/generated_images/<path:filename>')
+    def serve_generated_image(filename):
+        """Serve generated AI images"""
+        return send_from_directory(generated_images_dir, filename)
+
     return app

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Dashboard - CSCL Script Studio</title>
+    <title>Group Activity Studio</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ static_version }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/teacher.css') }}?v={{ static_version }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}?v={{ static_version }}">
@@ -24,7 +24,7 @@
                         <line x1="10" y1="10" x2="22" y2="10" stroke="currentColor" stroke-width="1.75"/>
                         <path d="M24 28 L28 28 L28 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
                     </svg>
-                    <span>CSCL Script Studio</span>
+                    <span>Group Activity Studio</span>
                 </a>
             </div>
             <nav class="sidebar-nav">
@@ -175,44 +175,34 @@
                         <h2><i class="fas fa-folder-open"></i> <span id="folderDetailName">课程文件夹</span></h2>
                         <p class="view-subtitle" id="folderDetailDesc">查看该课程下的活动和文档</p>
                     </div>
-                    <div class="view-header-actions">
-                        <button class="btn-secondary" onclick="switchView('folders')">
-                            <i class="fas fa-arrow-left"></i>
-                            <span>返回文件夹列表</span>
-                        </button>
-                        <button class="btn-primary" onclick="createActivityInFolder()">
-                            <i class="fas fa-plus"></i>
-                            <span>创建新活动</span>
-                        </button>
-                    </div>
                 </div>
                 <!-- Course Folder Workspace Secondary Navigation -->
                 <nav class="folder-nav">
-                    <a href="#" class="folder-nav-item active" data-folder-tab="overview" data-i18n="teacher.folder.nav.overview">Overview</a>
-                    <a href="#" class="folder-nav-item" data-folder-tab="activities" data-i18n="teacher.folder.nav.activities">Activities</a>
-                    <a href="#" class="folder-nav-item" data-folder-tab="materials" data-i18n="teacher.folder.nav.materials">Materials</a>
+                    <a href="#" class="folder-nav-item active" data-folder-tab="overview" data-i18n="teacher.folder.nav.overview">概览</a>
+                    <a href="#" class="folder-nav-item" data-folder-tab="activities" data-i18n="teacher.folder.nav.activities">活动</a>
+                    <a href="#" class="folder-nav-item" data-folder-tab="materials" data-i18n="teacher.folder.nav.materials">材料</a>
                 </nav>
 
                 <div class="folder-detail-content">
                     <!-- Overview Tab (Default) -->
                     <div id="folderOverviewTab" class="folder-tab-content active">
                         <div class="folder-workspace-intro">
-                            <p data-i18n="teacher.folder.workspace_intro">Manage course materials and create activities for this course.</p>
+                            <p data-i18n="teacher.folder.workspace_intro">管理该课程的材料和活动。</p>
                         </div>
                         <div class="folder-section">
                             <div class="section-header">
-                                <h3><i class="fas fa-book-open"></i> <span data-i18n="teacher.folder.materials.title">Course Materials</span></h3>
+                                <h3><i class="fas fa-book-open"></i> <span data-i18n="teacher.folder.materials.title">课程文档</span></h3>
                                 <button class="btn-secondary btn-sm" onclick="openFolderUploadModal()">
-                                    <i class="fas fa-upload"></i> <span data-i18n="teacher.folder.materials.upload">Upload</span>
+                                    <i class="fas fa-upload"></i> <span data-i18n="teacher.folder.materials.upload">上传</span>
                                 </button>
                             </div>
                             <div id="folderOverviewDocsList" class="documents-container"></div>
                         </div>
                         <div class="folder-section">
                             <div class="section-header">
-                                <h3><i class="fas fa-tasks"></i> <span data-i18n="teacher.folder.activities.title">Activities</span></h3>
+                                <h3><i class="fas fa-tasks"></i> <span data-i18n="teacher.folder.activities.title">活动列表</span></h3>
                                 <button class="btn-primary btn-sm" onclick="createActivityInFolder()">
-                                    <i class="fas fa-plus"></i> <span data-i18n="teacher.folder.activities.create">Create Activity</span>
+                                    <i class="fas fa-plus"></i> <span data-i18n="teacher.folder.activities.create">创建活动</span>
                                 </button>
                             </div>
                             <div id="folderOverviewActivitiesList" class="scripts-grid"></div>
@@ -223,9 +213,9 @@
                     <div id="folderActivitiesTab" class="folder-tab-content">
                         <div class="folder-section">
                             <div class="section-header">
-                                <h3><i class="fas fa-tasks"></i> <span data-i18n="teacher.folder.activities.all">All Activities</span></h3>
+                                <h3><i class="fas fa-tasks"></i> <span data-i18n="teacher.folder.activities.all">所有活动</span></h3>
                                 <button class="btn-primary" onclick="createActivityInFolder()">
-                                    <i class="fas fa-plus"></i> <span data-i18n="teacher.folder.activities.create">Create Activity</span>
+                                    <i class="fas fa-plus"></i> <span data-i18n="teacher.folder.activities.create">创建活动</span>
                                 </button>
                             </div>
                             <div id="folderActivitiesList" class="scripts-grid"></div>
@@ -236,12 +226,12 @@
                     <div id="folderMaterialsTab" class="folder-tab-content">
                         <div class="folder-section">
                             <div class="section-header">
-                                <h3><i class="fas fa-book-open"></i> <span data-i18n="teacher.folder.materials.all">All Materials</span></h3>
+                                <h3><i class="fas fa-book-open"></i> <span data-i18n="teacher.folder.materials.all">所有材料</span></h3>
                                 <div class="upload-area" id="folderUploadArea">
                                     <i class="fas fa-cloud-upload-alt"></i>
-                                    <p data-i18n="teacher.folder.materials.drag">Drag files here or click to browse</p>
+                                    <p data-i18n="teacher.folder.materials.drag">将文件拖放到此处，或点击浏览</p>
                                     <button class="btn-secondary" onclick="openFolderUploadModal()">
-                                        <i class="fas fa-folder-open"></i> <span data-i18n="teacher.folder.materials.browse">Browse Files</span>
+                                        <i class="fas fa-folder-open"></i> <span data-i18n="teacher.folder.materials.browse">浏览文件</span>
                                     </button>
                                 </div>
                             </div>
@@ -403,6 +393,39 @@
                     <div class="section-card">
                         <h3 class="section-title"><i class="fas fa-cog" aria-hidden="true"></i> <span data-i18n="teacher.settings.system">系统设置</span></h3>
                         <p data-i18n="teacher.settings.coming_soon">设置功能即将上线。</p>
+                    </div>
+                    
+                    <!-- AI Enhancement Settings -->
+                    <div class="section-card ai-enhancement-settings">
+                        <h3 class="section-title"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> <span data-i18n="teacher.settings.ai_enhancement">AI 增强功能</span></h3>
+                        <p class="section-description" data-i18n="teacher.settings.ai_description">配置图像生成和联网检索功能，丰富活动材料。</p>
+                        
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <label for="imageGenerationToggle" data-i18n="teacher.settings.image_generation">生成教学可视化图片</label>
+                                <span class="setting-hint" data-i18n="teacher.settings.image_hint">自动为学生幻灯片和工作单生成图表、流程图等视觉素材</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="imageGenerationToggle" data-setting="image_generation">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <label for="webRetrievalToggle" data-i18n="teacher.settings.web_retrieval">启用联网搜索补充材料</label>
+                                <span class="setting-hint" data-i18n="teacher.settings.web_hint">检索外部案例、数据集和最新资料来丰富活动内容（标注来源）</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="webRetrievalToggle" data-setting="web_retrieval">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-notice">
+                            <i class="fas fa-info-circle"></i>
+                            <span data-i18n="teacher.settings.api_notice">以上功能需要相应的 API 密钥配置。请联系管理员启用。</span>
+                        </div>
                     </div>
                 </div>
             </div>

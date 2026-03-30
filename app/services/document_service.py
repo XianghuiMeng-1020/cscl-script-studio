@@ -631,6 +631,7 @@ class DocumentService:
                 storage_uri=file_path,
                 mime_type=mime_type,
                 checksum=checksum,
+                file_size=len(file_content),
                 material_level=material_level,
                 uploaded_by=uploaded_by
             )
@@ -775,10 +776,11 @@ class DocumentService:
             storage_uri=file_path,
             mime_type=mime_type,
             checksum=checksum,
+            file_size=len(file_content),
             material_level=material_level,
             uploaded_by=uploaded_by
         )
-        
+
         db.session.add(document)
         db.session.flush()
         
@@ -914,13 +916,14 @@ class DocumentService:
             storage_uri=None,
             mime_type='text/plain',
             checksum=checksum,
+            file_size=len(text.encode('utf-8')),
             material_level=material_level,
             uploaded_by=uploaded_by
         )
-        
+
         db.session.add(document)
         db.session.flush()
-        
+
         # Create chunks from cleaned text
         chunks = self.chunk_text(cleaned_text)
         for idx, chunk_text in enumerate(chunks):
@@ -960,7 +963,7 @@ class DocumentService:
         
         result = []
         for doc in documents:
-            doc_dict = doc.to_dict()
+            doc_dict = doc.to_dict(include_file_size=True)
             # Add chunks_count
             doc_dict['chunks_count'] = len(doc.chunks)
             # Extract preview from chunks (only extracted text, never raw bytes)

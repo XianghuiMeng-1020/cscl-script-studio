@@ -72,20 +72,20 @@
         <!-- Main Content -->
         <main class="main-content">
             <!-- Dashboard View -->
-            <!-- Home View (Start Page) -->
+            <!-- Home View (Start Page) - Focused Start Page -->
             <div id="dashboardView" class="view active">
-                <div class="start-page">
-                    <!-- A. Hero Section -->
+                <div class="start-page start-page-focused">
+                    <!-- A. Page Title -->
                     <div class="start-page-header">
-                        <h2><i class="fas fa-chalkboard-teacher"></i>
-                            <span data-i18n="teacher.home.title">教师工作台</span>
-                        </h2>
-                        <p class="start-page-subtitle" data-i18n="teacher.home.subtitle">
-                            创建课程文件夹，开始生成可直接用于课堂的 CSCL 协作学习活动材料。
-                        </p>
+                        <h2 data-i18n="teacher.home.title">创建你的第一个课程文件夹</h2>
                     </div>
 
-                    <!-- Primary CTA -->
+                    <!-- B. Subtitle -->
+                    <p class="start-page-subtitle" data-i18n="teacher.home.subtitle">
+                        设置一个可复用的课程空间，用于生成 CSCL 协作学习活动材料。
+                    </p>
+
+                    <!-- C. Primary CTA Button -->
                     <div class="start-page-cta">
                         <button class="btn-primary btn-lg" onclick="switchView('folders'); createNewFolder();"
                                 data-i18n="teacher.home.create_folder">
@@ -93,56 +93,32 @@
                         </button>
                     </div>
 
-                    <!-- B. Output Preview Section -->
-                    <div class="start-section output-preview-section">
-                        <h3 data-i18n="teacher.home.outputs_heading">本系统生成的材料</h3>
-                        <div class="output-preview-grid">
-                            <div class="output-card">
-                                <div class="output-icon"><i class="fas fa-file-alt"></i></div>
-                                <span class="output-label" data-i18n="teacher.home.output_worksheet">学生学习单</span>
-                            </div>
-                            <div class="output-card">
-                                <div class="output-icon"><i class="fas fa-chalkboard"></i></div>
-                                <span class="output-label" data-i18n="teacher.home.output_slides">学生演示文稿</span>
-                            </div>
-                            <div class="output-card">
-                                <div class="output-icon"><i class="fas fa-clipboard-list"></i></div>
-                                <span class="output-label" data-i18n="teacher.home.output_facilitation">教师引导手册</span>
-                            </div>
-                        </div>
+                    <!-- D. System Generates Label (Inline Text) -->
+                    <div class="start-section generates-section">
+                        <span class="generates-label" data-i18n="teacher.home.generates_label">本系统生成：</span>
+                        <span class="generates-items">
+                            <span data-i18n="teacher.home.output_worksheet">学生学习单</span> ·
+                            <span data-i18n="teacher.home.output_slides">学生演示文稿</span> ·
+                            <span data-i18n="teacher.home.output_facilitation">教师引导手册</span>
+                        </span>
                     </div>
 
-                    <!-- C. How It Works Section -->
-                    <div class="start-section how-it-works-section">
-                        <h3 data-i18n="teacher.home.process_heading">工作流程</h3>
-                        <div class="process-steps-horizontal">
-                            <div class="process-step">
-                                <div class="step-circle">1</div>
-                                <span class="step-name" data-i18n="teacher.home.process_step1">创建课程文件夹</span>
-                            </div>
-                            <div class="process-connector"></div>
-                            <div class="process-step">
-                                <div class="step-circle">2</div>
-                                <span class="step-name" data-i18n="teacher.home.process_step2">创建活动</span>
-                            </div>
-                            <div class="process-connector"></div>
-                            <div class="process-step">
-                                <div class="step-circle">3</div>
-                                <span class="step-name" data-i18n="teacher.home.process_step3">生成活动包</span>
-                            </div>
-                            <div class="process-connector"></div>
-                            <div class="process-step">
-                                <div class="step-circle">4</div>
-                                <span class="step-name" data-i18n="teacher.home.process_step4">审阅并发布</span>
-                            </div>
-                        </div>
+                    <!-- E. Workflow Line -->
+                    <div class="start-section workflow-section">
+                        <span class="workflow-label" data-i18n="teacher.home.process_label">工作流程：</span>
+                        <span class="workflow-steps">
+                            <span data-i18n="teacher.home.process_step1">创建课程文件夹</span> →
+                            <span data-i18n="teacher.home.process_step2">创建活动</span> →
+                            <span data-i18n="teacher.home.process_step3">生成活动包</span> →
+                            <span data-i18n="teacher.home.process_step4">审阅并发布</span>
+                        </span>
                     </div>
 
-                    <!-- D. Why Start with Course Folder Section -->
-                    <div class="start-section why-section">
-                        <h3 data-i18n="teacher.home.why_heading">为何从课程文件夹开始？</h3>
-                        <p class="why-text" data-i18n="teacher.home.why_text">
-                            课程级材料只需上传一次，即可在同一课程空间内创建多个课时活动。
+                    <!-- F. Why Note (Small Support Note) -->
+                    <div class="start-section why-note">
+                        <p class="why-note-text">
+                            <strong data-i18n="teacher.home.why_heading">为何从课程文件夹开始？</strong>
+                            <span data-i18n="teacher.home.why_text">课程文件夹存储可复用的课程级材料，让你可以在同一课程空间内创建多个课时专属活动。</span>
                         </p>
                     </div>
                 </div>
@@ -398,30 +374,40 @@
                     <!-- AI Enhancement Settings -->
                     <div class="section-card ai-enhancement-settings">
                         <h3 class="section-title"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> <span data-i18n="teacher.settings.ai_enhancement">AI 增强功能</span></h3>
-                        <p class="section-description" data-i18n="teacher.settings.ai_description">配置图像生成和联网检索功能，丰富活动材料。</p>
-                        
+                        <p class="section-description" data-i18n="teacher.settings.ai_description">启用高级 AI 功能来丰富您的活动材料。这些设置将在生成流程中生效。</p>
+
+                        <!-- Image Generation Setting -->
                         <div class="setting-item">
                             <div class="setting-label">
                                 <label for="imageGenerationToggle" data-i18n="teacher.settings.image_generation">生成教学可视化图片</label>
                                 <span class="setting-hint" data-i18n="teacher.settings.image_hint">自动为学生幻灯片和工作单生成图表、流程图等视觉素材</span>
+                                <span class="setting-detail" data-i18n="teacher.settings.image_detail">适用场景：需要可视化概念图、流程图、思维导图等。系统将根据活动内容智能生成相关图片。</span>
                             </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="imageGenerationToggle" data-setting="image_generation">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-                        
+
+                        <!-- Web Retrieval Setting -->
                         <div class="setting-item">
                             <div class="setting-label">
                                 <label for="webRetrievalToggle" data-i18n="teacher.settings.web_retrieval">启用联网搜索补充材料</label>
                                 <span class="setting-hint" data-i18n="teacher.settings.web_hint">检索外部案例、数据集和最新资料来丰富活动内容（标注来源）</span>
+                                <span class="setting-detail" data-i18n="teacher.settings.web_detail">适用场景：需要最新案例、统计数据、行业动态等。系统将在生成时自动检索相关信息并标注来源。</span>
                             </div>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="webRetrievalToggle" data-setting="web_retrieval">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-                        
+
+                        <!-- How settings are used notice -->
+                        <div class="setting-usage-notice">
+                            <i class="fas fa-lightbulb"></i>
+                            <span data-i18n="teacher.settings.usage_notice">这些设置将在您点击「开始生成」时传递给 AI 流程。您可以在每次生成前调整这些设置。</span>
+                        </div>
+
                         <div class="setting-notice">
                             <i class="fas fa-info-circle"></i>
                             <span data-i18n="teacher.settings.api_notice">以上功能需要相应的 API 密钥配置。请联系管理员启用。</span>

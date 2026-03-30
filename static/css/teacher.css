@@ -2096,6 +2096,32 @@
     gap: 0.75rem;
 }
 
+/* How assessed section */
+.dimension-how-assessed {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--primary-light);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.how-assessed-label {
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-right: 0.25rem;
+}
+
+.how-assessed-label i {
+    margin-right: 0.25rem;
+}
+
+.how-assessed-text {
+    color: var(--text-secondary);
+}
+
 .score-value {
     font-size: 1.5rem;
     font-weight: 700;
@@ -2567,6 +2593,92 @@
     padding: 0 1rem;
 }
 
+/* Focused Start Page (per document requirements) */
+.start-page-focused {
+    max-width: 640px;
+    margin: 2rem auto;
+    text-align: center;
+    padding: 0 1rem;
+}
+
+.start-page-focused .start-page-header h2 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.start-page-focused .start-page-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+
+.start-page-focused .start-page-cta {
+    margin: 1.5rem 0;
+}
+
+/* Generates Section - Inline text style */
+.generates-section {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.generates-label {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.generates-items {
+    color: var(--text-secondary);
+}
+
+/* Workflow Section - Inline text style */
+.workflow-section {
+    margin-top: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.workflow-label {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.workflow-steps {
+    color: var(--text-secondary);
+}
+
+.workflow-steps span {
+    white-space: nowrap;
+}
+
+/* Why Note - Small support note */
+.why-note {
+    margin-top: 2rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--primary-color);
+    text-align: left;
+}
+
+.why-note-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.why-note-text strong {
+    color: var(--text-primary);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
 .start-section {
     margin-top: 2.5rem;
     text-align: center;
@@ -2876,6 +2988,150 @@
     font-size: 1rem;
 }
 
+/* Document Grouped List Styles */
+.documents-grouped-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.document-group {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.document-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.document-group-header i {
+    color: var(--primary-color);
+}
+
+.document-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color-light);
+    transition: background-color 0.2s ease;
+}
+
+.document-item:last-child {
+    border-bottom: none;
+}
+
+.document-item:hover {
+    background: var(--bg-surface-hover);
+}
+
+.document-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+.document-icon i {
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.document-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.document-name {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.document-meta {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    margin-top: 0.25rem;
+}
+
+/* Document View Button */
+.document-view-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.document-view-btn:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--primary-light);
+    color: var(--primary-color);
+}
+
+.document-view-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+/* Document Content Panel */
+.document-content-panel {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    padding: 1rem;
+    margin-top: -1px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.document-content-text {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.document-content-loading,
+.document-content-empty,
+.document-content-error {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    text-align: center;
+    padding: 1rem;
+}
+
+.document-content-error {
+    color: var(--error-color, #dc3545);
+}
+
 .folders-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -2922,6 +3178,34 @@
     display: block;
     font-size: 0.85rem;
     color: var(--text-muted);
+}
+
+.setting-detail {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    border-left: 2px solid var(--primary-light);
+}
+
+.setting-usage-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: var(--bg-surface);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--warning-color, #ffc107);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.setting-usage-notice i {
+    color: var(--warning-color, #ffc107);
 }
 
 /* Toggle Switch */

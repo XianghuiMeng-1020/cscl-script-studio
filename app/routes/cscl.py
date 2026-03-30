@@ -1179,6 +1179,37 @@ def delete_course_document(course_id, doc_id):
     }), 200
 
 
+@cscl_bp.route('/courses/<course_id>/docs/<doc_id>/content', methods=['GET'])
+@role_required('teacher', 'admin', 'student')
+def get_document_content(course_id, doc_id):
+    """Get document extracted text content for viewing (with expand/collapse support)"""
+    doc = CSCLCourseDocument.query.filter_by(id=doc_id, course_id=course_id).first()
+    if not doc:
+        return jsonify({
+            'success': False,
+            'error_code': 'NOT_FOUND',
+            'message': 'Document not found.'
+        }), 404
+
+    chunks = CSCLDocumentChunk.query.filter_by(document_id=doc_id).order_by(CSCLDocumentChunk.chunk_index).all()
+    # Use only safe chunks (no PDF binary)
+    safe_chunks = [c.chunk_text for c in chunks if c.chunk_text and not is_probably_pdf_binary_text(c.chunk_text)] if chunks else []
+    full_text = '\n\n'.join(safe_chunks) if safe_chunks else ''
+
+    # Return safe preview
+    from app.services.document_service import to_display_safe_preview
+    preview = to_display_safe_preview(full_text, 2000) if full_text else None
+
+    return jsonify({
+        'success': True,
+        'doc_id': doc_id,
+        'title': doc.title,
+        'has_content': len(safe_chunks) > 0,
+        'content_preview': preview,
+        'char_count': len(full_text) if full_text else 0
+    }), 200
+
+
 @cscl_bp.route('/courses/<course_id>/docs/<doc_id>/prefill', methods=['GET'])
 @role_required('teacher', 'admin')
 def doc_prefill(course_id, doc_id):
@@ -1869,7 +1900,7 @@ def create_folder():
 @cscl_bp.route('/folders/<folder_id>', methods=['GET'])
 @role_required('teacher', 'admin')
 def get_folder(folder_id):
-    """Get a course folder with its activities"""
+    """Get a course folder with its activities and documents grouped by activity"""
     folder = CSCLCourseFolder.query.filter_by(
         id=folder_id, created_by=current_user.id
     ).first()
@@ -1879,12 +1910,58 @@ def get_folder(folder_id):
     activities = CSCLScript.query.filter_by(folder_id=folder_id).order_by(
         CSCLScript.updated_at.desc()
     ).all()
-    docs = CSCLCourseDocument.query.filter_by(course_id=folder_id).all()
+    
+    # Get all documents for this folder
+    docs = CSCLCourseDocument.query.filter_by(folder_id=folder_id).all()
+    
+    # Build documents_by_activity structure
+    # For now, lesson-level docs are grouped by activity based on best matching
+    # Course-level docs go to 'course' group
+    documents_by_activity = {}
+    
+    # Initialize with 'course' group for course-level materials
+    documents_by_activity['course'] = {
+        'group_name': '课程级材料',
+        'group_name_en': 'Course-level Materials',
+        'documents': []
+    }
+    
+    # Initialize groups for each activity
+    activity_dict = {a.id: a for a in activities}
+    for activity in activities:
+        documents_by_activity[activity.id] = {
+            'group_name': activity.title or f'Activity {activity.id[:8]}',
+            'activity_id': activity.id,
+            'documents': []
+        }
+    
+    # Distribute documents to groups
+    unassigned_docs = []
+    for doc in docs:
+        doc_dict = doc.to_dict(include_file_size=True)
+        doc_dict['filename'] = doc.title  # Use title as filename for display
+
+        if doc.material_level == 'course':
+            documents_by_activity['course']['documents'].append(doc_dict)
+        else:
+            # For lesson-level docs, try to find matching activity
+            # For now, add to unassigned (will be shown as "活动材料")
+            unassigned_docs.append(doc_dict)
+
+    # Add unassigned lesson docs to a separate group if any exist
+    if unassigned_docs:
+        documents_by_activity['unassigned'] = {
+            'group_name': '活动材料',
+            'group_name_en': 'Activity Materials',
+            'documents': unassigned_docs
+        }
+
     return jsonify({
         'success': True,
         'folder': folder.to_dict(),
         'activities': [a.to_dict() for a in activities],
-        'documents': [d.to_dict() for d in docs],
+        'documents': [d.to_dict(include_file_size=True) for d in docs],
+        'documents_by_activity': documents_by_activity,
     }), 200
 
 

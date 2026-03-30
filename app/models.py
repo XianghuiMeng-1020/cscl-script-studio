@@ -451,6 +451,7 @@ class CSCLCourseDocument(db.Model):
     storage_uri = db.Column(db.String(1000), nullable=True)
     mime_type = db.Column(db.String(100), nullable=True)
     checksum = db.Column(db.String(64), nullable=True)
+    file_size = db.Column(db.Integer, nullable=True)  # File size in bytes
     material_level = db.Column(db.String(20), nullable=False, default='course')  # course | lesson
     uploaded_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -459,8 +460,8 @@ class CSCLCourseDocument(db.Model):
     chunks = db.relationship('CSCLDocumentChunk', backref='document', lazy=True, cascade='all, delete-orphan')
     folder = db.relationship('CSCLCourseFolder', backref='documents', lazy=True)
     
-    def to_dict(self):
-        return {
+    def to_dict(self, include_file_size=False):
+        result = {
             'id': self.id,
             'course_id': self.course_id,
             'folder_id': self.folder_id,
@@ -473,6 +474,9 @@ class CSCLCourseDocument(db.Model):
             'uploaded_by': self.uploaded_by,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+        if include_file_size:
+            result['file_size'] = self.file_size or 0
+        return result
 
 
 class CSCLDocumentChunk(db.Model):

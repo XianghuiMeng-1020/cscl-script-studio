@@ -439,7 +439,10 @@ async function loadFolders() {
             html += '<div class="script-card folder-card">';
             html += '<div class="script-card-header" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;"><i class="fas fa-folder" style="color: var(--primary-color); margin-right: 0.5rem;"></i><h4>' + _esc(f.name) + '</h4></div>';
             if (f.description) html += '<p class="script-card-meta" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;">' + _esc(f.description) + '</p>';
-            html += '<div class="script-card-footer" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;"><span>' + (f.activity_count || 0) + ' 个活动</span>';
+            var activityCountText = (typeof t === 'function')
+                ? (f.activity_count === 0 ? t('teacher.folder.activity_count_zero') : t('teacher.folder.activity_count').replace('{n}', f.activity_count || 0))
+                : (f.activity_count || 0) + ' 个活动';
+            html += '<div class="script-card-footer" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;"><span>' + activityCountText + '</span>';
             html += '<span>' + (f.created_at ? new Date(f.created_at).toLocaleDateString() : '') + '</span></div>';
             html += '<div class="folder-card-actions" style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">';
             html += '<button class="btn-secondary btn-sm" onclick="event.stopPropagation(); deleteFolder(\'' + f.id + '\', \'' + _esc(f.name).replace(/\\/g, '\\\\').replace(/\'/g, "\\'") + '\', ' + (f.activity_count || 0) + ')" title="删除文件夹" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">';
@@ -455,7 +458,8 @@ async function loadFolders() {
 }
 
 async function createNewFolder() {
-    var name = prompt('请输入课程文件夹名称：');
+    var promptText = (typeof t === 'function') ? t('teacher.folder.prompt_name') : '请输入课程文件夹名称：';
+    var name = prompt(promptText);
     if (!name || !name.trim()) return;
     try {
         var res = await fetch(API_BASE + '/folders', {
@@ -466,27 +470,33 @@ async function createNewFolder() {
         });
         var data = await res.json();
         if (data.success) {
-            showNotification('课程文件夹已创建', 'success');
+            showNotification((typeof t === 'function') ? t('teacher.folder.create_success') : '课程文件夹已创建', 'success');
             loadFolders();
             // Auto-set as current folder and course_id for wizard
             currentFolderId = data.folder.id;
         } else {
-            showNotification(data.error || '创建失败', 'error');
+            showNotification(data.error || ((typeof t === 'function') ? t('teacher.folder.create_error') : '创建失败'), 'error');
         }
     } catch (e) {
-        showNotification('创建失败: ' + e.message, 'error');
+        showNotification(((typeof t === 'function') ? t('teacher.folder.create_error') : '创建失败') + ': ' + e.message, 'error');
     }
 }
 
 async function deleteFolder(folderId, folderName, activityCount) {
     // Check if folder has activities
     if (activityCount > 0) {
-        showNotification('该文件夹下还有 ' + activityCount + ' 个活动，无法删除。请先删除所有活动后再删除文件夹。', 'error');
+        var hasActivitiesMsg = (typeof t === 'function') 
+            ? t('teacher.folder.delete_has_activities').replace('{n}', activityCount)
+            : '该文件夹下还有 ' + activityCount + ' 个活动，无法删除。请先删除所有活动后再删除文件夹。';
+        showNotification(hasActivitiesMsg, 'error');
         return;
     }
     
     // Confirm deletion
-    if (!confirm('确定要删除课程文件夹"' + folderName + '"吗？此操作不可撤销。')) {
+    var confirmMsg = (typeof t === 'function')
+        ? t('teacher.folder.delete_confirm').replace('{name}', folderName)
+        : '确定要删除课程文件夹"' + folderName + '"吗？此操作不可撤销。';
+    if (!confirm(confirmMsg)) {
         return;
     }
     
@@ -498,18 +508,18 @@ async function deleteFolder(folderId, folderName, activityCount) {
         });
         
         if (res.ok) {
-            showNotification('课程文件夹已删除', 'success');
+            showNotification((typeof t === 'function') ? t('teacher.folder.delete_success') : '课程文件夹已删除', 'success');
             loadFolders();
         } else {
             var data = await res.json();
             if (res.status === 400 && data.error && data.error.includes('activities')) {
-                showNotification('该文件夹下还有活动，无法删除。请先删除所有活动。', 'error');
+                showNotification((typeof t === 'function') ? t('teacher.folder.delete_has_activities').replace('{n}', activityCount || '若干') : '该文件夹下还有活动，无法删除。请先删除所有活动。', 'error');
             } else {
-                showNotification(data.error || '删除失败', 'error');
+                showNotification(data.error || ((typeof t === 'function') ? t('teacher.folder.delete_error') : '删除失败'), 'error');
             }
         }
     } catch (e) {
-        showNotification('删除失败: ' + e.message, 'error');
+        showNotification(((typeof t === 'function') ? t('teacher.folder.delete_error') : '删除失败') + ': ' + e.message, 'error');
     } finally {
         showLoading(false);
     }
@@ -560,20 +570,182 @@ function renderFolderDocuments(docs) {
     var overviewDocsEl = document.getElementById('folderOverviewDocsList');
     var matsEl = document.getElementById('folderMaterialsList');
 
+    // Use documents_by_activity from global data if available
+    var docsByActivity = (window.currentFolderData && window.currentFolderData.documents_by_activity) || null;
+
     var dhtml = '';
     if (docs.length === 0) {
-        var emptyMsg = typeof t === 'function' ? t('teacher.folder.no_docs') : 'No course materials yet. Upload files to get started.';
+        var emptyMsg = typeof t === 'function' ? t('teacher.folder.no_docs') : '暂无课程材料，请先上传文件';
         dhtml = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>' + emptyMsg + '</p></div>';
+    } else if (docsByActivity) {
+        // Grouped by activity view
+        dhtml = '<div class="documents-grouped-list">';
+
+        // First show course-level materials
+        var courseGroup = docsByActivity['course'];
+        if (courseGroup && courseGroup.documents && courseGroup.documents.length > 0) {
+            dhtml += '<div class="document-group">';
+            dhtml += '<div class="document-group-header"><i class="fas fa-graduation-cap"></i> ' + _esc(courseGroup.group_name) + '</div>';
+            dhtml += '<div class="documents-list">';
+            courseGroup.documents.forEach(function(d) {
+                dhtml += renderDocumentItem(d);
+            });
+            dhtml += '</div></div>';
+        }
+
+        // Show unassigned activity materials (if any)
+        var unassignedGroup = docsByActivity['unassigned'];
+        if (unassignedGroup && unassignedGroup.documents && unassignedGroup.documents.length > 0) {
+            dhtml += '<div class="document-group">';
+            dhtml += '<div class="document-group-header"><i class="fas fa-tasks"></i> ' + _esc(unassignedGroup.group_name) + '</div>';
+            dhtml += '<div class="documents-list">';
+            unassignedGroup.documents.forEach(function(d) {
+                dhtml += renderDocumentItem(d);
+            });
+            dhtml += '</div></div>';
+        }
+
+        // Show activity-specific materials
+        Object.keys(docsByActivity).forEach(function(key) {
+            if (key === 'course' || key === 'unassigned') return;
+            var group = docsByActivity[key];
+            if (group.documents && group.documents.length > 0) {
+                dhtml += '<div class="document-group">';
+                dhtml += '<div class="document-group-header"><i class="fas fa-folder-open"></i> ' + _esc(group.group_name) + '</div>';
+                dhtml += '<div class="documents-list">';
+                group.documents.forEach(function(d) {
+                    dhtml += renderDocumentItem(d);
+                });
+                dhtml += '</div></div>';
+            }
+        });
+
+        dhtml += '</div>';
     } else {
+        // Fallback to simple list view
         dhtml = '<div class="documents-list">';
         docs.forEach(function(d) {
-            dhtml += '<div class="document-item"><i class="fas fa-file-alt"></i> <span>' + _esc(d.filename || d.original_filename || 'document') + '</span></div>';
+            dhtml += renderDocumentItem(d);
         });
         dhtml += '</div>';
     }
 
     if (overviewDocsEl) overviewDocsEl.innerHTML = dhtml;
     if (matsEl) matsEl.innerHTML = dhtml;
+}
+
+function renderDocumentItem(d) {
+    var iconClass = getDocumentIconClass(d.mime_type);
+    var filename = d.filename || d.original_filename || d.title || 'document';
+    var uploadDate = d.created_at ? new Date(d.created_at).toLocaleDateString() : '';
+    var docId = d.id || '';
+    var fileSize = d.file_size || d.size || 0;
+    var mimeType = d.mime_type || '';
+
+    var html = '<div class="document-item" id="doc-item-' + docId + '">';
+    html += '<div class="document-icon"><i class="' + iconClass + '"></i></div>';
+    html += '<div class="document-info">';
+    html += '<div class="document-name" title="' + _esc(filename) + '">' + _esc(filename) + '</div>';
+    html += '<div class="document-meta">';
+    var metaParts = [];
+    if (fileSize > 0) {
+        metaParts.push(formatFileSize(fileSize));
+    }
+    if (uploadDate) {
+        metaParts.push(uploadDate);
+    }
+    if (mimeType) {
+        metaParts.push(getFileTypeLabel(mimeType));
+    }
+    html += metaParts.join(' · ');
+    html += '</div>';
+    html += '</div>';
+    // Add view content button
+    html += '<button class="btn-secondary btn-sm document-view-btn" onclick="toggleDocumentContent(\'' + docId + '\', event)" title="' + (typeof t === 'function' ? t('teacher.doc.view_content') : '查看') + '">';
+    html += '<i class="fas fa-eye"></i> <span class="btn-text">' + (typeof t === 'function' ? t('teacher.doc.view_content') : '查看') + '</span>';
+    html += '</button>';
+    html += '</div>';
+    // Content container (collapsed by default)
+    html += '<div class="document-content-panel" id="doc-content-' + docId + '" style="display: none;">';
+    html += '<div class="document-content-loading">' + (typeof t === 'function' ? t('teacher.doc.loading') : '加载中...') + '</div>';
+    html += '</div>';
+    return html;
+}
+
+// Format file size to human readable format
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    var k = 1024;
+    var sizes = ['B', 'KB', 'MB', 'GB'];
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+// Get file type label from mime type
+function getFileTypeLabel(mimeType) {
+    if (!mimeType) return '';
+    if (mimeType.includes('pdf')) return 'PDF';
+    if (mimeType.includes('word') || mimeType.includes('document')) return 'DOC';
+    if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return 'PPT';
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'XLS';
+    if (mimeType.includes('text')) return 'TXT';
+    if (mimeType.includes('image')) return 'IMG';
+    return mimeType.split('/')[1] || '';
+}
+
+// Toggle document content expand/collapse
+async function toggleDocumentContent(docId, event) {
+    if (event) event.stopPropagation();
+
+    var contentPanel = document.getElementById('doc-content-' + docId);
+    var docItem = document.getElementById('doc-item-' + docId);
+    var btn = docItem ? docItem.querySelector('.document-view-btn') : null;
+    var btnText = btn ? btn.querySelector('.btn-text') : null;
+
+    if (!contentPanel) return;
+
+    var isExpanded = contentPanel.style.display !== 'none';
+
+    if (isExpanded) {
+        // Collapse
+        contentPanel.style.display = 'none';
+        if (btn) btn.classList.remove('active');
+        if (btnText) btnText.textContent = typeof t === 'function' ? t('teacher.doc.view_content') : '查看';
+    } else {
+        // Expand and load content
+        contentPanel.style.display = 'block';
+        if (btn) btn.classList.add('active');
+        if (btnText) btnText.textContent = typeof t === 'function' ? t('teacher.doc.hide_content') : '隐藏';
+
+        // Load content if not already loaded
+        var loadingDiv = contentPanel.querySelector('.document-content-loading');
+        if (loadingDiv) {
+            try {
+                var courseId = window.currentFolderData && window.currentFolderData.folder ? window.currentFolderData.folder.id : DEFAULT_COURSE_ID;
+                var res = await fetch(API_BASE + '/courses/' + courseId + '/docs/' + docId + '/content', { credentials: 'include' });
+                var data = await res.json();
+
+                if (data.success && data.has_content && data.content_preview) {
+                    contentPanel.innerHTML = '<div class="document-content-text">' + escapeHtml(data.content_preview) + '</div>';
+                } else {
+                    contentPanel.innerHTML = '<div class="document-content-empty">' + (typeof t === 'function' ? t('teacher.doc.no_content') : '暂无提取内容') + '</div>';
+                }
+            } catch (e) {
+                contentPanel.innerHTML = '<div class="document-content-error">' + (typeof t === 'function' ? t('teacher.doc.load_error') : '加载失败') + '</div>';
+            }
+        }
+    }
+}
+
+function getDocumentIconClass(mimeType) {
+    if (!mimeType) return 'fas fa-file';
+    if (mimeType.includes('pdf')) return 'fas fa-file-pdf';
+    if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return 'fas fa-file-powerpoint';
+    if (mimeType.includes('word') || mimeType.includes('document')) return 'fas fa-file-word';
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || mimeType.includes('csv')) return 'fas fa-file-excel';
+    if (mimeType.includes('image')) return 'fas fa-file-image';
+    if (mimeType.includes('text')) return 'fas fa-file-alt';
+    return 'fas fa-file';
 }
 
 function renderFolderActivities(activities) {
@@ -2004,13 +2176,24 @@ async function runPipeline() {
         showLoading(true);
         resetPipelineStageCards();
         var idemKey = 'run-' + currentScriptId + '-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2));
+
+        // Include AI enhancement settings in pipeline run
+        var pipelinePayload = {
+            spec: currentSpec,
+            idempotency_key: idemKey,
+            ai_enhancement: {
+                image_generation: aiEnhancementSettings.image_generation || false,
+                web_retrieval: aiEnhancementSettings.web_retrieval || false
+            }
+        };
+
         var res = await fetch(API_BASE + '/scripts/' + currentScriptId + '/pipeline/run', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Idempotency-Key': idemKey
             },
-            body: JSON.stringify({ spec: currentSpec, idempotency_key: idemKey }),
+            body: JSON.stringify(pipelinePayload),
             credentials: 'include'
         });
         var result = await res.json().catch(function() { return {}; });
@@ -2704,12 +2887,12 @@ function renderQualityReport(report) {
         return status.toUpperCase();
     };
     const dimensions = [
-        { key: 'coverage', label: (typeof t === 'function' ? t('teacher.quality.dim_coverage') : 'Coverage'), icon: 'fas fa-check-circle', desc: (typeof t === 'function' ? t('teacher.quality.dim_coverage_desc') : 'Learning objectives and rubric coverage') },
-        { key: 'pedagogical_alignment', label: (typeof t === 'function' ? t('teacher.quality.dim_pedagogical') : 'Pedagogical Alignment'), icon: 'fas fa-graduation-cap', desc: (typeof t === 'function' ? t('teacher.quality.dim_pedagogical_desc') : 'Fit to task type and timing') },
-        { key: 'argumentation_support', label: (typeof t === 'function' ? t('teacher.quality.dim_argumentation') : 'Argumentation Support'), icon: 'fas fa-comments', desc: (typeof t === 'function' ? t('teacher.quality.dim_argumentation_desc') : 'Claims, evidence, rebuttals') },
-        { key: 'grounding', label: (typeof t === 'function' ? t('teacher.quality.dim_grounding') : 'Grounding'), icon: 'fas fa-anchor', desc: (typeof t === 'function' ? t('teacher.quality.dim_grounding_desc') : 'Evidence linked to materials') },
-        { key: 'safety_checks', label: (typeof t === 'function' ? t('teacher.quality.dim_safety') : 'Safety Checks'), icon: 'fas fa-shield-alt', desc: (typeof t === 'function' ? t('teacher.quality.dim_safety_desc') : 'Sensitive content and references') },
-        { key: 'teacher_in_loop', label: (typeof t === 'function' ? t('teacher.quality.dim_teacher') : 'Teacher in Loop'), icon: 'fas fa-user-check', desc: (typeof t === 'function' ? t('teacher.quality.dim_teacher_desc') : 'Your edits and acceptances') }
+        { key: 'coverage', label: (typeof t === 'function' ? t('teacher.quality.dim_coverage') : 'Coverage'), icon: 'fas fa-check-circle', desc: (typeof t === 'function' ? t('teacher.quality.dim_coverage_desc') : 'Learning objectives and rubric coverage'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_coverage_how') : 'Based on learning objective coverage (70%) and rubric coverage (30%)') },
+        { key: 'pedagogical_alignment', label: (typeof t === 'function' ? t('teacher.quality.dim_pedagogical') : 'Pedagogical Alignment'), icon: 'fas fa-graduation-cap', desc: (typeof t === 'function' ? t('teacher.quality.dim_pedagogical_desc') : 'Fit to task type and timing'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_pedagogical_how') : 'Based on task type alignment (40%), duration feasibility (30%), and role balance (30%)') },
+        { key: 'argumentation_support', label: (typeof t === 'function' ? t('teacher.quality.dim_argumentation') : 'Argumentation Support'), icon: 'fas fa-comments', desc: (typeof t === 'function' ? t('teacher.quality.dim_argumentation_desc') : 'Claims, evidence, rebuttals'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_argumentation_how') : 'Based on presence of claims, evidence, and counterarguments in scriptlets') },
+        { key: 'grounding', label: (typeof t === 'function' ? t('teacher.quality.dim_grounding') : 'Grounding'), icon: 'fas fa-anchor', desc: (typeof t === 'function' ? t('teacher.quality.dim_grounding_desc') : 'Evidence linked to materials'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_grounding_how') : 'Based on percentage of scriptlets with evidence bindings to uploaded materials') },
+        { key: 'safety_checks', label: (typeof t === 'function' ? t('teacher.quality.dim_safety') : 'Safety Checks'), icon: 'fas fa-shield-alt', desc: (typeof t === 'function' ? t('teacher.quality.dim_safety_desc') : 'Sensitive content and references'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_safety_how') : 'Based on detection of sensitive content and missing citations') },
+        { key: 'teacher_in_loop', label: (typeof t === 'function' ? t('teacher.quality.dim_teacher') : 'Teacher in Loop'), icon: 'fas fa-user-check', desc: (typeof t === 'function' ? t('teacher.quality.dim_teacher_desc') : 'Your edits and acceptances'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_teacher_how') : 'Based on your acceptance rate (60%) and rejection rate (40%) of AI suggestions') }
     ];
     
     container.innerHTML = `
@@ -2723,6 +2906,7 @@ function renderQualityReport(report) {
                 const actionTip = metric.action_tip || (typeof t === 'function' ? t('teacher.quality.no_action') : 'No specific action needed');
                 const statusText = statusLabel(score, status);
                 
+                var howAssessedText = dim.how_assessed || '';
                 return `
                     <div class="quality-dimension-card ${status}">
                         <div class="dimension-header">
@@ -2736,12 +2920,16 @@ function renderQualityReport(report) {
                                     <span class="score-value">${score}/100</span>
                                     <span class="score-status ${status}">${statusText}</span>
                                 </div>
+                                <div class="dimension-how-assessed">
+                                    <span class="how-assessed-label"><i class="fas fa-info-circle"></i> ${typeof t === 'function' ? t('teacher.quality.how_assessed') : 'How assessed'}:</span>
+                                    <span class="how-assessed-text">${escapeHtml(howAssessedText)}</span>
+                                </div>
                             </div>
                         </div>
                         <div class="dimension-body">
                             <div class="dimension-evidence">
                                 <h5>${typeof t === 'function' ? t('teacher.quality.evidence') : 'Evidence'}:</h5>
-                                ${evidence.length > 0 
+                                ${evidence.length > 0
                                     ? `<ul>${evidence.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`
                                     : '<p>' + (typeof t === 'function' ? t('teacher.quality.no_evidence') : 'No evidence available') + '</p>'
                                 }

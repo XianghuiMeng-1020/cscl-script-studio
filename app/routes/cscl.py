@@ -987,19 +987,6 @@ def get_script_revisions(script_id):
 @role_required('teacher', 'admin')
 def upload_course_document(course_id):
     """Upload a course document (teacher/admin only)"""
-    import traceback as _tb
-    try:
-        return _upload_course_document_impl(course_id)
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).exception("upload_course_document failed")
-        return jsonify({
-            'error': str(e),
-            'code': 'UPLOAD_EXCEPTION',
-            'traceback': _tb.format_exc()
-        }), 500
-
-def _upload_course_document_impl(course_id):
     document_service = DocumentService()
     
     # Check if file upload or text content
@@ -1927,31 +1914,19 @@ def create_folder():
 @role_required('teacher', 'admin')
 def get_folder(folder_id):
     """Get a course folder with its activities and documents grouped by activity"""
-    try:
-        folder = CSCLCourseFolder.query.filter_by(
-            id=folder_id, created_by=current_user.id
-        ).first()
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).exception("get_folder: folder query failed")
-        return jsonify({'error': f'Database error: {str(e)}', 'success': False}), 500
+    folder = CSCLCourseFolder.query.filter_by(
+        id=folder_id, created_by=current_user.id
+    ).first()
     if not folder:
         return jsonify({'error': 'Folder not found'}), 404
 
-    try:
-        activities = CSCLScript.query.filter_by(folder_id=folder_id).order_by(
-            CSCLScript.updated_at.desc()
-        ).all()
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).exception("get_folder: activities query failed")
-        return jsonify({'error': f'Activities query error: {str(e)}', 'success': False}), 500
+    activities = CSCLScript.query.filter_by(folder_id=folder_id).order_by(
+        CSCLScript.updated_at.desc()
+    ).all()
     
     try:
         docs = CSCLCourseDocument.query.filter_by(folder_id=folder_id).all()
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).exception("get_folder: docs query failed")
+    except Exception:
         docs = []
     
     # Build documents_by_activity structure

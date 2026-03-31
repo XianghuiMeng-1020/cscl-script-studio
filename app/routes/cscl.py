@@ -987,6 +987,19 @@ def get_script_revisions(script_id):
 @role_required('teacher', 'admin')
 def upload_course_document(course_id):
     """Upload a course document (teacher/admin only)"""
+    import traceback as _tb
+    try:
+        return _upload_course_document_impl(course_id)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception("upload_course_document failed")
+        return jsonify({
+            'error': str(e),
+            'code': 'UPLOAD_EXCEPTION',
+            'traceback': _tb.format_exc()
+        }), 500
+
+def _upload_course_document_impl(course_id):
     document_service = DocumentService()
     
     # Check if file upload or text content

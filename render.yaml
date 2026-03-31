@@ -1,6 +1,6 @@
 databases:
   - name: cscl-db
-    plan: free
+    plan: standard
     databaseName: cscl_studio
     user: cscl_user
 
@@ -9,9 +9,10 @@ services:
     name: cscl-script-studio
     runtime: python
     region: singapore
-    plan: free
+    plan: standard
     buildCommand: pip install -r requirements.txt && python -c "import os; os.makedirs('data/course_documents', exist_ok=True)"
-    startCommand: python -m alembic upgrade head 2>/dev/null; gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --preload
+    startCommand: python -m alembic upgrade head 2>/dev/null; gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 300 --graceful-timeout 120 --keep-alive 5 --max-requests 1000 --max-requests-jitter 50 --preload
+    healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.6"
@@ -26,28 +27,36 @@ services:
       - key: RUN_MIGRATIONS
         value: "1"
       - key: LLM_PROVIDER
-        value: openai
+        value: qwen
       - key: LLM_PROVIDER_PRIMARY
-        value: openai
+        value: qwen
       - key: LLM_PROVIDER_FALLBACK
-        value: openai
+        value: qwen
       - key: LLM_STRATEGY
         value: primary_with_fallback
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: OPENAI_ENABLED
+      - key: QWEN_API_KEY
+        value: "sk-9bdd34bbf3794cc0be3899b15e1ff11f"
+      - key: QWEN_ENABLED
         value: "true"
+      - key: QWEN_IMPLEMENTED
+        value: "true"
+      - key: QWEN_MODEL
+        value: "qwen-plus"
+      - key: OPENAI_ENABLED
+        value: "false"
       - key: OPENAI_IMPLEMENTED
         value: "true"
-      - key: OPENAI_MODEL
-        value: "gpt-4o-mini"
       - key: DEMO_MODE
         value: "true"
       - key: QUICK_DEMO_PUBLIC
         value: "true"
       - key: PDF_MAX_PAGES
-        value: "200"
+        value: "500"
       - key: DOCUMENT_MAX_FILE_SIZE_MB
-        value: "10"
+        value: "25"
+      - key: UPLOAD_TIMEOUT_SECONDS
+        value: "300"
+      - key: PDF_EXTRACTION_TIMEOUT_SECONDS
+        value: "120"
       - key: STATIC_VERSION
-        value: "12"
+        value: "13"

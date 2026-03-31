@@ -7,6 +7,8 @@ import os
 import re
 import logging
 import unicodedata
+
+logger = logging.getLogger(__name__)
 import hashlib
 import uuid
 import io
@@ -224,6 +226,20 @@ class DocumentService:
                     os.remove(file_path)
             except OSError:
                 pass
+
+    @staticmethod
+    def _store_file_data(doc_id, file_content):
+        """Store file binary in the file_data column via raw SQL (column may not exist)."""
+        try:
+            from sqlalchemy import text
+            db.session.execute(
+                text("UPDATE cscl_course_documents SET file_data = :data WHERE id = :id"),
+                {"data": file_content, "id": doc_id}
+            )
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            logger.warning("Could not store file_data for doc %s (column may not exist)", doc_id)
     
     def allowed_file(self, filename: str) -> bool:
         """Check if file extension is allowed"""
@@ -641,7 +657,6 @@ class DocumentService:
                 title=title or safe_filename,
                 source_type='file',
                 storage_uri=file_path,
-                file_data=file_content,
                 mime_type=mime_type,
                 checksum=checksum,
                 file_size=len(file_content),
@@ -651,6 +666,7 @@ class DocumentService:
             db.session.add(document)
             try:
                 db.session.commit()
+                self._store_file_data(document.id, file_content)
             except IntegrityError:
                 db.session.rollback()
                 existing = CSCLCourseDocument.query.filter_by(course_id=course_id, checksum=checksum).first()
@@ -759,7 +775,6 @@ class DocumentService:
             title=title or safe_filename,
             source_type='file',
             storage_uri=file_path,
-            file_data=file_content,
             mime_type=mime_type,
             checksum=checksum,
             file_size=len(file_content),
@@ -826,6 +841,7 @@ class DocumentService:
                     }
                 }
             raise
+        self._store_file_data(document.id, file_content)
         self._cleanup_temp_file(file_path)
         doc_dict = document.to_dict()
         detected = _detected_type_from_mime(mime_type)

@@ -215,6 +215,16 @@ class DocumentService:
         self.upload_dir = os.path.join(Config.DATA_DIR, 'course_documents')
         os.makedirs(self.upload_dir, exist_ok=True)
     
+    @staticmethod
+    def _cleanup_temp_file(file_path):
+        """Remove temporary file from disk (best-effort, never raises)."""
+        if file_path:
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except OSError:
+                pass
+    
     def allowed_file(self, filename: str) -> bool:
         """Check if file extension is allowed"""
         if '.' not in filename:
@@ -612,16 +622,18 @@ class DocumentService:
                 }
             }
         
-        # Save file
         safe_filename = secure_filename(filename)
         file_id = str(uuid.uuid4())
-        file_path = os.path.join(self.upload_dir, f"{file_id}_{safe_filename}")
         
-        with open(file_path, 'wb') as f:
-            f.write(file_content)
+        # Also write to disk as fallback for text extraction functions that need a file path
+        file_path = os.path.join(self.upload_dir, f"{file_id}_{safe_filename}")
+        try:
+            with open(file_path, 'wb') as f:
+                f.write(file_content)
+        except OSError:
+            file_path = None
         
         if not extract_text:
-            # Store only; no text extraction or chunks (for RAG / reference only).
             document = CSCLCourseDocument(
                 id=file_id,
                 course_id=course_id,
@@ -629,6 +641,7 @@ class DocumentService:
                 title=title or safe_filename,
                 source_type='file',
                 storage_uri=file_path,
+                file_data=file_content,
                 mime_type=mime_type,
                 checksum=checksum,
                 file_size=len(file_content),
@@ -640,11 +653,6 @@ class DocumentService:
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()
-                if os.path.exists(file_path):
-                    try:
-                        os.remove(file_path)
-                    except OSError:
-                        pass
                 existing = CSCLCourseDocument.query.filter_by(course_id=course_id, checksum=checksum).first()
                 if existing:
                     return {
@@ -660,6 +668,7 @@ class DocumentService:
                         }
                     }
                 raise
+            self._cleanup_temp_file(file_path)
             return {
                 'document': document.to_dict(),
                 'chunks_count': 0,
@@ -673,8 +682,6 @@ class DocumentService:
                 }
             }
         
-        # S2.13: PDF path uses extract_text_from_pdf_bytes only; never decode(bytes) for preview
-        # M1: Run PDF extraction with configurable timeout to avoid long request hangs
         is_pdf = (mime_type or '').lower().startswith('application/pdf') or (filename or '').lower().endswith('.pdf')
         is_pptx = (mime_type or '').lower().count('presentation') or (filename or '').lower().endswith('.pptx')
         is_docx = (mime_type or '').lower().count('wordprocessing') or (mime_type or '').lower().count('msword') or (filename or '').lower().endswith('.docx')
@@ -687,20 +694,16 @@ class DocumentService:
                 try:
                     pdf_result = fut.result(timeout=timeout_sec)
                 except FuturesTimeoutError:
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
+                    self._cleanup_temp_file(file_path)
                     return {
-                        'document': None,
-                        'chunks_count': 0,
+                        'document': None, 'chunks_count': 0,
                         'error': f'PDF extraction timed out after {timeout_sec}s. Try a smaller file or fewer pages.',
                         'error_code': EXTRACTION_TIMEOUT
                     }
             if not pdf_result.get('ok'):
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+                self._cleanup_temp_file(file_path)
                 return {
-                    'document': None,
-                    'chunks_count': 0,
+                    'document': None, 'chunks_count': 0,
                     'error': pdf_result.get('error', 'PDF extraction failed'),
                     'error_code': pdf_result.get('code', PDF_PARSE_FAILED)
                 }
@@ -709,27 +712,23 @@ class DocumentService:
             try:
                 text = self.extract_text_from_pptx(file_content)
             except ValueError as e:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+                self._cleanup_temp_file(file_path)
                 err = str(e).strip()
                 error_code = EXTRACTION_FAILED if err == EMPTY_EXTRACTED_TEXT or err == TEXT_TOO_SHORT else UNSUPPORTED_FILE_TYPE
                 return {'document': None, 'chunks_count': 0, 'error': err, 'error_code': error_code}
-            except Exception as e:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+            except Exception:
+                self._cleanup_temp_file(file_path)
                 return {'document': None, 'chunks_count': 0, 'error': 'PPTX extraction failed.', 'error_code': UNSUPPORTED_FILE_TYPE}
         elif is_docx:
             try:
                 text = self.extract_text_from_docx(file_content)
             except ValueError as e:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+                self._cleanup_temp_file(file_path)
                 err = str(e).strip()
                 error_code = EXTRACTION_FAILED if err == EMPTY_EXTRACTED_TEXT or err == TEXT_TOO_SHORT else UNSUPPORTED_FILE_TYPE
                 return {'document': None, 'chunks_count': 0, 'error': err, 'error_code': error_code}
-            except Exception as e:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+            except Exception:
+                self._cleanup_temp_file(file_path)
                 return {'document': None, 'chunks_count': 0, 'error': 'DOCX extraction failed.', 'error_code': UNSUPPORTED_FILE_TYPE}
         elif is_image:
             text = '[Image: ' + (title or safe_filename) + ']'
@@ -737,36 +736,22 @@ class DocumentService:
             try:
                 text = self.extract_text_from_file(file_path, mime_type)
             except ValueError as e:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+                self._cleanup_temp_file(file_path)
                 err = str(e).strip()
-                if err == PDF_PARSE_FAILED:
-                    error_code = PDF_PARSE_FAILED
-                elif err == EMPTY_EXTRACTED_TEXT:
-                    error_code = EMPTY_EXTRACTED_TEXT
-                elif err == TEXT_TOO_SHORT:
-                    error_code = TEXT_TOO_SHORT
-                elif 'DOCX' in err or 'unsupported' in err.lower() or '不支持' in err:
-                    error_code = UNSUPPORTED_FILE_TYPE
-                else:
-                    error_code = 'EXTRACTION_FAILED'
+                if err == PDF_PARSE_FAILED: error_code = PDF_PARSE_FAILED
+                elif err == EMPTY_EXTRACTED_TEXT: error_code = EMPTY_EXTRACTED_TEXT
+                elif err == TEXT_TOO_SHORT: error_code = TEXT_TOO_SHORT
+                elif 'DOCX' in err or 'unsupported' in err.lower(): error_code = UNSUPPORTED_FILE_TYPE
+                else: error_code = 'EXTRACTION_FAILED'
+                return {'document': None, 'chunks_count': 0, 'error': err, 'error_code': error_code}
+            except Exception:
+                self._cleanup_temp_file(file_path)
                 return {
-                    'document': None,
-                    'chunks_count': 0,
-                    'error': err,
-                    'error_code': error_code
-                }
-            except Exception as e:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                return {
-                    'document': None,
-                    'chunks_count': 0,
+                    'document': None, 'chunks_count': 0,
                     'error': 'Extraction failed',
                     'error_code': PDF_PARSE_FAILED if 'pdf' in (mime_type or '').lower() else 'EXTRACTION_FAILED'
                 }
         
-        # Create document record
         document = CSCLCourseDocument(
             id=file_id,
             course_id=course_id,
@@ -774,6 +759,7 @@ class DocumentService:
             title=title or safe_filename,
             source_type='file',
             storage_uri=file_path,
+            file_data=file_content,
             mime_type=mime_type,
             checksum=checksum,
             file_size=len(file_content),
@@ -784,7 +770,6 @@ class DocumentService:
         db.session.add(document)
         db.session.flush()
         
-        # Create chunks
         chunks = self.chunk_text(text)
         chunk_objects = []
         for idx, chunk_text in enumerate(chunks):
@@ -797,19 +782,13 @@ class DocumentService:
             chunk_objects.append(chunk)
             db.session.add(chunk)
         
-        # Validate preview before commit (Bug 1: avoid committing then returning error)
         full_text = ' '.join(chunks)
         preview = to_display_safe_preview(full_text)
         if preview is None:
             db.session.rollback()
-            if os.path.exists(file_path):
-                try:
-                    os.remove(file_path)
-                except OSError:
-                    pass
+            self._cleanup_temp_file(file_path)
             return {
-                'document': None,
-                'chunks_count': 0,
+                'document': None, 'chunks_count': 0,
                 'error': 'Unable to parse readable text from PDF. Please upload a text-based PDF or paste plain text.',
                 'error_code': PDF_PARSE_FAILED
             }
@@ -847,6 +826,7 @@ class DocumentService:
                     }
                 }
             raise
+        self._cleanup_temp_file(file_path)
         doc_dict = document.to_dict()
         detected = _detected_type_from_mime(mime_type)
         extraction_method = 'pypdf_page_text' if detected == 'pdf' else 'plain_text'
@@ -996,9 +976,7 @@ class DocumentService:
         if document.uploaded_by != user_id and (not user or user.role != UserRole.ADMIN):
             return False
         
-        # Delete file if exists
-        if document.storage_uri and os.path.exists(document.storage_uri):
-            os.remove(document.storage_uri)
+        self._cleanup_temp_file(document.storage_uri)
         
         # Delete document (chunks will be cascade deleted)
         db.session.delete(document)

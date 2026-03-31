@@ -445,14 +445,15 @@ class CSCLCourseDocument(db.Model):
     
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     course_id = db.Column(db.String(100), nullable=False)
-    folder_id = db.Column(db.String(36), db.ForeignKey('cscl_course_folders.id'), nullable=True)  # Associated folder/activity
+    folder_id = db.Column(db.String(36), db.ForeignKey('cscl_course_folders.id'), nullable=True)
     title = db.Column(db.String(500), nullable=False)
     source_type = db.Column(db.String(50), nullable=False)  # file, url, text
     storage_uri = db.Column(db.String(1000), nullable=True)
+    file_data = db.Column(db.LargeBinary, nullable=True)
     mime_type = db.Column(db.String(100), nullable=True)
     checksum = db.Column(db.String(64), nullable=True)
-    file_size = db.Column(db.Integer, nullable=True)  # File size in bytes
-    material_level = db.Column(db.String(20), nullable=False, default='course')  # course | lesson
+    file_size = db.Column(db.Integer, nullable=True)
+    material_level = db.Column(db.String(20), nullable=False, default='course')
     uploaded_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     

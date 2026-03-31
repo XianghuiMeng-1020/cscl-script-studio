@@ -63,6 +63,25 @@ def create_app(config_class=Config):
         except Exception:
             logger.exception("Failed to bootstrap in-memory DB (non-fatal, app will still start)")
 
+    # Ensure file_data column exists (handles case where Alembic migration didn't run)
+    try:
+        with app.app_context():
+            from app.db import db
+            from sqlalchemy import text, inspect as sa_inspect
+            insp = sa_inspect(db.engine)
+            if 'cscl_course_documents' in insp.get_table_names():
+                cols = [c['name'] for c in insp.get_columns('cscl_course_documents')]
+                if 'file_data' not in cols:
+                    dialect = db.engine.dialect.name
+                    if dialect == 'postgresql':
+                        db.session.execute(text('ALTER TABLE cscl_course_documents ADD COLUMN file_data BYTEA'))
+                    else:
+                        db.session.execute(text('ALTER TABLE cscl_course_documents ADD COLUMN file_data BLOB'))
+                    db.session.commit()
+                    logger.info("Added missing file_data column to cscl_course_documents")
+    except Exception:
+        logger.warning("Could not ensure file_data column (non-fatal)", exc_info=True)
+
     # Seed demo users unless we're inside an Alembic migration (tables may not exist yet).
     if not os.environ.get("_ALEMBIC_RUNNING"):
         try:

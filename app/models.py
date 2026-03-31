@@ -449,7 +449,7 @@ class CSCLCourseDocument(db.Model):
     title = db.Column(db.String(500), nullable=False)
     source_type = db.Column(db.String(50), nullable=False)  # file, url, text
     storage_uri = db.Column(db.String(1000), nullable=True)
-    file_data = db.Column(db.LargeBinary, nullable=True)
+    file_data = db.deferred(db.Column(db.LargeBinary, nullable=True))
     mime_type = db.Column(db.String(100), nullable=True)
     checksum = db.Column(db.String(64), nullable=True)
     file_size = db.Column(db.Integer, nullable=True)

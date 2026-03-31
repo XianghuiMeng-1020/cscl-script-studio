@@ -1914,18 +1914,32 @@ def create_folder():
 @role_required('teacher', 'admin')
 def get_folder(folder_id):
     """Get a course folder with its activities and documents grouped by activity"""
-    folder = CSCLCourseFolder.query.filter_by(
-        id=folder_id, created_by=current_user.id
-    ).first()
+    try:
+        folder = CSCLCourseFolder.query.filter_by(
+            id=folder_id, created_by=current_user.id
+        ).first()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception("get_folder: folder query failed")
+        return jsonify({'error': f'Database error: {str(e)}', 'success': False}), 500
     if not folder:
         return jsonify({'error': 'Folder not found'}), 404
 
-    activities = CSCLScript.query.filter_by(folder_id=folder_id).order_by(
-        CSCLScript.updated_at.desc()
-    ).all()
+    try:
+        activities = CSCLScript.query.filter_by(folder_id=folder_id).order_by(
+            CSCLScript.updated_at.desc()
+        ).all()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception("get_folder: activities query failed")
+        return jsonify({'error': f'Activities query error: {str(e)}', 'success': False}), 500
     
-    # Get all documents for this folder
-    docs = CSCLCourseDocument.query.filter_by(folder_id=folder_id).all()
+    try:
+        docs = CSCLCourseDocument.query.filter_by(folder_id=folder_id).all()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception("get_folder: docs query failed")
+        docs = []
     
     # Build documents_by_activity structure
     # For now, lesson-level docs are grouped by activity based on best matching

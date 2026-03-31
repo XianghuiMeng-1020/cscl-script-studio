@@ -1771,11 +1771,20 @@ def run_pipeline(script_id):
     # S2.18: Extract force_provider from options for retry scenarios
     force_provider = options.get('force_provider')
     
+    # B1/B2: Extract AI enhancement settings from request
+    ai_enhancement = data.get('ai_enhancement', {})
+    _enable_web_retrieval = bool(ai_enhancement.get('web_retrieval', False))
+    _enable_image_generation = bool(ai_enhancement.get('image_generation', False))
+    
     # Run pipeline asynchronously so the HTTP request returns immediately
     import threading
     from app import create_app as _create_app
 
-    pipeline_service = CSCLPipelineService(force_provider=force_provider)
+    pipeline_service = CSCLPipelineService(
+        force_provider=force_provider,
+        enable_web_retrieval=_enable_web_retrieval,
+        enable_image_generation=_enable_image_generation
+    )
 
     # Pre-create a run_id and return it immediately; pipeline executes in background thread
     import uuid as _uuid
@@ -1790,7 +1799,11 @@ def run_pipeline(script_id):
     def _run_bg():
         with _app.app_context():
             try:
-                svc = CSCLPipelineService(force_provider=force_provider)
+                svc = CSCLPipelineService(
+                    force_provider=force_provider,
+                    enable_web_retrieval=_enable_web_retrieval,
+                    enable_image_generation=_enable_image_generation
+                )
                 svc.run_pipeline(
                     script_id=_script_id,
                     spec=_spec_copy,

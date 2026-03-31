@@ -2122,6 +2122,195 @@
     color: var(--text-secondary);
 }
 
+/* Review Page (redesigned Quality Report) */
+.review-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.review-summary-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.review-summary-card.review-ready {
+    border-left: 5px solid var(--success-color);
+    background: color-mix(in srgb, var(--success-color) 5%, var(--bg-surface));
+}
+
+.review-summary-card.review-needs-revision {
+    border-left: 5px solid var(--warning-color);
+    background: color-mix(in srgb, var(--warning-color) 5%, var(--bg-surface));
+}
+
+.review-summary-card.review-not-ready {
+    border-left: 5px solid var(--error-color);
+    background: color-mix(in srgb, var(--error-color) 5%, var(--bg-surface));
+}
+
+.review-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius-full, 99px);
+}
+
+.review-status-badge.review-ready {
+    color: var(--success-color);
+}
+
+.review-status-badge.review-needs-revision {
+    color: var(--warning-color);
+}
+
+.review-status-badge.review-not-ready {
+    color: var(--error-color);
+}
+
+.review-summary-text {
+    margin-top: 1rem;
+}
+
+.review-summary-text h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin: 0 0 0.5rem 0;
+}
+
+.review-summary-text p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.review-section {
+    margin-bottom: 1.5rem;
+}
+
+.review-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.review-checks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.review-check-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+}
+
+.review-check-card.good { border-left: 4px solid var(--success-color); }
+.review-check-card.warning { border-left: 4px solid var(--warning-color); }
+.review-check-card.poor { border-left: 4px solid var(--error-color); }
+.review-check-card.unassessed { border-left: 4px solid var(--text-muted); }
+
+.review-check-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.review-check-header i {
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+.review-check-label {
+    font-weight: 600;
+    flex: 1;
+    font-size: 0.95rem;
+}
+
+.review-check-score {
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.review-check-score.good { color: var(--success-color); }
+.review-check-score.warning { color: var(--warning-color); }
+.review-check-score.poor { color: var(--error-color); }
+.review-check-score.unassessed { color: var(--text-muted); }
+
+.review-check-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0 0 0.5rem 0;
+}
+
+.review-check-tip {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0;
+    padding: 0.5rem;
+    background: color-mix(in srgb, var(--warning-color) 8%, transparent);
+    border-radius: var(--radius-sm);
+}
+
+.review-check-tip i {
+    color: var(--warning-color);
+    margin-right: 0.25rem;
+}
+
+.review-warnings {
+    background: color-mix(in srgb, var(--warning-color) 5%, var(--bg-surface));
+    border: 1px solid color-mix(in srgb, var(--warning-color) 20%, var(--border-color));
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+}
+
+.review-warnings h3 {
+    color: var(--warning-color);
+}
+
+.review-warnings ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.review-warnings li {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.review-advanced {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.review-advanced-toggle {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.review-advanced-content {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .score-value {
     font-size: 1.5rem;
     font-weight: 700;

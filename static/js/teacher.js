@@ -291,7 +291,7 @@ async function checkHealth() {
         console.log('Health check:', data);
     } catch (error) {
         console.error('Health check failed:', error);
-        showNotification('Service unavailable. Some features may not work.', 'warning');
+        showNotification(t('teacher.notify.service_unavailable'), 'warning');
     }
 }
 
@@ -425,13 +425,13 @@ var currentFolderId = null;
 async function loadFolders() {
     var container = document.getElementById('foldersList');
     if (!container) return;
-    container.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
+    container.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>' + t('common.loading') + '</p></div>';
     try {
         var res = await fetch(API_BASE + '/folders', { credentials: 'include' });
         var data = await res.json();
         var folders = data.folders || [];
         if (folders.length === 0) {
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-folder"></i><h4>暂无课程文件夹</h4><p>创建你的第一个课程文件夹</p><button class="btn-primary" onclick="createNewFolder()"><i class="fas fa-plus"></i> 创建课程文件夹</button></div>';
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-folder"></i><h4>' + t('teacher.quality.no_scripts', '暂无课程文件夹') + '</h4><p>' + t('teacher.home.title', '创建你的第一个课程文件夹') + '</p><button class="btn-primary" onclick="createNewFolder()"><i class="fas fa-plus"></i> ' + t('teacher.folders.create') + '</button></div>';
             return;
         }
         var html = '';
@@ -441,19 +441,19 @@ async function loadFolders() {
             if (f.description) html += '<p class="script-card-meta" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;">' + _esc(f.description) + '</p>';
             var activityCountText = (typeof t === 'function')
                 ? (f.activity_count === 0 ? t('teacher.folder.activity_count_zero') : t('teacher.folder.activity_count').replace('{n}', f.activity_count || 0))
-                : (f.activity_count || 0) + ' 个活动';
+                : (f.activity_count || 0) + ' ' + t('teacher.folder.activity_count', '个活动');
             html += '<div class="script-card-footer" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;"><span>' + activityCountText + '</span>';
             html += '<span>' + (f.created_at ? new Date(f.created_at).toLocaleDateString() : '') + '</span></div>';
             html += '<div class="folder-card-actions" style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">';
-            html += '<button class="btn-secondary btn-sm" onclick="event.stopPropagation(); deleteFolder(\'' + f.id + '\', \'' + _esc(f.name).replace(/\\/g, '\\\\').replace(/\'/g, "\\'") + '\', ' + (f.activity_count || 0) + ')" title="删除文件夹" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">';
-            html += '<i class="fas fa-trash"></i> 删除';
+            html += '<button class="btn-secondary btn-sm" onclick="event.stopPropagation(); deleteFolder(\'' + f.id + '\', \'' + _esc(f.name).replace(/\\/g, '\\\\').replace(/\'/g, "\\'") + '\', ' + (f.activity_count || 0) + ')" title="' + t('common.delete') + '" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">';
+            html += '<i class="fas fa-trash"></i> ' + t('common.delete') + '';
             html += '</button>';
             html += '</div>';
             html += '</div>';
         });
         container.innerHTML = html;
     } catch (e) {
-        container.innerHTML = '<div class="empty-state"><p>加载失败: ' + e.message + '</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>' + t('teacher.notify.load_failed') + ': ' + e.message + '</p></div>';
     }
 }
 
@@ -541,7 +541,7 @@ async function openFolder(folderId) {
     var matsEl = document.getElementById('folderMaterialsList');
 
     // Show loading state
-    var loadingHtml = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
+    var loadingHtml = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>' + t('common.loading') + '</p></div>';
     if (overviewDocsEl) overviewDocsEl.innerHTML = loadingHtml;
     if (overviewActsEl) overviewActsEl.innerHTML = loadingHtml;
     if (actsEl) actsEl.innerHTML = loadingHtml;
@@ -550,7 +550,7 @@ async function openFolder(folderId) {
     try {
         var res = await fetch(API_BASE + '/folders/' + folderId, { credentials: 'include' });
         var data = await res.json();
-        if (!data.success) { showNotification(data.error || '加载失败', 'error'); return; }
+        if (!data.success) { showNotification(data.error || t('teacher.notify.load_failed'), 'error'); return; }
         var folder = data.folder;
         if (nameEl) nameEl.textContent = folder.name;
         if (descEl) descEl.textContent = folder.description || (typeof t === 'function' ? t('teacher.folder.default_desc') : 'Manage activities and materials for this course');
@@ -562,7 +562,7 @@ async function openFolder(folderId) {
         renderFolderDocuments(data.documents || []);
         renderFolderActivities(data.activities || []);
     } catch (e) {
-        showNotification('加载失败: ' + e.message, 'error');
+        showNotification(t('teacher.notify.load_failed') + ': ' + e.message, 'error');
     }
 }
 
@@ -721,7 +721,7 @@ async function toggleDocumentContent(docId, event) {
         var loadingDiv = contentPanel.querySelector('.document-content-loading');
         if (loadingDiv) {
             try {
-                var courseId = window.currentFolderData && window.currentFolderData.folder ? window.currentFolderData.folder.id : DEFAULT_COURSE_ID;
+                var courseId = DEFAULT_COURSE_ID;
                 var res = await fetch(API_BASE + '/courses/' + courseId + '/docs/' + docId + '/content', { credentials: 'include' });
                 var data = await res.json();
 
@@ -807,20 +807,21 @@ function openFolderUploadModal() {
 
 async function uploadFilesToFolder(files) {
     if (!currentFolderId) {
-        showNotification('请先选择课程文件夹', 'warning');
+        showNotification(t('teacher.notify.select_folder_first'), 'warning');
         return;
     }
 
-    showNotification('正在上传文件...', 'info');
+    showNotification(t('teacher.notify.upload_in_progress'), 'info');
 
     try {
         var uploadedCount = 0;
         for (var i = 0; i < files.length; i++) {
             var formData = new FormData();
             formData.append('file', files[i]);
+            formData.append('title', files[i].name);
             formData.append('folder_id', currentFolderId);
 
-            var res = await fetch(API_BASE + '/courses/' + currentFolderId + '/docs/upload', {
+            var res = await fetch(API_BASE + '/courses/' + DEFAULT_COURSE_ID + '/docs/upload', {
                 method: 'POST',
                 body: formData,
                 credentials: 'include'
@@ -832,7 +833,7 @@ async function uploadFilesToFolder(files) {
             }
         }
 
-        showNotification('成功上传 ' + uploadedCount + ' 个文件', 'success');
+        showNotification(t('teacher.notify.upload_success').replace('{n}', uploadedCount), 'success');
 
         // Refresh folder data
         if (window.currentFolderData) {
@@ -840,12 +841,12 @@ async function uploadFilesToFolder(files) {
             openFolder(currentFolderId);
         }
     } catch (e) {
-        showNotification('上传失败: ' + e.message, 'error');
+        showNotification(t('teacher.notify.upload_failed') + ': ' + e.message, 'error');
     }
 }
 
 function createActivityInFolder() {
-    if (!currentFolderId) { showNotification('请先选择一个课程文件夹', 'warning'); return; }
+    if (!currentFolderId) { showNotification(t('teacher.notify.select_folder_first'), 'warning'); return; }
     wizardFolderId = currentFolderId;
     goToStep(2);
 }
@@ -866,7 +867,7 @@ async function loadRecentPipelines() {
     if (!container) return;
     try {
         if (scripts.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>No pipeline runs yet</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.pipeline.no_runs') + '</p></div>';
             return;
         }
         
@@ -882,30 +883,30 @@ async function loadRecentPipelines() {
             const recent = runs.slice(0, 3);
             
             if (recent.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No pipeline runs yet</p></div>';
+                container.innerHTML = '<div class="empty-state"><p>' + t('teacher.pipeline.no_runs') + '</p></div>';
             } else {
                 container.innerHTML = recent.map(run => `
                     <div class="activity-item">
                         <div class="activity-icon"><i class="fas fa-project-diagram"></i></div>
                         <div class="activity-content">
-                            <h5>Pipeline Run ${run.run_id.substring(0, 8)}</h5>
-                            <p>Status: ${run.status}</p>
+                            <h5>${t('teacher.pipeline.run_prefix')} ${run.run_id.substring(0, 8)}</h5>
+                            <p>${t('teacher.pipeline.status_label')} ${run.status}</p>
                         </div>
                         <div class="activity-time">${formatTime(run.created_at)}</div>
                     </div>
                 `).join('');
             }
         } else {
-            container.innerHTML = '<div class="empty-state"><p>Unable to load pipeline runs</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.pipeline.load_runs_error') + '</p></div>';
         }
     } catch (error) {
-        if (container) container.innerHTML = '<div class="empty-state"><p>Error loading pipeline runs</p></div>';
+        if (container) container.innerHTML = '<div class="empty-state"><p>' + t('teacher.pipeline.load_runs_error') + '</p></div>';
     }
 }
 
 async function loadRecentDecisions() {
     var container = document.getElementById('recentDecisions');
-    if (container) container.innerHTML = '<div class="empty-state"><p>No decisions yet</p></div>';
+    if (container) container.innerHTML = '<div class="empty-state"><p>' + t('teacher.decisions.no_decisions') + '</p></div>';
 }
 
 // Script Management
@@ -918,12 +919,12 @@ async function loadScripts() {
         });
         
         if (res.status === 401) {
-            container.innerHTML = '<div class="empty-state"><p>Please login first</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.notify.login_first') + '</p></div>';
             return;
         }
         
         if (res.status === 403) {
-            container.innerHTML = '<div class="empty-state"><p>Current role has no permission</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.notify.no_permission') + '</p></div>';
             return;
         }
         
@@ -932,11 +933,11 @@ async function loadScripts() {
             scripts = data.scripts || [];
             renderScripts(scripts);
         } else {
-            container.innerHTML = '<div class="empty-state"><p>Failed to load scripts</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.notify.load_script_failed') + '</p></div>';
         }
     } catch (error) {
         console.error('Error loading scripts:', error);
-        container.innerHTML = '<div class="empty-state"><p>Error loading scripts</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>' + t('teacher.notify.load_script_failed') + '</p></div>';
     } finally {
         showLoading(false);
     }
@@ -949,11 +950,11 @@ function renderScripts(scriptsList) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-folder-open"></i>
-                <h4>No Script Projects</h4>
-                <p>You haven't created any script projects yet.</p>
+                <h4>${t('teacher.scripts.no_projects')}</h4>
+                <p>${t('teacher.scripts.no_projects_desc')}</p>
                 <button class="btn-primary" onclick="createNewScriptProject()">
                     <i class="fas fa-plus"></i>
-                    Create New Script Project
+                    ${t('teacher.scripts.create_new')}
                 </button>
             </div>
         `;
@@ -973,11 +974,11 @@ function renderScripts(scriptsList) {
             </div>
             <div class="script-card-content">
                 ${folderInfo}
-                <p><strong>Topic:</strong> ${escapeHtml(script.topic || 'N/A')}</p>
-                <p><strong>Duration:</strong> ${script.duration_minutes || 0} minutes</p>
+                <p><strong>${t('teacher.scripts.topic')}</strong> ${escapeHtml(script.topic || 'N/A')}</p>
+                <p><strong>${t('teacher.scripts.duration')}</strong> ${script.duration_minutes || 0}${t('teacher.scripts.minutes')}</p>
             </div>
             <div class="script-card-footer">
-                <span class="script-time">Updated: ${formatTime(script.updated_at)}</span>
+                <span class="script-time">${t('teacher.scripts.updated')} ${formatTime(script.updated_at)}</span>
                 <button class="btn-secondary btn-sm" onclick="event.stopPropagation(); editScript('${script.id}')" title="${labelEdit}">
                     <i class="fas fa-edit"></i> ${labelEdit}
                 </button>
@@ -1065,13 +1066,13 @@ function resetWizard() {
 async function wizardNext() {
     if (wizardStep === 2) {
         if (!currentSpec) {
-            showNotification('请先完成教学目标检查', 'warning');
+            showNotification(t('teacher.notify.complete_validation_first'), 'warning');
             return;
         }
     }
     if (wizardStep === 3) {
         if (!currentPipelineRunId) {
-            showNotification('Please run pipeline first', 'warning');
+            showNotification(t('teacher.notify.run_pipeline_first'), 'warning');
             return;
         }
     }
@@ -1192,7 +1193,7 @@ async function loadScriptPreview() {
         var run = data.run || {};
 
         if (run.status === 'running') {
-            container.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>Pipeline is still running... Please wait.</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.preview.still_running') + '</p></div>';
             setTimeout(function() { loadScriptPreview(); }, 3000);
             return;
         }
@@ -1455,7 +1456,7 @@ function updateWizardProgress() {
 }
 
 function cancelWizard() {
-    if (confirm('Are you sure you want to cancel? All progress will be lost.')) {
+    if (confirm(t('teacher.wizard.cancel_confirm'))) {
         switchView('dashboard');
         resetWizard();
     }
@@ -1554,21 +1555,21 @@ document.getElementById('syllabusFile')?.addEventListener('change', async functi
             } else {
                 errCount++;
                 var msg = (result.code === 'PDF_PARSE_FAILED')
-                    ? 'Unable to extract text from this PDF. Please try a text-based PDF or paste text manually.'
-                    : (result.error || result.message || 'Upload failed.');
-                showNotification((file.name || 'File') + ': ' + msg, 'error');
+                    ? t('teacher.pdf.parse_failed_generic')
+                    : (result.error || result.message || t('teacher.notify.upload_failed'));
+                showNotification((file.name || '') + ': ' + msg, 'error');
             }
         }
         if (firstExtractedText)
             document.getElementById('syllabusText').value = firstExtractedText;
         if (okCount > 0) {
-            showNotification(okCount === 1 ? 'File uploaded successfully' : okCount + ' files uploaded', 'success');
+            showNotification(t('teacher.notify.upload_success').replace('{n}', okCount), 'success');
             if (typeof loadDocuments === 'function') loadDocuments();
             if (typeof loadUploadedFilesListForStep1 === 'function') loadUploadedFilesListForStep1();
         }
     } catch (err) {
         console.error('Upload error:', err);
-        showNotification('Failed to upload file(s).', 'error');
+        showNotification(t('teacher.notify.upload_failed'), 'error');
     } finally {
         showLoading(false);
     }
@@ -1625,18 +1626,18 @@ document.getElementById('lessonFile')?.addEventListener('change', async function
             } else {
                 errCount++;
                 var msg = (result.code === 'PDF_PARSE_FAILED')
-                    ? 'Unable to extract text from this PDF. Please try a text-based PDF or paste text manually.'
-                    : (result.error || result.message || 'Upload failed.');
-                showNotification((file.name || 'File') + ': ' + msg, 'error');
+                    ? t('teacher.pdf.parse_failed_generic')
+                    : (result.error || result.message || t('teacher.notify.upload_failed'));
+                showNotification((file.name || '') + ': ' + msg, 'error');
             }
         }
         if (okCount > 0) {
-            showNotification(okCount === 1 ? 'File uploaded successfully' : okCount + ' files uploaded', 'success');
+            showNotification(t('teacher.notify.upload_success').replace('{n}', okCount), 'success');
             loadLessonUploadedFiles();
         }
     } catch (err) {
         console.error('Lesson upload error:', err);
-        showNotification('Failed to upload file(s).', 'error');
+        showNotification(t('teacher.notify.upload_failed'), 'error');
     } finally {
         showLoading(false);
     }
@@ -1879,7 +1880,7 @@ async function validateSpec() {
         if (res.status === 422 || !result.valid) {
             if (resultDiv) {
                 resultDiv.className = 'validation-result error';
-                resultDiv.innerHTML = '<h4><i class="fas fa-exclamation-circle"></i> Validation Failed</h4><ul>' + (result.issues || []).map(function(issue) { return '<li>' + escapeHtml(issue) + '</li>'; }).join('') + '</ul><p><strong>Action:</strong> Fix the issues above and try again.</p>';
+                resultDiv.innerHTML = '<h4><i class="fas fa-exclamation-circle"></i> ' + t('teacher.validation.failed_title') + '</h4><ul>' + (result.issues || []).map(function(issue) { return '<li>' + escapeHtml(issue) + '</li>'; }).join('') + '</ul><p><strong>' + t('teacher.validation.action_label') + '</strong> ' + t('teacher.validation.fix_issues') + '</p>';
             }
             var firstId = firstErrorFieldIdFromPaths(result.field_paths) || firstErrorFieldIdFromIssues(result.issues);
             if (firstId) {
@@ -1890,17 +1891,17 @@ async function validateSpec() {
                 }
             }
             if (document.getElementById('wizardStep2Next')) document.getElementById('wizardStep2Next').disabled = true;
-            showNotification('Validation failed. Fix the highlighted fields and try again.', 'error');
+            showNotification(t('teacher.notify.validation_failed'), 'error');
         } else if (res.status === 401) {
             if (resultDiv) resultDiv.className = 'validation-result error';
-            if (resultDiv) resultDiv.innerHTML = '<p>Please login first</p>';
+            if (resultDiv) resultDiv.innerHTML = '<p>' + t('teacher.notify.login_first') + '</p>';
             if (document.getElementById('wizardStep2Next')) document.getElementById('wizardStep2Next').disabled = true;
-            showNotification('Please login first', 'error');
+            showNotification(t('teacher.notify.login_first'), 'error');
         } else if (res.status === 403) {
             if (resultDiv) resultDiv.className = 'validation-result error';
-            if (resultDiv) resultDiv.innerHTML = '<p>Current role has no permission</p>';
+            if (resultDiv) resultDiv.innerHTML = '<p>' + t('teacher.notify.no_permission') + '</p>';
             if (document.getElementById('wizardStep2Next')) document.getElementById('wizardStep2Next').disabled = true;
-            showNotification('Current role has no permission', 'error');
+            showNotification(t('teacher.notify.no_permission'), 'error');
         } else {
             resultDiv.className = 'validation-result success';
             resultDiv.innerHTML = '<h4><i class="fas fa-check-circle"></i> Validation Successful</h4><p>' + (typeof t === 'function' ? t('teacher.spec.ready') : 'Teaching plan is complete and ready for pipeline generation.') + '</p>';
@@ -1914,9 +1915,9 @@ async function validateSpec() {
         if (resultDiv) {
             resultDiv.classList.remove('hidden');
             resultDiv.className = 'validation-result error';
-            resultDiv.innerHTML = '<p>Service temporarily unavailable. Please check your connection and try again.</p>';
+            resultDiv.innerHTML = '<p>' + t('teacher.validation.service_unavailable') + '</p>';
         }
-        showNotification('Validation request failed. Please try again.', 'error');
+        showNotification(t('teacher.notify.validation_failed'), 'error');
         if (document.getElementById('wizardStep2Next')) document.getElementById('wizardStep2Next').disabled = true;
     } finally {
         showLoading(false);
@@ -1945,20 +1946,20 @@ function resetPipelineStageCards() {
         var status = stage.querySelector('.stage-status');
         if (status) {
             status.removeAttribute('data-i18n');
-            status.textContent = 'Pending';
+            status.textContent = t('teacher.pipeline.pending');
             status.className = 'stage-status';
         }
         var inputEl = stage.querySelector('.input-summary');
         if (inputEl) {
             var spans = inputEl.querySelectorAll('span');
             var target = spans.length > 1 ? spans[1] : spans[0];
-            if (target) { target.removeAttribute('data-i18n'); target.textContent = 'Waiting...'; }
+            if (target) { target.removeAttribute('data-i18n'); target.textContent = t('teacher.pipeline.waiting'); }
         }
         var outputEl = stage.querySelector('.output-summary');
         if (outputEl) {
             var spans = outputEl.querySelectorAll('span');
             var target = spans.length > 1 ? spans[1] : spans[0];
-            if (target) { target.removeAttribute('data-i18n'); target.textContent = 'Waiting...'; }
+            if (target) { target.removeAttribute('data-i18n'); target.textContent = t('teacher.pipeline.waiting'); }
         }
         var dur = stage.querySelector('.stage-duration');
         if (dur) dur.textContent = '--';
@@ -2015,7 +2016,7 @@ function updateStageCardsFromResult(result) {
             if (card) {
                 var statusEl = card.querySelector('.stage-status');
                 if (statusEl && statusEl.textContent === 'Pending') {
-                    statusEl.textContent = 'Skipped';
+                    statusEl.textContent = t('teacher.pipeline.skipped');
                     statusEl.className = 'stage-status skipped';
                 }
                 var durationEl = card.querySelector('.stage-duration');
@@ -2032,7 +2033,7 @@ function showPipelineErrorPanel(issues, message, showRetryButton) {
     var actionEl = document.getElementById('pipelineErrorAction');
     if (!panel) return;
     panel.classList.remove('hidden');
-    if (titleEl) titleEl.textContent = message || 'Pipeline error';
+    if (titleEl) titleEl.textContent = message || t('teacher.pipeline.error_title');
     if (listEl) {
         if (Array.isArray(issues)) {
             listEl.innerHTML = issues.map(function(i) {
@@ -2043,14 +2044,14 @@ function showPipelineErrorPanel(issues, message, showRetryButton) {
         } else if (typeof issues === 'string') {
             listEl.innerHTML = '<li>' + escapeHtml(issues) + '</li>';
         } else {
-            listEl.innerHTML = '<li>' + escapeHtml(message || 'Pipeline error') + '</li>';
+            listEl.innerHTML = '<li>' + escapeHtml(message || t('teacher.pipeline.error_title')) + '</li>';
         }
     }
     if (actionEl) {
         if (showRetryButton) {
-            actionEl.innerHTML = '<button class="btn-secondary" onclick="retryPipelineWithFallback()" style="margin-top: 10px;"><i class="fas fa-redo"></i> Retry with fallback provider</button>';
+            actionEl.innerHTML = '<button class="btn-secondary" onclick="retryPipelineWithFallback()" style="margin-top: 10px;"><i class="fas fa-redo"></i> ' + t('teacher.pipeline.retry_fallback') + '</button>';
         } else {
-            actionEl.textContent = 'Fix the fields in Step 2 and run again.';
+            actionEl.textContent = t('teacher.pipeline.fix_and_retry');
         }
     }
 }
@@ -2073,7 +2074,7 @@ async function runPipeline() {
     pipelineRunInProgress = true;
     if (runBtn) { runBtn.disabled = true; runBtn.classList.add('btn-loading'); runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.generating') : 'Generating...'); }
     if (!currentSpec) {
-        showNotification('Please complete teaching plan validation first', 'warning');
+        showNotification(t('teacher.notify.complete_validation_first'), 'warning');
         pipelineRunInProgress = false;
         if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
         return;
@@ -2090,7 +2091,7 @@ async function runPipeline() {
         });
         var vData = await vRes.json().catch(function() { return {}; });
         if (vRes.status === 422 || !vData.valid) {
-            showNotification('Teaching plan has errors. Fix them before running.', 'error');
+            showNotification(t('teacher.pipeline.plan_errors'), 'error');
             if (vData.issues && vData.issues.length) {
                 goToStep(2);
                 var firstId = firstErrorFieldIdFromPaths(vData.field_paths) || firstErrorFieldIdFromIssues(vData.issues);
@@ -2102,7 +2103,7 @@ async function runPipeline() {
             return;
         }
     } catch (e) {
-        showNotification('Could not validate teaching plan. Try again.', 'error');
+        showNotification(t('teacher.notify.verify_failed'), 'error');
         pipelineRunInProgress = false;
         if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
         return;
@@ -2131,19 +2132,19 @@ async function runPipeline() {
                 if (currentScriptId && typeof sessionStorage !== 'undefined') sessionStorage.setItem('cscl_current_script_id', currentScriptId);
             } else {
                 if (res.status === 401) {
-                    showNotification('Session expired, please login again', 'error');
+                    showNotification(t('teacher.notify.session_expired'), 'error');
                     pipelineRunInProgress = false;
                     if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
                     return;
                 }
-                showNotification('Failed to create script project', 'error');
+                showNotification(t('teacher.notify.create_script_failed'), 'error');
                 pipelineRunInProgress = false;
                 if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
                 return;
             }
         } catch (error) {
             console.error('Error creating script:', error);
-            showNotification('Failed to create script project', 'error');
+            showNotification(t('teacher.notify.create_script_failed'), 'error');
             pipelineRunInProgress = false;
             if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             return;
@@ -2157,18 +2158,18 @@ async function runPipeline() {
             currentScriptId = null;
             if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('cscl_current_script_id');
             if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
-            showNotification('Script expired, please complete Step 2 again', 'warning');
+            showNotification(t('teacher.notify.script_expired'), 'warning');
             goToStep(2);
             return;
         }
         if (getRes.status === 401) {
             if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
-            showNotification('Session expired, please login again', 'error');
+            showNotification(t('teacher.notify.session_expired'), 'error');
             return;
         }
     } catch (e) {
         if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
-        showNotification('Could not verify script. Try again.', 'error');
+        showNotification(t('teacher.notify.verify_failed'), 'error');
         return;
     }
 
@@ -2200,24 +2201,28 @@ async function runPipeline() {
 
         if (res.status === 401) {
             pipelineRunInProgress = false;
-            showNotification('Session expired, please login again', 'error');
+            showLoading(false);
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
+            showNotification(t('teacher.notify.session_expired'), 'error');
             return;
         }
         if (res.status === 403) {
             pipelineRunInProgress = false;
-            showNotification('Current role has no permission', 'error');
+            showLoading(false);
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
+            showNotification(t('teacher.notify.no_permission'), 'error');
             return;
         }
-        // 400: 未上传课程文档 / 缺少 course_id
         if (res.status === 400) {
             pipelineRunInProgress = false;
+            showLoading(false);
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             var code = result.code || '';
             var errMsg = result.error || result.message || 'Request failed.';
             if (code === 'PREFLIGHT_NO_COURSE_DOCS') {
                 errMsg = typeof t === 'function' ? t('teacher.pipeline.no_course_docs') : '当前课程下还没有上传文档。请先在 Step 1 中上传课程文档，再点击运行生成。';
                 showPipelineErrorPanel(errMsg, typeof t === 'function' ? t('teacher.pipeline.no_docs_title') : '请先上传课程文档', false);
                 showNotification(errMsg, 'error');
-                // Go back to step 1 to upload documents
                 goToStep(1);
             } else if (code === 'PREFLIGHT_MISSING_COURSE_ID') {
                 showNotification(typeof t === 'function' ? t('teacher.pipeline.missing_course_id') : '请填写课程信息（Step 2 中的课程）后再运行。', 'error');
@@ -2228,7 +2233,6 @@ async function runPipeline() {
             resetPipelineStageCards();
             return;
         }
-        // S2.18: Handle 503 LLM_PROVIDER_NOT_READY
         if (res.status === 503) {
             if (result.code === 'LLM_PROVIDER_NOT_READY') {
                 var errorMsg = result.error || 'Configured LLM provider is not runnable';
@@ -2238,22 +2242,22 @@ async function runPipeline() {
                 showPipelineErrorPanel(
                     errorMsg + '. ' + reason + ' ' + hint,
                     'LLM Provider Not Ready',
-                    true  // Show retry button
+                    true
                 );
-                // Preserve spec in sessionStorage
                 if (typeof sessionStorage !== 'undefined' && currentSpec) {
                     sessionStorage.setItem('cscl_current_spec', JSON.stringify(currentSpec));
                 }
                 showNotification(errorMsg, 'error');
             } else {
-                showNotification('Service temporarily unavailable. You can use mock mode for testing.', 'warning');
+                showNotification(t('teacher.notify.service_temp_unavailable'), 'warning');
                 simulatePipelineRun();
             }
             pipelineRunInProgress = false;
+            showLoading(false);
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             resetPipelineStageCards();
             return;
         }
-        // S2.18: Handle 422 PIPELINE_FAILED with retry option
         if (!res.ok || res.status === 422) {
             if (res.status === 422 && result.issues && result.issues.length > 0) {
                 showPipelineErrorPanel(result.issues, result.message || 'Spec validation failed.', false);
@@ -2266,14 +2270,12 @@ async function runPipeline() {
                 }
                 showNotification(result.message || 'Fix the fields above and run again.', 'error');
             } else if (result.code === 'PIPELINE_FAILED') {
-                // Pipeline failed - show error with retry option
                 var errorMsg = result.error || 'Pipeline execution failed';
                 showPipelineErrorPanel(
                     errorMsg,
                     'Pipeline Failed',
-                    true  // Show retry button
+                    true
                 );
-                // Preserve spec in sessionStorage
                 if (typeof sessionStorage !== 'undefined' && currentSpec) {
                     sessionStorage.setItem('cscl_current_spec', JSON.stringify(currentSpec));
                 }
@@ -2282,6 +2284,8 @@ async function runPipeline() {
                 showNotification(result.error || result.message || 'Pipeline failed', 'error');
             }
             pipelineRunInProgress = false;
+            showLoading(false);
+            if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             resetPipelineStageCards();
             return;
         }
@@ -2289,7 +2293,7 @@ async function runPipeline() {
             currentPipelineRunId = result.run_id;
             try { sessionStorage.setItem('cscl_current_run_id', result.run_id); } catch (e) {}
             if (result.status === 'success' || result.status === 'completed') {
-                showNotification('Generation completed!', 'success');
+                showNotification(t('teacher.notify.generation_completed'), 'success');
                 updateStageCardsFromResult(result);
                 var nextBtn = document.getElementById('wizardStep3Next');
                 if (nextBtn) nextBtn.disabled = false;
@@ -2297,18 +2301,18 @@ async function runPipeline() {
                 showLoading(false);
                 if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             } else if (result.status === 'partial_failed') {
-                showNotification('Generation partially completed. Some stages had errors.', 'warning');
+                showNotification(t('teacher.notify.generation_partial'), 'warning');
                 updateStageCardsFromResult(result);
                 pipelineRunInProgress = false;
                 showLoading(false);
                 if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             } else {
-                showNotification('Pipeline started, please wait...', 'success');
+                showNotification(t('teacher.notify.pipeline_started'), 'success');
                 _pipelinePollingActive = true;
                 pollPipelineStatus(result.run_id);
             }
         } else {
-            showNotification('Pipeline failed to start', 'error');
+            showNotification(t('teacher.notify.pipeline_failed_start'), 'error');
             resetPipelineStageCards();
             pipelineRunInProgress = false;
             showLoading(false);
@@ -2316,7 +2320,7 @@ async function runPipeline() {
         }
     } catch (error) {
         console.error('Error running pipeline:', error);
-        showNotification('Failed to run pipeline. Service may be unavailable.', 'error');
+        showNotification(t('teacher.notify.pipeline_failed'), 'error');
         resetPipelineStageCards();
         pipelineRunInProgress = false;
         showLoading(false);
@@ -2338,7 +2342,7 @@ async function pollPipelineStatus(runId) {
             if (_pollRetryCount < _pollMaxRetries) {
                 setTimeout(() => pollPipelineStatus(runId), 2000);
             } else {
-                _finishPolling('Pipeline run not found after timeout', 'error');
+                _finishPolling(t('teacher.notify.pipeline_timeout'), 'error');
             }
             return;
         }
@@ -2353,16 +2357,16 @@ async function pollPipelineStatus(runId) {
             } else if (data.run.status === 'completed' || data.run.status === 'success') {
                 var nextBtn = document.getElementById('wizardStep3Next');
                 if (nextBtn) nextBtn.disabled = false;
-                _finishPolling('Pipeline completed successfully', 'success');
+                _finishPolling(t('teacher.notify.pipeline_completed'), 'success');
             } else if (data.run.status === 'failed' || data.run.status === 'partial_failed') {
-                _finishPolling('Pipeline finished with errors: ' + (data.run.error_message || 'unknown'), 'warning');
+                _finishPolling(t('teacher.notify.pipeline_failed') + ': ' + (data.run.error_message || 'unknown'), 'warning');
             }
         } else {
             _pollRetryCount++;
             if (_pollRetryCount < _pollMaxRetries) {
                 setTimeout(() => pollPipelineStatus(runId), 2000);
             } else {
-                _finishPolling('Pipeline polling failed', 'error');
+                _finishPolling(t('teacher.notify.pipeline_poll_failed'), 'error');
             }
         }
     } catch (error) {
@@ -2371,7 +2375,7 @@ async function pollPipelineStatus(runId) {
         if (_pollRetryCount < _pollMaxRetries) {
             setTimeout(() => pollPipelineStatus(runId), 3000);
         } else {
-            _finishPolling('Pipeline polling failed', 'error');
+            _finishPolling(t('teacher.notify.pipeline_poll_failed'), 'error');
         }
     }
 }
@@ -2474,10 +2478,10 @@ function _setStageIO(stageElement, stage) {
         var target = inputSpans.length > 1 ? inputSpans[1] : inputSpans[0];
         if (target) {
             target.removeAttribute('data-i18n');
-            if (stage.status === 'success') target.textContent = 'Done';
-            else if (stage.status === 'running') target.textContent = 'Processing...';
-            else if (stage.status === 'failed') target.textContent = 'Error';
-            else if (stage.status === 'skipped') target.textContent = 'Skipped';
+            if (stage.status === 'success') target.textContent = t('teacher.pipeline.done');
+            else if (stage.status === 'running') target.textContent = t('teacher.pipeline.processing');
+            else if (stage.status === 'failed') target.textContent = t('teacher.pipeline.error_label');
+            else if (stage.status === 'skipped') target.textContent = t('teacher.pipeline.skipped');
         }
     }
     if (outputEl) {
@@ -2485,10 +2489,10 @@ function _setStageIO(stageElement, stage) {
         var target = outputSpans.length > 1 ? outputSpans[1] : outputSpans[0];
         if (target) {
             target.removeAttribute('data-i18n');
-            if (stage.status === 'success') target.textContent = stage.output_json ? 'Generated' : 'Done';
-            else if (stage.status === 'running') target.textContent = 'Waiting...';
-            else if (stage.status === 'failed') target.textContent = stage.error_message ? stage.error_message.substring(0, 60) : 'Failed';
-            else if (stage.status === 'skipped') target.textContent = 'Skipped';
+            if (stage.status === 'success') target.textContent = stage.output_json ? t('teacher.pipeline.generated') : t('teacher.pipeline.done');
+            else if (stage.status === 'running') target.textContent = t('teacher.pipeline.waiting');
+            else if (stage.status === 'failed') target.textContent = stage.error_message ? stage.error_message.substring(0, 60) : t('teacher.pipeline.failed_label');
+            else if (stage.status === 'skipped') target.textContent = t('teacher.pipeline.skipped');
         }
     }
 }
@@ -2496,7 +2500,7 @@ function _setStageIO(stageElement, stage) {
 // S2.18: Retry pipeline with fallback provider
 async function retryPipelineWithFallback() {
     if (!currentScriptId) {
-        showNotification('No script to retry', 'error');
+        showNotification(t('teacher.notify.no_retry_script'), 'warning');
         return;
     }
     
@@ -2513,7 +2517,7 @@ async function retryPipelineWithFallback() {
     }
     
     if (!currentSpec) {
-        showNotification('No spec available to retry', 'error');
+        showNotification(t('teacher.notify.no_retry_spec'), 'warning');
         return;
     }
     
@@ -2522,7 +2526,7 @@ async function retryPipelineWithFallback() {
     
     try {
         showLoading(true);
-        if (runBtn) { runBtn.disabled = true; runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Retrying...'; }
+        if (runBtn) { runBtn.disabled = true; runBtn.innerHTML = '<i class="fas fa-sync fa-spin"></i> ' + t('teacher.notify.retrying'); }
         resetPipelineStageCards();
         
         var res = await fetch(API_BASE + '/scripts/' + currentScriptId + '/pipeline/run', {
@@ -2539,11 +2543,11 @@ async function retryPipelineWithFallback() {
         var result = await res.json().catch(function() { return {}; });
         
         if (res.status === 401) {
-            showNotification('Session expired, please login again', 'error');
+            showNotification(t('teacher.notify.session_expired'), 'error');
             return;
         }
         if (res.status === 403) {
-            showNotification('Current role has no permission', 'error');
+            showNotification(t('teacher.notify.no_permission'), 'error');
             return;
         }
         if (!res.ok) {
@@ -2555,26 +2559,26 @@ async function retryPipelineWithFallback() {
             currentPipelineRunId = result.run_id;
             try { sessionStorage.setItem('cscl_current_run_id', result.run_id); } catch (e) {}
             if (result.status === 'success' || result.status === 'completed') {
-                showNotification('Pipeline retry completed!', 'success');
+                showNotification(t('teacher.notify.retry_success'), 'success');
                 updateStageCardsFromResult(result);
                 var nextBtn = document.getElementById('wizardStep3Next');
                 if (nextBtn) nextBtn.disabled = false;
                 showLoading(false);
                 if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             } else {
-                showNotification('Pipeline retry started', 'success');
+                showNotification(t('teacher.notify.pipeline_started'), 'success');
                 _pipelinePollingActive = true;
                 pollPipelineStatus(result.run_id);
             }
         } else {
-            showNotification('Pipeline retry failed to start', 'error');
+            showNotification(t('teacher.notify.pipeline_failed_start'), 'error');
             resetPipelineStageCards();
             showLoading(false);
             if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
         }
     } catch (error) {
         console.error('Error retrying pipeline:', error);
-        showNotification('Failed to retry pipeline. Service may be unavailable.', 'error');
+        showNotification(t('teacher.notify.retry_failed'), 'error');
         resetPipelineStageCards();
         showLoading(false);
         if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
@@ -2588,7 +2592,7 @@ function simulatePipelineRun() {
     const runStage = () => {
         if (currentStage >= stages.length) {
             document.getElementById('wizardStep3Next').disabled = false;
-            showNotification('Pipeline simulation completed', 'success');
+            showNotification(t('teacher.pipeline.simulation_completed'), 'success');
             return;
         }
         
@@ -2596,15 +2600,15 @@ function simulatePipelineRun() {
         const stageElement = document.querySelector(`[data-stage="${stage}"]`);
         if (stageElement) {
             const statusEl = stageElement.querySelector('.stage-status');
-            statusEl.textContent = 'Running';
+            statusEl.textContent = t('teacher.pipeline.stage.running');
             statusEl.className = 'stage-status running';
             
             setTimeout(() => {
-                statusEl.textContent = 'Completed';
+                statusEl.textContent = t('teacher.pipeline.stage.completed');
                 statusEl.className = 'stage-status completed';
                 stageElement.querySelector('.stage-duration').textContent = '2.5s';
-                stageElement.querySelector('.input-summary span').textContent = (typeof t === 'function' ? t('teacher.pipeline.spec_validated') : 'Teaching plan validated') + '...';
-                stageElement.querySelector('.output-summary span').textContent = 'Stage output generated...';
+                stageElement.querySelector('.input-summary span').textContent = t('teacher.pipeline.spec_validated') + '...';
+                stageElement.querySelector('.output-summary span').textContent = t('teacher.pipeline.generated') + '...';
                 currentStage++;
                 runStage();
             }, 1500);
@@ -2617,7 +2621,7 @@ function simulatePipelineRun() {
 // Step 4: Finalize & Publish
 async function finalizeScript() {
     if (!currentScriptId) {
-        showNotification('No script to finalize', 'error');
+        showNotification(t('teacher.notify.finalize_failed'), 'error');
         return;
     }
     
@@ -2629,20 +2633,20 @@ async function finalizeScript() {
         });
         
         if (res.ok) {
-            showNotification('Script finalized successfully', 'success');
+            showNotification(t('teacher.notify.finalize_success'), 'success');
             document.getElementById('publishBtn').disabled = false;
         } else if (res.status === 401) {
-            showNotification('Please login first', 'error');
+            showNotification(t('teacher.notify.login_first'), 'error');
         } else if (res.status === 403) {
-            showNotification('Current role has no permission', 'error');
+            showNotification(t('teacher.notify.no_permission'), 'error');
         } else if (res.status === 404) {
-            showNotification('Script not found or not yet created', 'error');
+            showNotification(t('teacher.notify.script_not_found'), 'error');
         } else {
-            showNotification('Failed to finalize script', 'error');
+            showNotification(t('teacher.notify.finalize_failed'), 'error');
         }
     } catch (error) {
         console.error('Error finalizing script:', error);
-        showNotification('Failed to finalize script', 'error');
+        showNotification(t('teacher.notify.finalize_failed'), 'error');
     } finally {
         showLoading(false);
     }
@@ -2650,7 +2654,7 @@ async function finalizeScript() {
 
 async function publishScript() {
     if (!currentScriptId) {
-        showNotification('No script to publish', 'error');
+        showNotification(t('teacher.notify.publish_failed'), 'error');
         return;
     }
     try {
@@ -2660,20 +2664,20 @@ async function publishScript() {
         if (res.ok && (data.share_code || data.already_published)) {
             var studentUrl = data.student_url || (window.location.origin + '/student?code=' + (data.share_code || ''));
             showPublishShareModal(data.share_code || '', studentUrl);
-            if (data.already_published) showNotification('Activity already published; share link shown.', 'info');
-            else showNotification('Published successfully', 'success');
+            if (data.already_published) showNotification(t('teacher.notify.already_published'), 'info');
+            else showNotification(t('teacher.notify.publish_success'), 'success');
         } else if (res.status === 401) {
-            showNotification('Please login first', 'error');
+            showNotification(t('teacher.notify.login_first'), 'error');
         } else if (res.status === 403) {
-            showNotification('Current role has no permission', 'error');
+            showNotification(t('teacher.notify.no_permission'), 'error');
         } else if (res.status === 404) {
-            showNotification('Script not found', 'error');
+            showNotification(t('teacher.notify.script_not_found'), 'error');
         } else {
-            showNotification(data.error || 'Failed to publish', 'error');
+            showNotification(data.error || t('teacher.notify.publish_failed'), 'error');
         }
     } catch (e) {
         console.error('publishScript error', e);
-        showNotification('Failed to publish', 'error');
+        showNotification(t('teacher.notify.publish_failed'), 'error');
     } finally {
         showLoading(false);
     }
@@ -2698,20 +2702,20 @@ function closePublishShareModal() {
 function copyPublishShareCode() {
     var el = document.getElementById('publishShareCodeInput');
     if (el && el.value) {
-        navigator.clipboard.writeText(el.value).then(function() { showNotification('Invite code copied', 'success'); }).catch(function() { showNotification('Copy failed', 'error'); });
+        navigator.clipboard.writeText(el.value).then(function() { showNotification(t('teacher.notify.code_copied'), 'success'); }).catch(function() { showNotification(t('teacher.notify.copy_failed'), 'error'); });
     }
 }
 
 function copyPublishShareUrl() {
     var el = document.getElementById('publishShareUrlInput');
     if (el && el.value) {
-        navigator.clipboard.writeText(el.value).then(function() { showNotification('Link copied', 'success'); }).catch(function() { showNotification('Copy failed', 'error'); });
+        navigator.clipboard.writeText(el.value).then(function() { showNotification(t('teacher.notify.link_copied'), 'success'); }).catch(function() { showNotification(t('teacher.notify.copy_failed'), 'error'); });
     }
 }
 
 async function viewQualityReport() {
     if (!currentScriptId) {
-        showNotification('No script selected', 'error');
+        showNotification(t('teacher.notify.no_script_selected'), 'error');
         return;
     }
     
@@ -2721,7 +2725,7 @@ async function viewQualityReport() {
 
 async function exportScript(format) {
     if (!currentScriptId) {
-        showNotification('No script to export', 'error');
+        showNotification(t('teacher.notify.no_script_to_export'), 'error');
         return;
     }
     format = (format || 'json').toLowerCase();
@@ -2754,20 +2758,20 @@ async function exportScript(format) {
                 a.click();
                 URL.revokeObjectURL(url);
             }
-            showNotification('Export successful', 'success');
+            showNotification(t('teacher.notify.export_success'), 'success');
         } else if (res.status === 401) {
-            showNotification('Please login first', 'error');
+            showNotification(t('teacher.notify.login_first'), 'error');
         } else if (res.status === 403) {
-            showNotification('Current role has no permission', 'error');
+            showNotification(t('teacher.notify.no_permission'), 'error');
         } else if (res.status === 404) {
             var errBody = await res.json().catch(function() { return {}; });
-            showNotification(errBody.error || 'Script or materials not found. Run the pipeline first.', 'error');
+            showNotification(errBody.error || t('teacher.notify.export_not_found'), 'error');
         } else {
-            showNotification('Failed to export', 'error');
+            showNotification(t('teacher.notify.export_failed'), 'error');
         }
     } catch (error) {
         console.error('Error exporting script:', error);
-        showNotification('Failed to export', 'error');
+        showNotification(t('teacher.notify.export_failed'), 'error');
     }
 }
 
@@ -2798,11 +2802,11 @@ async function loadQualityReports() {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-chart-line"></i>
-                    <h4>No Script Projects</h4>
-                    <p>Create an activity in a course folder first to view quality reports.</p>
+                    <h4>${t('teacher.quality.no_scripts')}</h4>
+                    <p>${t('teacher.quality.no_scripts_desc')}</p>
                     <button class="btn-primary" onclick="switchView('folders')">
                         <i class="fas fa-folder"></i>
-                        Go to Course Folders
+                        ${t('teacher.quality.go_to_folders')}
                     </button>
                 </div>
             `;
@@ -2812,21 +2816,21 @@ async function loadQualityReports() {
         // Show list of scripts with quality report links
         container.innerHTML = `
             <div class="quality-reports-list">
-                <h3>Select a script to view quality report:</h3>
+                <h3>${t('teacher.quality.select_script')}</h3>
                 <div class="scripts-grid">
                     ${scripts.map(script => `
                         <div class="script-card" onclick="viewScriptQuality('${script.id}')">
                             <div class="script-card-header">
-                                <h4>${escapeHtml(script.title || 'Untitled')}</h4>
+                                <h4>${escapeHtml(script.title || t('teacher.scripts.untitled'))}</h4>
                                 <span class="status-badge ${script.status}">${script.status}</span>
                             </div>
                             <div class="script-card-content">
-                                <p><strong>Topic:</strong> ${escapeHtml(script.topic || 'N/A')}</p>
+                                <p><strong>${t('teacher.scripts.topic')}</strong> ${escapeHtml(script.topic || 'N/A')}</p>
                             </div>
                             <div class="script-card-footer">
                                 <button class="btn-primary" onclick="event.stopPropagation(); viewScriptQuality('${script.id}')">
                                     <i class="fas fa-chart-line"></i>
-                                    View Quality Report
+                                    ${t('teacher.quality.view_report')}
                                 </button>
                             </div>
                         </div>
@@ -2836,7 +2840,7 @@ async function loadQualityReports() {
         `;
     } catch (error) {
         console.error('Error loading quality reports:', error);
-        container.innerHTML = '<div class="empty-state"><p>Error loading quality reports</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>' + t('teacher.quality.error_loading') + '</p></div>';
     } finally {
         showLoading(false);
     }
@@ -2851,17 +2855,17 @@ async function loadQualityReportDetail(scriptId) {
         });
         
         if (res.status === 401) {
-            container.innerHTML = '<div class="empty-state"><p>Please login first</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.notify.login_first') + '</p></div>';
             return;
         }
         
         if (res.status === 403) {
-            container.innerHTML = '<div class="empty-state"><p>Current role has no permission</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.notify.no_permission') + '</p></div>';
             return;
         }
         
         if (res.status === 404) {
-            container.innerHTML = '<div class="empty-state"><p>Resource not found or not yet created</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.quality.not_found') + '</p></div>';
             return;
         }
         
@@ -2869,11 +2873,11 @@ async function loadQualityReportDetail(scriptId) {
             const data = await res.json();
             renderQualityReport(data.report);
         } else {
-            container.innerHTML = '<div class="empty-state"><p>Failed to load quality report</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.quality.load_failed') + '</p></div>';
         }
     } catch (error) {
         console.error('Error loading quality report:', error);
-        container.innerHTML = '<div class="empty-state"><p>Error loading quality report</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>' + t('teacher.quality.error_loading') + '</p></div>';
     } finally {
         showLoading(false);
     }
@@ -2881,69 +2885,119 @@ async function loadQualityReportDetail(scriptId) {
 
 function renderQualityReport(report) {
     const container = document.getElementById('qualityReportDetailContent');
-    var introText = typeof t === 'function' ? t('teacher.quality.intro') : 'This report scores your activity script across six dimensions. Use it to spot gaps and improve the design.';
-    var statusLabel = function(score, status) {
-        if (score === 0) return (typeof t === 'function' ? t('teacher.quality.not_assessed') : 'Not yet assessed');
-        return status.toUpperCase();
-    };
-    const dimensions = [
-        { key: 'coverage', label: (typeof t === 'function' ? t('teacher.quality.dim_coverage') : 'Coverage'), icon: 'fas fa-check-circle', desc: (typeof t === 'function' ? t('teacher.quality.dim_coverage_desc') : 'Learning objectives and rubric coverage'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_coverage_how') : 'Based on learning objective coverage (70%) and rubric coverage (30%)') },
-        { key: 'pedagogical_alignment', label: (typeof t === 'function' ? t('teacher.quality.dim_pedagogical') : 'Pedagogical Alignment'), icon: 'fas fa-graduation-cap', desc: (typeof t === 'function' ? t('teacher.quality.dim_pedagogical_desc') : 'Fit to task type and timing'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_pedagogical_how') : 'Based on task type alignment (40%), duration feasibility (30%), and role balance (30%)') },
-        { key: 'argumentation_support', label: (typeof t === 'function' ? t('teacher.quality.dim_argumentation') : 'Argumentation Support'), icon: 'fas fa-comments', desc: (typeof t === 'function' ? t('teacher.quality.dim_argumentation_desc') : 'Claims, evidence, rebuttals'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_argumentation_how') : 'Based on presence of claims, evidence, and counterarguments in scriptlets') },
-        { key: 'grounding', label: (typeof t === 'function' ? t('teacher.quality.dim_grounding') : 'Grounding'), icon: 'fas fa-anchor', desc: (typeof t === 'function' ? t('teacher.quality.dim_grounding_desc') : 'Evidence linked to materials'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_grounding_how') : 'Based on percentage of scriptlets with evidence bindings to uploaded materials') },
-        { key: 'safety_checks', label: (typeof t === 'function' ? t('teacher.quality.dim_safety') : 'Safety Checks'), icon: 'fas fa-shield-alt', desc: (typeof t === 'function' ? t('teacher.quality.dim_safety_desc') : 'Sensitive content and references'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_safety_how') : 'Based on detection of sensitive content and missing citations') },
-        { key: 'teacher_in_loop', label: (typeof t === 'function' ? t('teacher.quality.dim_teacher') : 'Teacher in Loop'), icon: 'fas fa-user-check', desc: (typeof t === 'function' ? t('teacher.quality.dim_teacher_desc') : 'Your edits and acceptances'), how_assessed: (typeof t === 'function' ? t('teacher.quality.dim_teacher_how') : 'Based on your acceptance rate (60%) and rejection rate (40%) of AI suggestions') }
+    const dims = report.dimensions || report;
+    const summary = report.summary || {};
+    const overallScore = summary.overall_score || 0;
+    const overallStatus = summary.status || (overallScore >= 70 ? 'good' : overallScore >= 50 ? 'needs_attention' : 'insufficient_data');
+
+    const primaryDims = [
+        { key: 'coverage', label: t('teacher.quality.dim_coverage'), icon: 'fas fa-check-circle', desc: t('teacher.quality.dim_coverage_desc') },
+        { key: 'pedagogical_alignment', label: t('teacher.quality.dim_pedagogical'), icon: 'fas fa-graduation-cap', desc: t('teacher.quality.dim_pedagogical_desc') },
+        { key: 'grounding', label: t('teacher.quality.dim_grounding'), icon: 'fas fa-anchor', desc: t('teacher.quality.dim_grounding_desc') }
     ];
-    
+    const advancedDims = [
+        { key: 'argumentation_support', label: t('teacher.quality.dim_argumentation'), icon: 'fas fa-comments', desc: t('teacher.quality.dim_argumentation_desc'), how: t('teacher.quality.dim_argumentation_how') },
+        { key: 'safety_checks', label: t('teacher.quality.dim_safety'), icon: 'fas fa-shield-alt', desc: t('teacher.quality.dim_safety_desc'), how: t('teacher.quality.dim_safety_how') },
+        { key: 'teacher_in_loop', label: t('teacher.quality.dim_teacher'), icon: 'fas fa-user-check', desc: t('teacher.quality.dim_teacher_desc'), how: t('teacher.quality.dim_teacher_how') }
+    ];
+
+    function getDimMetric(key) {
+        var m = dims[key] || {};
+        var rawEv = m.evidence || [];
+        var ev = Array.isArray(rawEv) ? rawEv : (typeof rawEv === 'object' ? Object.values(rawEv).flat() : [String(rawEv)]);
+        return { score: m.score || 0, status: getStatusFromScore(m.score || 0), evidence: ev, action_tip: m.action_tip || '' };
+    }
+
+    var publishLabel, publishClass;
+    if (overallScore >= 70) { publishLabel = t('teacher.quality.ready_to_publish'); publishClass = 'review-ready'; }
+    else if (overallScore >= 50) { publishLabel = t('teacher.quality.needs_revision'); publishClass = 'review-needs-revision'; }
+    else { publishLabel = t('teacher.quality.not_ready'); publishClass = 'review-not-ready'; }
+
+    var summaryText = summary.summary_text || '';
+    if (!summaryText) {
+        var issues = [];
+        primaryDims.forEach(function(d) { var m = getDimMetric(d.key); if (m.score < 70 && m.action_tip) issues.push(m.action_tip); });
+        summaryText = issues.length > 0 ? issues.join(' ') : t('teacher.quality.no_action');
+    }
+
+    var warnings = report.warnings || [];
+
     container.innerHTML = `
-        <p class="quality-report-intro">${escapeHtml(introText)}</p>
-        <div class="quality-report-grid">
-            ${dimensions.map(dim => {
-                const metric = report[dim.key] || {};
-                const score = metric.score || 0;
-                const status = getStatusFromScore(score);
-                const evidence = metric.evidence || [];
-                const actionTip = metric.action_tip || (typeof t === 'function' ? t('teacher.quality.no_action') : 'No specific action needed');
-                const statusText = statusLabel(score, status);
-                
-                var howAssessedText = dim.how_assessed || '';
-                return `
-                    <div class="quality-dimension-card ${status}">
-                        <div class="dimension-header">
-                            <div class="dimension-icon">
-                                <i class="${dim.icon}"></i>
-                            </div>
-                            <div class="dimension-info">
-                                <h4>${dim.label}</h4>
-                                <p class="dimension-desc">${escapeHtml(dim.desc)}</p>
-                                <div class="dimension-score">
-                                    <span class="score-value">${score}/100</span>
-                                    <span class="score-status ${status}">${statusText}</span>
-                                </div>
-                                <div class="dimension-how-assessed">
-                                    <span class="how-assessed-label"><i class="fas fa-info-circle"></i> ${typeof t === 'function' ? t('teacher.quality.how_assessed') : 'How assessed'}:</span>
-                                    <span class="how-assessed-text">${escapeHtml(howAssessedText)}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="dimension-body">
-                            <div class="dimension-evidence">
-                                <h5>${typeof t === 'function' ? t('teacher.quality.evidence') : 'Evidence'}:</h5>
-                                ${evidence.length > 0
-                                    ? `<ul>${evidence.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`
-                                    : '<p>' + (typeof t === 'function' ? t('teacher.quality.no_evidence') : 'No evidence available') + '</p>'
-                                }
-                            </div>
-                            <div class="dimension-action">
-                                <h5>${typeof t === 'function' ? t('teacher.quality.action_tip') : 'Action Tip'}:</h5>
-                                <p>${escapeHtml(actionTip)}</p>
-                            </div>
-                        </div>
+        <div class="review-page">
+            <div class="review-summary-card ${publishClass}">
+                <div class="review-summary-header">
+                    <div class="review-status-badge ${publishClass}">
+                        <i class="fas ${overallScore >= 70 ? 'fa-check-circle' : overallScore >= 50 ? 'fa-exclamation-triangle' : 'fa-times-circle'}"></i>
+                        ${publishLabel}
                     </div>
-                `;
-            }).join('')}
+                </div>
+                <div class="review-summary-text">
+                    <h4>${t('teacher.quality.review_summary_label')}</h4>
+                    <p>${escapeHtml(summaryText)}</p>
+                </div>
+            </div>
+
+            <div class="review-section">
+                <h3>${t('teacher.quality.key_checks')}</h3>
+                <div class="review-checks-grid">
+                    ${primaryDims.map(function(dim) {
+                        var m = getDimMetric(dim.key);
+                        return '<div class="review-check-card ' + m.status + '">' +
+                            '<div class="review-check-header">' +
+                                '<i class="' + dim.icon + '"></i>' +
+                                '<span class="review-check-label">' + dim.label + '</span>' +
+                                '<span class="review-check-score ' + m.status + '">' + m.score + '/100</span>' +
+                            '</div>' +
+                            '<p class="review-check-desc">' + escapeHtml(dim.desc) + '</p>' +
+                            (m.action_tip ? '<p class="review-check-tip"><i class="fas fa-lightbulb"></i> ' + escapeHtml(m.action_tip) + '</p>' : '') +
+                        '</div>';
+                    }).join('')}
+                </div>
+            </div>
+
+            ${warnings.length > 0 ? '<div class="review-section review-warnings"><h3><i class="fas fa-exclamation-triangle"></i> ' + t('teacher.quality.suggested_revisions') + '</h3><ul>' + warnings.map(function(w) { return '<li>' + escapeHtml(typeof w === 'string' ? w : w.message || '') + '</li>'; }).join('') + '</ul></div>' : ''}
+
+            <div class="review-section review-advanced">
+                <button class="btn-secondary review-advanced-toggle" onclick="toggleAdvancedReview()">
+                    <i class="fas fa-chevron-down"></i> ${t('teacher.quality.show_advanced')}
+                </button>
+                <div class="review-advanced-content" style="display:none;">
+                    <div class="quality-report-grid">
+                        ${[...primaryDims, ...advancedDims].map(function(dim) {
+                            var m = getDimMetric(dim.key);
+                            var howText = dim.how || '';
+                            return '<div class="quality-dimension-card ' + m.status + '">' +
+                                '<div class="dimension-header">' +
+                                    '<div class="dimension-icon"><i class="' + dim.icon + '"></i></div>' +
+                                    '<div class="dimension-info">' +
+                                        '<h4>' + dim.label + '</h4>' +
+                                        '<p class="dimension-desc">' + escapeHtml(dim.desc) + '</p>' +
+                                        '<div class="dimension-score"><span class="score-value">' + m.score + '/100</span><span class="score-status ' + m.status + '">' + (m.score === 0 ? t('teacher.quality.not_assessed') : m.status) + '</span></div>' +
+                                        (howText ? '<div class="dimension-how-assessed"><span class="how-assessed-label"><i class="fas fa-info-circle"></i> ' + t('teacher.quality.how_assessed') + ':</span><span class="how-assessed-text">' + escapeHtml(howText) + '</span></div>' : '') +
+                                    '</div>' +
+                                '</div>' +
+                                '<div class="dimension-body">' +
+                                    '<div class="dimension-evidence"><h5>' + t('teacher.quality.evidence') + ':</h5>' +
+                                        (m.evidence.length > 0 ? '<ul>' + m.evidence.map(function(e) { return '<li>' + escapeHtml(typeof e === 'string' ? e : JSON.stringify(e)) + '</li>'; }).join('') + '</ul>' : '<p>' + t('teacher.quality.no_evidence') + '</p>') +
+                                    '</div>' +
+                                    (m.action_tip ? '<div class="dimension-action"><h5>' + t('teacher.quality.action_tip') + ':</h5><p>' + escapeHtml(m.action_tip) + '</p></div>' : '') +
+                                '</div>' +
+                            '</div>';
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
         </div>
     `;
+}
+
+function toggleAdvancedReview() {
+    var content = document.querySelector('.review-advanced-content');
+    var btn = document.querySelector('.review-advanced-toggle');
+    if (!content || !btn) return;
+    var isHidden = content.style.display === 'none';
+    content.style.display = isHidden ? 'block' : 'none';
+    btn.innerHTML = '<i class="fas fa-chevron-' + (isHidden ? 'up' : 'down') + '"></i> ' + (isHidden ? t('teacher.quality.hide_advanced') : t('teacher.quality.show_advanced'));
 }
 
 function getStatusFromScore(score) {
@@ -2985,7 +3039,7 @@ async function loadPipelineRuns() {
         }
         
         if (allRuns.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>No pipeline runs found</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.pipeline.no_runs') + '</p></div>';
         } else {
             container.innerHTML = allRuns.map(run => `
                 <div class="pipeline-run-card" onclick="viewPipelineRun('${run.run_id}')">
@@ -2994,15 +3048,15 @@ async function loadPipelineRuns() {
                         <span class="status-badge ${run.status}">${run.status}</span>
                     </div>
                     <div class="run-content">
-                        <p><strong>Script:</strong> ${run.script_id.substring(0, 8)}...</p>
-                        <p><strong>Created:</strong> ${formatTime(run.created_at)}</p>
+                        <p><strong>ID:</strong> ${run.script_id.substring(0, 8)}...</p>
+                        <p><strong>${t('teacher.scripts.updated')}</strong> ${formatTime(run.created_at)}</p>
                     </div>
                 </div>
             `).join('');
         }
     } catch (error) {
         console.error('Error loading pipeline runs:', error);
-        container.innerHTML = '<div class="empty-state"><p>Error loading pipeline runs</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>' + t('teacher.pipeline.load_runs_error') + '</p></div>';
     } finally {
         showLoading(false);
     }
@@ -3057,7 +3111,7 @@ function escapeHtml(text) {
 }
 
 function formatTime(timeString) {
-    if (!timeString) return 'N/A';
+    if (!timeString) return '-';
     const date = new Date(timeString);
     return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
@@ -3105,7 +3159,7 @@ async function editScript(scriptId) {
         showNotification(typeof t === 'function' ? t('teacher.scripts.edit_ready') : 'Edit the form and run generation again.', 'success');
     } catch (e) {
         console.error('editScript error', e);
-        showNotification('Failed to load script', 'error');
+        showNotification(t('teacher.notify.load_script_failed'), 'error');
     } finally {
         showLoading(false);
     }
@@ -3117,7 +3171,7 @@ async function duplicateScript(scriptId) {
         showLoading(true);
         var res = await fetch(API_BASE + '/scripts/' + scriptId, { credentials: 'include' });
         if (!res.ok) {
-            showNotification('Failed to load script', 'error');
+            showNotification(t('teacher.notify.load_script_failed'), 'error');
             return;
         }
         var data = await res.json();
@@ -3147,7 +3201,7 @@ async function duplicateScript(scriptId) {
         loadScripts();
     } catch (e) {
         console.error('duplicateScript error', e);
-        showNotification('Failed to duplicate script', 'error');
+        showNotification(t('teacher.notify.duplicate_failed'), 'error');
     } finally {
         showLoading(false);
     }
@@ -3235,26 +3289,26 @@ async function validateStandaloneSpec() {
         if (res.status === 422 || !result.valid) {
             resultDiv.className = 'validation-result error';
             resultDiv.innerHTML = `
-                <h4><i class="fas fa-exclamation-circle"></i> Validation Failed</h4>
+                <h4><i class="fas fa-exclamation-circle"></i> ${t('teacher.validation.failed_title')}</h4>
                 <ul>
                     ${result.issues.map(issue => `<li>${escapeHtml(issue)}</li>`).join('')}
                 </ul>
-                <p><strong>Action:</strong> Please fix the issues above and try again.</p>
+                <p><strong>${t('teacher.validation.action_label')}</strong> ${t('teacher.validation.fix_issues')}</p>
             `;
         } else if (res.status === 401) {
             resultDiv.className = 'validation-result error';
-            resultDiv.innerHTML = '<p>Please login first</p>';
+            resultDiv.innerHTML = '<p>' + t('teacher.notify.login_first') + '</p>';
         } else if (res.status === 403) {
             resultDiv.className = 'validation-result error';
-            resultDiv.innerHTML = '<p>Current role has no permission</p>';
+            resultDiv.innerHTML = '<p>' + t('teacher.notify.no_permission') + '</p>';
         } else {
             resultDiv.className = 'validation-result success';
             resultDiv.innerHTML = `
-                <h4><i class="fas fa-check-circle"></i> Validation Successful</h4>
-                <p>${typeof t === 'function' ? t('teacher.spec.ready') : 'Teaching plan is complete and ready for pipeline generation.'}</p>
+                <h4><i class="fas fa-check-circle"></i> ${t('teacher.validation.success_title')}</h4>
+                <p>${t('teacher.spec.ready')}</p>
                 <button class="btn-primary" onclick="createNewScriptProject()" style="margin-top: 1rem;">
                     <i class="fas fa-arrow-right"></i>
-                    Create Script Project
+                    ${t('teacher.validation.create_script')}
                 </button>
             `;
             showNotification(typeof t === 'function' ? t('teacher.spec.validated') : 'Teaching plan validated successfully', 'success');
@@ -3264,7 +3318,7 @@ async function validateStandaloneSpec() {
         const resultDiv = document.getElementById('standaloneValidationResult');
         resultDiv.classList.remove('hidden');
         resultDiv.className = 'validation-result error';
-        resultDiv.innerHTML = '<p>Service temporarily unavailable. You can continue with mock mode.</p>';
+        resultDiv.innerHTML = '<p>' + t('teacher.validation.service_unavailable') + '</p>';
     } finally {
         showLoading(false);
     }
@@ -3284,12 +3338,12 @@ async function loadDocuments() {
         ]);
         
         if (docsRes.status === 401) {
-            container.innerHTML = '<div class="empty-state"><p>请先登录</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.notify.login_first') + '</p></div>';
             return;
         }
         
         if (docsRes.status === 403) {
-            container.innerHTML = '<div class="empty-state"><p>当前角色无权限</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.notify.no_permission') + '</p></div>';
             return;
         }
         
@@ -3313,11 +3367,11 @@ async function loadDocuments() {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-book"></i>
-                        <h4>暂无课程文档</h4>
-                        <p>上传课程文档以启用检索增强生成功能。</p>
+                        <h4>${t('teacher.doc.no_docs')}</h4>
+                        <p>${t('teacher.doc.no_docs_desc')}</p>
                         <button class="btn-primary" onclick="uploadDocument()">
                             <i class="fas fa-upload"></i>
-                            上传第一份文档
+                            ${t('teacher.doc.upload_first')}
                         </button>
                     </div>
                 `;
@@ -3341,15 +3395,15 @@ async function loadDocuments() {
                 function renderDocCard(doc) {
                     return '<div class="document-card" style="margin-bottom: 0.75rem; border: 1px solid #e9ecef; border-radius: 6px; padding: 0.75rem;">' +
                         '<div class="document-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">' +
-                            '<h4 style="margin: 0; font-size: 0.95rem;">' + escapeHtml(doc.title || '未命名') + '</h4>' +
+                            '<h4 style="margin: 0; font-size: 0.95rem;">' + escapeHtml(doc.title || t('teacher.doc.untitled')) + '</h4>' +
                             '<span class="document-type" style="font-size: 0.75rem; color: #6c757d; background: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 4px;">' + (doc.mime_type || 'text/plain') + '</span>' +
                         '</div>' +
                         '<div class="document-content" style="font-size: 0.85rem; color: #6c757d; margin-bottom: 0.5rem;">' +
                             '<span><i class="fas fa-clock"></i> ' + uploadedLabel + ': ' + formatTime(doc.created_at) + '</span>' +
                         '</div>' +
                         '<div class="document-actions" style="display: flex; gap: 0.5rem;">' +
-                            '<button class="btn-primary btn-sm" onclick="applyPrefillFromDoc(\'' + doc.id + '\')" title="使用此文档建议表单内容" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">' +
-                                '<i class="fas fa-magic"></i> ' + (typeof t === 'function' ? t('teacher.doc.prefill_btn') : '填充') +
+                            '<button class="btn-primary btn-sm" onclick="applyPrefillFromDoc(\'' + doc.id + '\')" title="' + t('teacher.doc.prefill_title') + '" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">' +
+                                '<i class="fas fa-magic"></i> ' + t('teacher.doc.prefill_btn') +
                             '</button>' +
                             '<button class="btn-secondary btn-sm" onclick="deleteDocument(\'' + doc.id + '\')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">' +
                                 '<i class="fas fa-trash"></i>' +
@@ -3362,7 +3416,7 @@ async function loadDocuments() {
                 if (courseDocs.length > 0) {
                     html += '<div class="docs-section" style="margin-bottom: 1.5rem;">';
                     html += '<h3 style="font-size: 1.1rem; color: #495057; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid #dee2e6;">' +
-                        '<i class="fas fa-graduation-cap"></i> 课程级材料</h3>';
+                        '<i class="fas fa-graduation-cap"></i> ' + t('teacher.doc.course_materials') + '</h3>';
                     html += '<div class="docs-list">';
                     courseDocs.forEach(function(doc) {
                         html += renderDocCard(doc);
@@ -3373,7 +3427,7 @@ async function loadDocuments() {
                 // 2. Activity/Folder documents sections
                 Object.keys(groupedDocs).forEach(function(folderId) {
                     var folder = folderMap[folderId];
-                    var folderName = folder ? folder.name : '活动 ' + folderId.substring(0, 8);
+                    var folderName = folder ? folder.name : t('teacher.doc.activity_prefix') + ' ' + folderId.substring(0, 8);
                     var folderDocs = groupedDocs[folderId];
                     
                     html += '<div class="docs-section" style="margin-bottom: 1.5rem;">';
@@ -3386,14 +3440,14 @@ async function loadDocuments() {
                     html += '</div></div>';
                 });
                 
-                container.innerHTML = html || '<div class="empty-state"><p>未找到文档</p></div>';
+                container.innerHTML = html || '<div class="empty-state"><p>' + t('teacher.doc.no_docs') + '</p></div>';
             }
         } else {
-            container.innerHTML = '<div class="empty-state"><p>加载文档失败</p></div>';
+            container.innerHTML = '<div class="empty-state"><p>' + t('teacher.notify.load_failed') + '</p></div>';
         }
     } catch (error) {
         console.error('Error loading documents:', error);
-        container.innerHTML = '<div class="empty-state"><p>加载文档时出错</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>' + t('teacher.quality.error_loading') + '</p></div>';
     } finally {
         showLoading(false);
     }
@@ -3406,7 +3460,7 @@ async function applyPrefillFromDoc(docId) {
         const res = await fetch(`${API_BASE}/courses/${courseId}/docs/${docId}/prefill`, { credentials: 'include' });
         const data = await res.json();
         if (!res.ok) {
-            showNotification(data.message || '获取建议失败', 'error');
+            showNotification(data.message || t('teacher.notify.prefill_failed'), 'error');
             return;
         }
         const sug = data.suggestions || {};
@@ -3429,7 +3483,7 @@ async function applyPrefillFromDoc(docId) {
         if (typeof goToStep === 'function') goToStep(2);
     } catch (e) {
         console.error('Prefill error:', e);
-        showNotification('无法加载建议，请重试。', 'error');
+        showNotification(t('teacher.notify.prefill_load_error'), 'error');
     } finally {
         showLoading(false);
     }
@@ -3468,7 +3522,7 @@ function uploadDocument() {
                     showNotification(typeof t === 'function' ? t('teacher.pdf.parse_failed_binary') : '解析失败：检测到二进制PDF内容。请重新上传或使用其他文件。', 'error');
                     return;
                 }
-                showNotification('文档上传成功', 'success');
+                showNotification(t('teacher.notify.doc_upload_success'), 'success');
                 loadDocuments(); // Will display extracted_text_preview or empty state
             } else {
                 var code = result.code || '';
@@ -3491,7 +3545,7 @@ function uploadDocument() {
 }
 
 async function deleteDocument(docId) {
-    if (!confirm('确定要删除此文档吗？')) {
+    if (!confirm(t('teacher.notify.doc_delete_confirm'))) {
         return;
     }
     
@@ -3504,15 +3558,15 @@ async function deleteDocument(docId) {
         });
         
         if (res.ok) {
-            showNotification('文档删除成功', 'success');
+            showNotification(t('teacher.notify.doc_deleted'), 'success');
             loadDocuments();
         } else {
             const result = await res.json();
-            showNotification(result.error || '删除失败', 'error');
+            showNotification(result.error || t('teacher.notify.doc_delete_failed'), 'error');
         }
     } catch (error) {
         console.error('Error deleting document:', error);
-        showNotification('删除失败', 'error');
+        showNotification(t('teacher.notify.doc_delete_failed'), 'error');
     } finally {
         showLoading(false);
     }
@@ -3533,11 +3587,11 @@ async function loadDecisionTimeline() {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-history"></i>
-                    <h4>No Decisions Yet</h4>
-                    <p>Decision timeline will appear here after you create and modify activities in course folders.</p>
+                    <h4>${t('teacher.decisions.no_decisions')}</h4>
+                    <p>${t('teacher.decisions.no_decisions_desc')}</p>
                     <button class="btn-primary" onclick="switchView('folders')">
                         <i class="fas fa-folder"></i>
-                        Go to Course Folders
+                        ${t('teacher.decisions.go_to_folders')}
                     </button>
                 </div>
             `;
@@ -3558,20 +3612,20 @@ async function loadDecisionTimeline() {
                 container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-history"></i>
-                        <h4>No Decisions Yet</h4>
-                        <p>Decision timeline will appear here after you create and modify script projects.</p>
+                        <h4>${t('teacher.decisions.no_decisions')}</h4>
+                        <p>${t('teacher.decisions.no_decisions_desc')}</p>
                     </div>
                 `;
             } else {
                 container.innerHTML = decisions.map(decision => `
                     <div class="decision-item">
                         <div class="decision-header">
-                            <h4>${escapeHtml(decision.decision_type || 'Unknown')}</h4>
+                            <h4>${escapeHtml(decision.decision_type || t('teacher.decisions.unknown'))}</h4>
                             <span class="decision-time">${formatTime(decision.created_at)}</span>
                         </div>
                         <div class="decision-content">
-                            <p><strong>Target:</strong> ${escapeHtml(decision.target_type || 'N/A')}</p>
-                            ${decision.reason ? `<p><strong>Reason:</strong> ${escapeHtml(decision.reason)}</p>` : ''}
+                            <p><strong>${t('teacher.decisions.target')}</strong> ${escapeHtml(decision.target_type || 'N/A')}</p>
+                            ${decision.reason ? `<p><strong>${t('teacher.decisions.reason')}</strong> ${escapeHtml(decision.reason)}</p>` : ''}
                         </div>
                     </div>
                 `).join('');
@@ -3580,8 +3634,8 @@ async function loadDecisionTimeline() {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-history"></i>
-                    <h4>No Decisions Yet</h4>
-                    <p>Decision timeline will appear here after you create and modify script projects.</p>
+                    <h4>${t('teacher.decisions.no_decisions')}</h4>
+                    <p>${t('teacher.decisions.no_decisions_desc')}</p>
                 </div>
             `;
         } else {
@@ -3606,11 +3660,11 @@ async function loadPublishView() {
             container.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-rocket"></i>
-                    <h4>No Scripts Ready to Publish</h4>
-                    <p>Finalize an activity to make it available for publishing.</p>
+                    <h4>${t('teacher.publish.no_scripts')}</h4>
+                    <p>${t('teacher.publish.no_scripts_desc')}</p>
                     <button class="btn-primary" onclick="switchView('folders')">
                         <i class="fas fa-folder"></i>
-                        Go to Course Folders
+                        ${t('teacher.quality.go_to_folders')}
                     </button>
                 </div>
             `;
@@ -3619,28 +3673,28 @@ async function loadPublishView() {
                 <div class="script-card">
                     <div class="script-card-header">
                         <h4>${escapeHtml(script.title || 'Untitled')}</h4>
-                        <span class="status-badge final">Ready</span>
+                        <span class="status-badge final">${t('teacher.publish.ready')}</span>
                     </div>
                     <div class="script-card-content">
-                        <p><strong>Topic:</strong> ${escapeHtml(script.topic || 'N/A')}</p>
+                        <p><strong>${t('teacher.publish.topic')}</strong> ${escapeHtml(script.topic || 'N/A')}</p>
                     </div>
                     <div class="script-card-footer">
                         <button class="btn-primary" onclick="publishScriptById('${script.id}')">
                             <i class="fas fa-rocket"></i>
-                            Publish Activity
+                            ${t('teacher.publish.publish_btn')}
                         </button>
                     </div>
                 </div>
             `).join('');
         }
     } catch (error) {
-        container.innerHTML = '<div class="empty-state"><p>Error loading publish view</p></div>';
+        container.innerHTML = '<div class="empty-state"><p>' + t('teacher.publish.error_loading') + '</p></div>';
     }
 }
 
 async function publishScriptById(scriptId) {
     if (!scriptId) {
-        showNotification('No script to publish', 'error');
+        showNotification(t('teacher.notify.publish_failed'), 'error');
         return;
     }
     try {
@@ -3650,20 +3704,20 @@ async function publishScriptById(scriptId) {
         if (res.ok && (data.share_code || data.already_published)) {
             const studentUrl = data.student_url || (window.location.origin + '/student?code=' + (data.share_code || ''));
             showPublishShareModal(data.share_code || '', studentUrl);
-            if (data.already_published) showNotification('Activity already published; share link shown.', 'info');
-            else showNotification('Published successfully', 'success');
+            if (data.already_published) showNotification(t('teacher.notify.already_published'), 'info');
+            else showNotification(t('teacher.notify.publish_success'), 'success');
         } else if (res.status === 401) {
-            showNotification('Please login first', 'error');
+            showNotification(t('teacher.notify.login_first'), 'error');
         } else if (res.status === 403) {
-            showNotification('Current role has no permission', 'error');
+            showNotification(t('teacher.notify.no_permission'), 'error');
         } else if (res.status === 404) {
-            showNotification('Script not found', 'error');
+            showNotification(t('teacher.notify.script_not_found'), 'error');
         } else {
-            showNotification(data.error || 'Failed to publish', 'error');
+            showNotification(data.error || t('teacher.notify.publish_failed'), 'error');
         }
     } catch (e) {
         console.error('publishScriptById error', e);
-        showNotification('Failed to publish', 'error');
+        showNotification(t('teacher.notify.publish_failed'), 'error');
     } finally {
         showLoading(false);
     }
@@ -3691,7 +3745,7 @@ function loadAIEnhancementSettings() {
         imageToggle.addEventListener('change', function() {
             aiEnhancementSettings.image_generation = this.checked;
             saveAIEnhancementSettings();
-            showNotification(this.checked ? '图像生成功能已启用' : '图像生成功能已禁用', 'info');
+            showNotification(this.checked ? t('teacher.notify.image_gen_enabled') : t('teacher.notify.image_gen_disabled'), 'info');
         });
     }
     
@@ -3701,7 +3755,7 @@ function loadAIEnhancementSettings() {
         webToggle.addEventListener('change', function() {
             aiEnhancementSettings.web_retrieval = this.checked;
             saveAIEnhancementSettings();
-            showNotification(this.checked ? '联网搜索功能已启用' : '联网搜索功能已禁用', 'info');
+            showNotification(this.checked ? t('teacher.notify.web_retrieval_enabled') : t('teacher.notify.web_retrieval_disabled'), 'info');
         });
     }
 }

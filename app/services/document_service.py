@@ -964,7 +964,7 @@ class DocumentService:
         result = []
         for doc in documents:
             doc_dict = doc.to_dict(include_file_size=True)
-            # Add chunks_count
+            doc_dict['filename'] = doc.title
             doc_dict['chunks_count'] = len(doc.chunks)
             # Extract preview from chunks (only extracted text, never raw bytes)
             # S2.13: skip any chunk that looks like PDF binary (e.g. legacy bad data)

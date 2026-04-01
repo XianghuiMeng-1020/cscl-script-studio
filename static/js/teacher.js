@@ -2118,8 +2118,8 @@ async function runPipeline() {
                 body: JSON.stringify({
                     title: (flat && flat.topic) ? flat.topic : 'New Script',
                     topic: (flat && flat.topic) ? flat.topic : '',
-                    course_id: wizardFolderId || DEFAULT_COURSE_ID,
-                    folder_id: wizardFolderId,
+                    course_id: DEFAULT_COURSE_ID,
+                    folder_id: wizardFolderId || null,
                     learning_objectives: (flat && flat.learning_objectives) ? flat.learning_objectives : [],
                     task_type: (flat && flat.task_type) ? flat.task_type : 'structured_debate',
                     duration_minutes: (flat && flat.duration_minutes) ? flat.duration_minutes : 90

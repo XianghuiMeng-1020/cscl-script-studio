@@ -1723,6 +1723,7 @@ def run_pipeline(script_id):
     
     # B2: Preflight – do not start run if course_id, docs, or provider checks fail
     course_id = script.course_id or (normalized_spec.get('course_context') or {}).get('course_id') or ''
+    folder_id = getattr(script, 'folder_id', None) or (normalized_spec.get('course_context') or {}).get('folder_id')
     if not course_id:
         return jsonify({
             'error': 'Course ID is required for pipeline run. Set course in spec or script.',
@@ -1730,11 +1731,31 @@ def run_pipeline(script_id):
             'details': {'course_id': ''}
         }), 400
     has_docs = CSCLCourseDocument.query.filter_by(course_id=course_id).first() is not None
+    if not has_docs and course_id != 'default-course':
+        has_docs = CSCLCourseDocument.query.filter_by(course_id='default-course').first() is not None
+        if has_docs:
+            script.course_id = 'default-course'
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+            course_id = 'default-course'
+    if not has_docs and folder_id:
+        has_docs = CSCLCourseDocument.query.filter_by(folder_id=folder_id).first() is not None
+        if has_docs:
+            doc = CSCLCourseDocument.query.filter_by(folder_id=folder_id).first()
+            if doc and doc.course_id:
+                script.course_id = doc.course_id
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                course_id = doc.course_id
     if not has_docs:
         return jsonify({
             'error': 'No course documents for this course. Upload documents in Course Documents first.',
             'code': 'PREFLIGHT_NO_COURSE_DOCS',
-            'details': {'course_id': course_id}
+            'details': {'course_id': course_id, 'folder_id': folder_id}
         }), 400
     provider_status = select_runnable_provider()
     if not provider_status.get('ready'):

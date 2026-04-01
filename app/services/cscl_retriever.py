@@ -107,8 +107,11 @@ class CSCLRetriever:
             - relevance_score
             - citation_hint
         """
-        # Get all chunks for the course
+        # Get all chunks for the course (with fallback to default-course)
         documents = CSCLCourseDocument.query.filter_by(course_id=course_id).all()
+        
+        if not documents and course_id != 'default-course':
+            documents = CSCLCourseDocument.query.filter_by(course_id='default-course').all()
         
         if not documents:
             return []

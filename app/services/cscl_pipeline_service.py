@@ -162,12 +162,12 @@ class CSCLPipelineService:
         if not self.retriever:
             return []
         
-        # Get course_id from script
+        # Get course_id from script (fallback to default-course for compatibility)
         script = db.session.get(CSCLScript, script_id)
         course_id = script.course_id if script else spec.get('course_context', {}).get('course_id')
         
         if not course_id:
-            return []
+            course_id = 'default-course'
         
         # Construct query
         query = self.retriever.construct_query(spec, stage_name)

@@ -725,11 +725,16 @@ class CSCLPipelineService:
                 'error': None
             }
         except Exception as e:
-            pipeline_run.status = 'failed'
-            pipeline_run.error_message = str(e)
-            pipeline_run.finished_at = datetime.utcnow()
             db.session.rollback()
-            db.session.commit()
+            try:
+                run_obj = CSCLPipelineRun.query.filter_by(run_id=run_id).first()
+                if run_obj:
+                    run_obj.status = 'failed'
+                    run_obj.error_message = str(e)[:1000]
+                    run_obj.finished_at = datetime.now(timezone.utc)
+                    db.session.commit()
+            except Exception:
+                db.session.rollback()
             return {
                 'run_id': run_id,
                 'status': 'failed',

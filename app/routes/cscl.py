@@ -1840,9 +1840,18 @@ def run_pipeline(script_id):
                     options=_options_copy,
                     run_id_override=bg_run_id,
                 )
-            except Exception:
+            except Exception as exc:
                 import logging
                 logging.getLogger(__name__).exception("Background pipeline failed")
+                try:
+                    run_obj = CSCLPipelineRun.query.filter_by(run_id=bg_run_id).first()
+                    if run_obj and run_obj.status == 'running':
+                        run_obj.status = 'failed'
+                        run_obj.error_message = f'Background thread error: {str(exc)[:500]}'
+                        run_obj.finished_at = datetime.utcnow()
+                        db.session.commit()
+                except Exception:
+                    db.session.rollback()
 
     t = threading.Thread(target=_run_bg, daemon=True)
     t.start()
@@ -1872,6 +1881,17 @@ def get_pipeline_run(run_id):
     if not script or script.created_by != current_user.id:
         return jsonify({'error': 'Access denied'}), 403
     
+    if pipeline_run.status == 'running' and pipeline_run.created_at:
+        age_minutes = (datetime.utcnow() - pipeline_run.created_at).total_seconds() / 60
+        if age_minutes > 10:
+            pipeline_run.status = 'failed'
+            pipeline_run.error_message = 'Pipeline timed out (exceeded 10 minutes). Please retry.'
+            pipeline_run.finished_at = datetime.utcnow()
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+    
     # Get stage runs
     stage_runs = CSCLPipelineStageRun.query.filter_by(run_id=run_id).order_by(
         CSCLPipelineStageRun.created_at
@@ -1895,6 +1915,18 @@ def get_script_pipeline_runs(script_id):
     runs = CSCLPipelineRun.query.filter_by(script_id=script_id).order_by(
         CSCLPipelineRun.created_at.desc()
     ).all()
+    
+    for run in runs:
+        if run.status == 'running' and run.created_at:
+            age_minutes = (datetime.utcnow() - run.created_at).total_seconds() / 60
+            if age_minutes > 10:
+                run.status = 'failed'
+                run.error_message = 'Pipeline timed out (exceeded 10 minutes). Please retry.'
+                run.finished_at = datetime.utcnow()
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
     
     return jsonify({
         'success': True,

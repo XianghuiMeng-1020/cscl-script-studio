@@ -1832,6 +1832,98 @@
     margin-top: 0.25rem;
 }
 
+/* Pipeline Progress Bar */
+.pipeline-progress-bar {
+    margin-bottom: 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+}
+.pipeline-progress-bar.hidden { display: none; }
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+}
+.progress-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+.progress-timer {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+}
+.progress-track {
+    display: flex;
+    gap: 3px;
+    height: 28px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-secondary);
+}
+.progress-segment {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-secondary);
+}
+.progress-segment:first-child { border-radius: 8px 0 0 8px; }
+.progress-segment:last-child { border-radius: 0 8px 8px 0; }
+.seg-fill {
+    position: absolute;
+    inset: 0;
+    width: 0%;
+    transition: width 0.4s ease, background 0.3s ease;
+}
+.progress-segment.done .seg-fill {
+    width: 100%;
+    background: #22c55e;
+}
+.progress-segment.active .seg-fill {
+    width: 100%;
+    background: linear-gradient(90deg, #3b82f6 25%, #60a5fa 50%, #3b82f6 75%);
+    background-size: 200% 100%;
+    animation: progressShimmer 1.5s linear infinite;
+}
+@keyframes progressShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+.progress-segment.failed .seg-fill {
+    width: 100%;
+    background: #ef4444;
+}
+.seg-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    z-index: 1;
+    pointer-events: none;
+}
+.progress-segment.done .seg-label,
+.progress-segment.active .seg-label {
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.progress-hint {
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    text-align: center;
+}
+
 /* Pipeline Visualization */
 .pipeline-visualization {
     margin: 2rem 0;

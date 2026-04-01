@@ -653,6 +653,31 @@
                                 <p><strong data-i18n="common.why">为什么要做：</strong><span data-i18n="teacher.wizard.step3.why">流程包含 4 个阶段：规划器（结构）、材料（内容）、审查器（审查）、优化器（润色）。</span></p>
                             </div>
                             <div id="pipelineVisualization" class="pipeline-visualization">
+                                <div id="pipelineProgressBar" class="pipeline-progress-bar hidden">
+                                    <div class="progress-header">
+                                        <span id="pipelineProgressLabel" class="progress-label">Preparing...</span>
+                                        <span id="pipelineElapsedTime" class="progress-timer">0:00</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-segment" data-seg="planner">
+                                            <div class="seg-fill"></div>
+                                            <span class="seg-label">Plan</span>
+                                        </div>
+                                        <div class="progress-segment" data-seg="material">
+                                            <div class="seg-fill"></div>
+                                            <span class="seg-label">Material</span>
+                                        </div>
+                                        <div class="progress-segment" data-seg="critic">
+                                            <div class="seg-fill"></div>
+                                            <span class="seg-label">Critic</span>
+                                        </div>
+                                        <div class="progress-segment" data-seg="refiner">
+                                            <div class="seg-fill"></div>
+                                            <span class="seg-label">Refiner</span>
+                                        </div>
+                                    </div>
+                                    <div class="progress-hint" id="pipelineProgressHint">Estimated ~3-4 minutes total</div>
+                                </div>
                                 <div class="pipeline-stages">
                                     <div class="pipeline-stage" data-stage="planner">
                                         <div class="stage-header">

@@ -540,7 +540,8 @@ IMPORTANT:
 - Focus on ONE concrete group task with 3-6 clear steps. Every step must tell students exactly what to do.
 - Teaching stage: """ + str(teaching_stage) + """. Collaboration purpose: """ + str(collaboration_purpose) + """. Design for groups of """ + str(group_size) + """ students.
 - If the payload includes "retrieved_chunks", use that content to ground the activity in the course material.
-- If the payload includes "initial_idea", the teacher has given a free-text idea, preference, or concern for this activity; use it to guide the design (e.g. compare two examples, keep it simple, fit 15 minutes)."""
+- If the payload includes "initial_idea", the teacher has given a free-text idea, preference, or concern for this activity; use it to guide the design (e.g. compare two examples, keep it simple, fit 15 minutes).
+- CRITICAL: All activities must be SELF-CONTAINED. Do NOT reference external images, charts, figures, or visual materials that are not included in the text output. If the activity involves data visualization or chart analysis, embed the data as a text table or describe the chart in enough detail that students can work with it from the text alone."""
             messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Design one CSCL group activity from this specification. Return JSON with key 'activity' only.\n\n{user_text}"}
@@ -700,7 +701,10 @@ IMPORTANT:
             "teacher_guide (object with: overview, alignment_with_objectives, rationale, implementation_steps, monitoring_points, expected_difficulties, debrief_questions, adaptation_suggestions). "
             "Each scene must include: order_index, scene_type, purpose, transition_rule, scriptlets. "
             "Each scriptlet: prompt_text, prompt_type, role_id (nullable). "
-            "student_worksheet, student_slides, and teacher_guide must be ready for teachers and students to use directly."
+            "student_worksheet, student_slides, and teacher_guide must be ready for teachers and students to use directly. "
+            "CRITICAL: All materials must be SELF-CONTAINED. Do NOT reference external images, charts, figures, or visual materials. "
+            "If the activity involves data visualization or chart analysis, embed sample data as a text table or ASCII representation, "
+            "or describe the chart in enough detail that students can work with it from the text alone."
         )
         r = self._chat_json(system_prompt, input_payload)
         if not r['success']:
@@ -800,7 +804,7 @@ class QwenProvider(BaseLLMProvider):
         try:
             user_text = json.dumps(input_payload, ensure_ascii=False)
             messages = [
-                {"role": "system", "content": "You are a CSCL script planner. Return ONLY valid JSON."},
+                {"role": "system", "content": "You are a CSCL script planner. Return ONLY valid JSON.\n\nCRITICAL: All activities must be SELF-CONTAINED. Do NOT reference external images, charts, figures, or visual materials that are not included in the text output. If the activity involves data visualization or chart analysis, you MUST embed the data as a text table, ASCII chart, or describe the chart in enough detail that students can work with it from the text alone. Never say 'study the assigned chart' or 'look at Figure X' — instead, provide the actual data or detailed description inline."},
                 {"role": "user", "content": f"Generate a script plan JSON from this payload: {user_text}"}
             ]
 
@@ -930,7 +934,10 @@ class QwenProvider(BaseLLMProvider):
             "teacher_guide (object with: overview, alignment_with_objectives, rationale, implementation_steps, monitoring_points, expected_difficulties, debrief_questions, adaptation_suggestions). "
             "Each scene must include: order_index, scene_type, purpose, transition_rule, scriptlets. "
             "Each scriptlet: prompt_text, prompt_type, role_id (nullable). "
-            "student_worksheet, student_slides, and teacher_guide must be ready for teachers and students to use directly."
+            "student_worksheet, student_slides, and teacher_guide must be ready for teachers and students to use directly. "
+            "CRITICAL: All materials must be SELF-CONTAINED. Do NOT reference external images, charts, figures, or visual materials. "
+            "If the activity involves data visualization or chart analysis, embed sample data as a text table or ASCII representation, "
+            "or describe the chart in enough detail that students can work with it from the text alone."
         )
         r = self._qwen_chat_json(system_prompt, input_payload)
         if not r['success']:

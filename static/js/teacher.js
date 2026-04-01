@@ -55,6 +55,8 @@ let aiEnhancementSettings = {
     web_retrieval: false
 };
 let pipelineRuns = [];
+let _pipelineTimerInterval = null;
+let _pipelineStartTime = null;
 let wizardFolderId = null;  // Track current folder context when creating activities from within a folder
 
 // Initialize - S2.14.2: phased init, full stack on error, event delegation
@@ -1941,6 +1943,81 @@ function specForScript(s) {
     return s;
 }
 
+var _pipelineStageOrder = ['planner', 'material', 'critic', 'refiner'];
+var _pipelineStageLabels = { planner: 'Planner', material: 'Material', critic: 'Critic', refiner: 'Refiner' };
+
+function _startPipelineTimer() {
+    _pipelineStartTime = Date.now();
+    if (_pipelineTimerInterval) clearInterval(_pipelineTimerInterval);
+    _pipelineTimerInterval = setInterval(function() {
+        var el = document.getElementById('pipelineElapsedTime');
+        if (!el || !_pipelineStartTime) return;
+        var secs = Math.floor((Date.now() - _pipelineStartTime) / 1000);
+        var m = Math.floor(secs / 60);
+        var s = secs % 60;
+        el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    }, 1000);
+}
+
+function _stopPipelineTimer() {
+    if (_pipelineTimerInterval) { clearInterval(_pipelineTimerInterval); _pipelineTimerInterval = null; }
+}
+
+function _showProgressBar(show) {
+    var bar = document.getElementById('pipelineProgressBar');
+    if (bar) bar.classList.toggle('hidden', !show);
+}
+
+function _updateProgressBar(stages) {
+    var bar = document.getElementById('pipelineProgressBar');
+    if (!bar) return;
+
+    var stageMap = {};
+    var backendToSeg = { 'planner': 'planner', 'material_generator': 'material', 'critic': 'critic', 'refiner': 'refiner' };
+    (stages || []).forEach(function(s) {
+        var seg = backendToSeg[s.stage_name] || s.stage_name;
+        stageMap[seg] = s.status;
+    });
+
+    var doneCount = 0;
+    var activeStage = null;
+    var failedStage = null;
+
+    _pipelineStageOrder.forEach(function(seg) {
+        var el = bar.querySelector('.progress-segment[data-seg="' + seg + '"]');
+        if (!el) return;
+        el.classList.remove('done', 'active', 'failed');
+        var status = stageMap[seg];
+        if (status === 'success' || status === 'completed') {
+            el.classList.add('done');
+            doneCount++;
+        } else if (status === 'running') {
+            el.classList.add('active');
+            activeStage = seg;
+        } else if (status === 'failed') {
+            el.classList.add('failed');
+            failedStage = seg;
+            doneCount++;
+        }
+    });
+
+    var label = document.getElementById('pipelineProgressLabel');
+    var hint = document.getElementById('pipelineProgressHint');
+    if (doneCount === 4) {
+        if (label) label.textContent = failedStage ? 'Pipeline completed with errors' : 'Pipeline completed successfully!';
+        if (hint) hint.textContent = '';
+        _stopPipelineTimer();
+    } else if (activeStage) {
+        var idx = _pipelineStageOrder.indexOf(activeStage) + 1;
+        if (label) label.textContent = 'Stage ' + idx + '/4 — ' + (_pipelineStageLabels[activeStage] || activeStage) + '...';
+        var remaining = (4 - doneCount) * 40;
+        if (hint) hint.textContent = '~' + Math.ceil(remaining / 60) + ' min remaining';
+    } else if (doneCount === 0) {
+        if (label) label.textContent = 'Starting pipeline...';
+        if (hint) hint.textContent = 'Estimated ~3-4 minutes total';
+    }
+}
+
 function resetPipelineStageCards() {
     document.querySelectorAll('.pipeline-stage').forEach(function(stage) {
         var status = stage.querySelector('.stage-status');
@@ -1964,6 +2041,8 @@ function resetPipelineStageCards() {
         var dur = stage.querySelector('.stage-duration');
         if (dur) dur.textContent = '--';
     });
+    _showProgressBar(false);
+    _stopPipelineTimer();
 }
 
 // Map backend stage_name to HTML data-stage attribute
@@ -2024,6 +2103,8 @@ function updateStageCardsFromResult(result) {
             }
         }
     });
+    _updateProgressBar(stages);
+    _stopPipelineTimer();
 }
 
 function showPipelineErrorPanel(issues, message, showRetryButton) {
@@ -2073,6 +2154,9 @@ async function runPipeline() {
     }
     pipelineRunInProgress = true;
     if (runBtn) { runBtn.disabled = true; runBtn.classList.add('btn-loading'); runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.generating') : 'Generating...'); }
+    _showProgressBar(true);
+    _updateProgressBar([]);
+    _startPipelineTimer();
     if (!currentSpec) {
         showNotification(t('teacher.notify.complete_validation_first'), 'warning');
         pipelineRunInProgress = false;
@@ -2384,6 +2468,7 @@ function _finishPolling(message, level) {
     _pipelinePollingActive = false;
     pipelineRunInProgress = false;
     _pollRetryCount = 0;
+    _stopPipelineTimer();
     if (message) showNotification(message, level || 'success');
     showLoading(false);
     var runBtn = document.getElementById('runPipelineBtn');
@@ -2459,6 +2544,10 @@ function updatePipelineVisualization(data) {
             _setStageIO(stageElement, stage);
         }
     });
+    _updateProgressBar(stages);
+    if (run.status === 'success' || run.status === 'completed' || run.status === 'failed' || run.status === 'partial_failed') {
+        _stopPipelineTimer();
+    }
 }
 
 function _setStageStatus(stageElement, status) {

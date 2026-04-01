@@ -48,3 +48,6 @@ test.pdf
 tmp_spec_*.json
 *.bak.*
 cookies*.txt
+outputs/
+scripts/
+TEST_REPORT.md

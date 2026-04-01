@@ -1,8 +1,0 @@
-{
-  "health_ok": true,
-  "teacher_redirect_302": true,
-  "student_redirect_302": true,
-  "login_page_200": true,
-  "demo_page_200": true,
-  "demo_scripts_200": false
-}

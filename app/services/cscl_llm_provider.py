@@ -207,6 +207,10 @@ class BaseLLMProvider(ABC):
         """Refine script based on critique"""
         pass
 
+    def critique_and_refine(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Combined critique + refine in one call. Default: delegates to critique_script."""
+        return self.critique_script(input_payload)
+
 
 class MockProvider(BaseLLMProvider):
     """Mock provider for testing and fallback"""
@@ -396,6 +400,22 @@ class MockProvider(BaseLLMProvider):
         }
         return {'success': True, 'error': None, 'provider': 'mock', 'model': Config.MOCK_MODEL, 'refined': refined}
 
+    def critique_and_refine(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
+        material_output = input_payload.get('material_output', {})
+        scenes = material_output.get('scenes', [])
+        roles = material_output.get('roles', [])
+        result = {
+            'validation': {'is_valid': True, 'issues': [], 'warnings': []},
+            'quality_indicators': {'scene_count': len(scenes), 'role_count': len(roles), 'scriptlet_count': sum(len(s.get('scriptlets', [])) for s in scenes)},
+            'roles': roles,
+            'scenes': scenes,
+            'refinements_applied': {'scenes_added': 0, 'roles_added': 0, 'scriptlets_fixed': 0, 'prompts_made_specific': 0, 'grounding_added': 0},
+        }
+        for key in ('student_worksheet', 'student_slides', 'teacher_guide', 'role_cards'):
+            if material_output.get(key):
+                result[key] = material_output[key]
+        return {'success': True, 'error': None, 'provider': 'mock', 'model': Config.MOCK_MODEL, 'result': result}
+
     def generate_materials(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
         planner_output = input_payload.get('planner_output', {})
         plan = planner_output.get('plan', {})
@@ -487,6 +507,82 @@ class MockProvider(BaseLLMProvider):
         }
 
 
+def _build_planner_system_prompt(teaching_stage: str, collaboration_purpose: str, group_size: int) -> str:
+    return (
+        "You are an expert CSCL (Computer-Supported Collaborative Learning) instructional designer "
+        "grounded in Dillenbourg's scripting theory and the ArgCSCL argumentation framework.\n\n"
+        "PEDAGOGICAL PRINCIPLES you MUST apply:\n"
+        "1. Positive Interdependence — each student's contribution must be necessary for group success; the task CANNOT be completed by one person alone.\n"
+        "2. Individual Accountability — each role has a unique deliverable that the group depends on.\n"
+        "3. Promotive Interaction — design prompts that require students to build on each other's ideas (not just present independently).\n"
+        "4. Scaffolded Argumentation — if debate/synthesis: follow Claim → Evidence → Counter → Synthesis structure.\n\n"
+        "GROUNDING REQUIREMENT:\n"
+        "If the payload includes 'retrieved_chunks' (course materials uploaded by the teacher), you MUST:\n"
+        "- Reference specific concepts, examples, or data from these chunks in at least 2 activity steps.\n"
+        "- Use phrases like 'Using the concept of [X] from the course materials...' in student prompts.\n"
+        "- If no chunks are provided, design based on the topic and note 'No course documents were used for grounding.'\n\n"
+        "Return ONLY valid JSON with a single top-level key 'activity'. The 'activity' object MUST contain:\n"
+        "- 'title': string (short, specific activity title)\n"
+        "- 'overview': string (1-2 sentences describing what the group will do)\n"
+        "- 'objective': string (aligned with learning goals from the spec)\n"
+        "- 'steps': array of 3-6 objects, each with: 'step_order' (int), 'title' (string), 'description' (string — detailed instructions, not vague), "
+        "'duration_minutes' (int), 'prompts' (array of EXACT student-facing prompts — NOT 'discuss the topic' but specific like "
+        "'Write a 3-sentence claim about [concept] supported by evidence from [specific course material]')\n"
+        "- 'roles': array of objects, each with: 'role_name', 'description', 'responsibilities' (array). Empty array if role_structure is 'no_roles'.\n"
+        "- 'expected_output': string (concrete deliverable the group must produce)\n"
+        "- 'reporting_instructions': string (how to report back to class)\n\n"
+        "IMPORTANT:\n"
+        "- Do NOT generate a full lesson flow. Focus on ONE concrete group task.\n"
+        f"- Teaching stage: {teaching_stage}. Collaboration purpose: {collaboration_purpose}. Design for groups of {group_size} students.\n"
+        "- If the payload includes 'initial_idea', the teacher has given a free-text idea/preference; incorporate it.\n"
+        "- All activities must be SELF-CONTAINED. Do NOT reference external images or figures not included in text.\n"
+        "- Every prompt must be specific enough that a student can act on it WITHOUT asking the teacher for clarification."
+    )
+
+
+_MATERIAL_SYSTEM_PROMPT = (
+    "You generate classroom-ready CSCL activity materials grounded in collaborative learning pedagogy. "
+    "Return ONLY valid JSON with these keys:\n"
+    "- roles (list of {role_name, description, responsibilities})\n"
+    "- scenes (list of {order_index, scene_type, purpose, transition_rule, scriptlets: [{prompt_text, prompt_type, role_id}]})\n"
+    "- student_worksheet: object with title, goal, roles_summary, "
+    "steps (each with title, description AS FULL INSTRUCTIONS not summaries, duration_minutes, "
+    "prompts AS EXACT STUDENT-FACING TEXT that students read and act on directly), "
+    "timing_summary, output_instructions (what to produce), reporting_instructions\n"
+    "- student_slides: {title, slides: [{slide_number, title, content}]} — 4-8 slides for projecting in class\n"
+    "- teacher_guide: {overview, alignment_with_objectives, rationale, "
+    "implementation_steps (step-by-step for the teacher), monitoring_points (what to watch for), "
+    "expected_difficulties (common student struggles AND how to address each), "
+    "debrief_questions, adaptation_suggestions}\n\n"
+    "QUALITY REQUIREMENTS:\n"
+    "- Student worksheet steps must be COMPLETE INSTRUCTIONS, not summaries. A student should be able to do the entire activity using ONLY the worksheet.\n"
+    "- Each prompt must reference specific course concepts when retrieved_chunks are available.\n"
+    "- Teacher guide must include concrete intervention strategies for each expected difficulty.\n"
+    "- All materials must be SELF-CONTAINED. No references to external images or figures."
+)
+
+
+_CRITIC_REFINER_SYSTEM_PROMPT = (
+    "You are a CSCL activity quality evaluator AND refiner. Perform TWO tasks in sequence:\n\n"
+    "TASK 1 — EVALUATE: Check the materials against these criteria:\n"
+    "1. Positive Interdependence: Can one student complete this alone? (If yes → issue)\n"
+    "2. Specificity: Are prompts concrete enough that students can act without asking the teacher? (Vague prompts like 'discuss the topic' → issue)\n"
+    "3. Course Grounding: Do at least 2 steps reference specific concepts from course materials? (If not → warning)\n"
+    "4. Completeness: Does student_worksheet contain full instructions (not just titles)? Does teacher_guide include difficulty+intervention pairs?\n"
+    "5. Structure: At least 1 scene/step with non-empty scriptlets or prompts.\n\n"
+    "TASK 2 — REFINE: Fix ALL issues found. Improve vague prompts into specific ones. Add missing materials.\n\n"
+    "Return ONLY JSON with keys:\n"
+    "- validation: {is_valid: boolean, issues: [strings], warnings: [strings]}\n"
+    "- quality_indicators: {scene_count, role_count, scriptlet_count}\n"
+    "- roles: (refined list)\n"
+    "- scenes: (refined list, each with scriptlets)\n"
+    "- refinements_applied: {scenes_added, roles_added, scriptlets_fixed, prompts_made_specific, grounding_added}\n"
+    "- student_worksheet: (refined, with FULL instructions in each step)\n"
+    "- student_slides: (refined)\n"
+    "- teacher_guide: (refined, with expected_difficulties containing problem+solution pairs)"
+)
+
+
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI provider (implemented)"""
 
@@ -523,25 +619,7 @@ class OpenAIProvider(BaseLLMProvider):
             collaboration_purpose = input_payload.get('collaboration_purpose') or 'compare_ideas'
             group_size = input_payload.get('group_size') or 4
             user_text = json.dumps(input_payload, ensure_ascii=False)
-            system_prompt = """You are a CSCL (Computer-Supported Collaborative Learning) activity designer.
-Your task is to design ONE specific small-group collaborative activity — NOT a full lesson plan.
-
-Return ONLY valid JSON with a single top-level key "activity". The "activity" object MUST contain:
-- "title": string (short activity title)
-- "overview": string (1-2 sentences describing what the group will do)
-- "objective": string (aligned with learning goals)
-- "steps": array of objects, each with: "step_order" (int), "title" (string), "description" (string), "duration_minutes" (int), "prompts" (array of strings for discussion/task prompts)
-- "roles": array of objects, each with: "role_name" (string), "description" (string), "responsibilities" (array of strings). Use empty array if role_structure is "no_roles".
-- "expected_output": string (what the group must produce)
-- "reporting_instructions": string (how to report back to class, or "none" if not applicable)
-
-IMPORTANT:
-- Do NOT generate a full lesson flow (no "introduction → activity → presentation → reflection").
-- Focus on ONE concrete group task with 3-6 clear steps. Every step must tell students exactly what to do.
-- Teaching stage: """ + str(teaching_stage) + """. Collaboration purpose: """ + str(collaboration_purpose) + """. Design for groups of """ + str(group_size) + """ students.
-- If the payload includes "retrieved_chunks", use that content to ground the activity in the course material.
-- If the payload includes "initial_idea", the teacher has given a free-text idea, preference, or concern for this activity; use it to guide the design (e.g. compare two examples, keep it simple, fit 15 minutes).
-- CRITICAL: All activities must be SELF-CONTAINED. Do NOT reference external images, charts, figures, or visual materials that are not included in the text output. If the activity involves data visualization or chart analysis, embed the data as a text table or describe the chart in enough detail that students can work with it from the text alone."""
+            system_prompt = _build_planner_system_prompt(teaching_stage, collaboration_purpose, group_size)
             messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Design one CSCL group activity from this specification. Return JSON with key 'activity' only.\n\n{user_text}"}
@@ -693,79 +771,26 @@ IMPORTANT:
             }
     
     def generate_materials(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        system_prompt = (
-            "You generate classroom-ready CSCL activity materials. Return ONLY valid JSON with these keys: "
-            "roles (list), scenes (list), "
-            "student_worksheet (object with: title, goal, roles_summary, steps with title/description/duration_minutes/prompts, timing_summary, output_instructions, reporting_instructions), "
-            "student_slides (object with: title, slides array of {slide_number, title, content} for a small set of student-facing instructional slides explaining the activity goal, key steps, timing, and expected output), "
-            "teacher_guide (object with: overview, alignment_with_objectives, rationale, implementation_steps, monitoring_points, expected_difficulties, debrief_questions, adaptation_suggestions). "
-            "Each scene must include: order_index, scene_type, purpose, transition_rule, scriptlets. "
-            "Each scriptlet: prompt_text, prompt_type, role_id (nullable). "
-            "student_worksheet, student_slides, and teacher_guide must be ready for teachers and students to use directly. "
-            "CRITICAL: All materials must be SELF-CONTAINED. Do NOT reference external images, charts, figures, or visual materials. "
-            "If the activity involves data visualization or chart analysis, embed sample data as a text table or ASCII representation, "
-            "or describe the chart in enough detail that students can work with it from the text alone."
-        )
-        r = self._chat_json(system_prompt, input_payload)
+        r = self._chat_json(_MATERIAL_SYSTEM_PROMPT, input_payload)
         if not r['success']:
             return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'materials': None}
         out = r['output'] or {}
         return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'materials': out}
-    
+
+    def critique_and_refine(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
+        r = self._chat_json(_CRITIC_REFINER_SYSTEM_PROMPT, input_payload)
+        if not r['success']:
+            return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'result': None}
+        out = r['output'] or {}
+        return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'result': out}
+
     def critique_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        material_output = input_payload.get('material_output') or {}
-        roles = material_output.get('roles') if isinstance(material_output.get('roles'), list) else []
-        scenes = material_output.get('scenes') if isinstance(material_output.get('scenes'), list) else []
-        role_count = len(roles)
-        scene_count = len(scenes)
-        role_names = [r.get('role_name', r.get('role_id', '')) for r in roles if isinstance(r, dict)][:20]
-        scriptlet_count = sum(len(s.get('scriptlets') or []) for s in scenes if isinstance(s, dict))
-        compact_payload = {
-            'role_count': role_count,
-            'scene_count': scene_count,
-            'scriptlet_count': scriptlet_count,
-            'role_names': role_names,
-            'roles': roles[:10],
-            'scenes': [
-                {
-                    'order_index': s.get('order_index'),
-                    'scene_type': s.get('scene_type'),
-                    'purpose': (s.get('purpose') or '')[:200],
-                    'scriptlet_count': len(s.get('scriptlets') or []),
-                    'scriptlets': (s.get('scriptlets') or [])[:3]
-                }
-                for s in (scenes[:10] if isinstance(scenes, list) else []) if isinstance(s, dict)
-            ],
-            'spec_topic': (input_payload.get('spec') or {}).get('course_context', {}).get('topic', ''),
-            'spec_task_type': (input_payload.get('spec') or {}).get('task_requirements', {}).get('task_type', ''),
-            'has_student_worksheet': bool(material_output.get('student_worksheet')),
-            'has_teacher_guide': bool(material_output.get('teacher_guide')),
-        }
-        system_prompt = (
-            "You are a CSCL activity quality critic. Evaluate whether this is ONE specific collaborative activity (not a full lesson flow). "
-            "Return ONLY JSON with keys: validation {is_valid:boolean, issues:list[str], warnings:list[str]}, "
-            "quality_indicators {scene_count:int, role_count:int, scriptlet_count:int}, roles (list), scenes (list). "
-            "Set is_valid to true if: (1) there is at least one clear task with steps, (2) students know what to do each step, (3) roles/scenes are consistent. "
-            "Do NOT report 'No roles' or 'No scenes' when roles and scenes are non-empty. Prefer accepting activity-style output (steps with prompts) even with 0-1 roles."
-        )
-        r = self._chat_json(system_prompt, compact_payload)
-        if not r['success']:
-            return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'critique': None}
-        out = r['output'] or {}
-        return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'critique': out}
-    
+        r = self.critique_and_refine(input_payload)
+        return {'success': r['success'], 'error': r.get('error'), 'provider': r['provider'], 'model': r['model'], 'critique': r.get('result')}
+
     def refine_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        system_prompt = (
-            "You are a CSCL activity refiner. Fix the issues and return ONLY JSON with keys: "
-            "roles (list), scenes (list), refinements_applied (object). "
-            "If student_worksheet, student_slides, or teacher_guide are present in the input, include them in the output unchanged or improved. "
-            "Ensure at least one scene/step with non-empty scriptlets or prompts."
-        )
-        r = self._chat_json(system_prompt, input_payload)
-        if not r['success']:
-            return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'refined': None}
-        out = r['output'] or {}
-        return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'refined': out}
+        r = self.critique_and_refine(input_payload)
+        return {'success': r['success'], 'error': r.get('error'), 'provider': r['provider'], 'model': r['model'], 'refined': r.get('result')}
 
 
 class QwenProvider(BaseLLMProvider):
@@ -803,9 +828,12 @@ class QwenProvider(BaseLLMProvider):
 
         try:
             user_text = json.dumps(input_payload, ensure_ascii=False)
+            teaching_stage = input_payload.get('teaching_stage') or 'concept_exploration'
+            collaboration_purpose = input_payload.get('collaboration_purpose') or 'compare_ideas'
+            group_size = input_payload.get('group_size') or 4
             messages = [
-                {"role": "system", "content": "You are a CSCL script planner. Return ONLY valid JSON.\n\nCRITICAL: All activities must be SELF-CONTAINED. Do NOT reference external images, charts, figures, or visual materials that are not included in the text output. If the activity involves data visualization or chart analysis, you MUST embed the data as a text table, ASCII chart, or describe the chart in enough detail that students can work with it from the text alone. Never say 'study the assigned chart' or 'look at Figure X' — instead, provide the actual data or detailed description inline."},
-                {"role": "user", "content": f"Generate a script plan JSON from this payload: {user_text}"}
+                {"role": "system", "content": _build_planner_system_prompt(teaching_stage, collaboration_purpose, group_size)},
+                {"role": "user", "content": f"Design one CSCL group activity from this specification. Return JSON with key 'activity' only.\n\n{user_text}"}
             ]
 
             resp = requests.post(
@@ -926,50 +954,27 @@ class QwenProvider(BaseLLMProvider):
             return {'success': False, 'error': f"Qwen request failed: {type(e).__name__}: {e}", 'provider': 'qwen', 'model': model, 'output': None}
 
     def generate_materials(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        system_prompt = (
-            "You generate classroom-ready CSCL activity materials. Return ONLY valid JSON with these keys: "
-            "roles (list), scenes (list), "
-            "student_worksheet (object with: title, goal, roles_summary, steps with title/description/duration_minutes/prompts, timing_summary, output_instructions, reporting_instructions), "
-            "student_slides (object with: title, slides array of {slide_number, title, content} for a small set of student-facing instructional slides explaining the activity goal, key steps, timing, and expected output), "
-            "teacher_guide (object with: overview, alignment_with_objectives, rationale, implementation_steps, monitoring_points, expected_difficulties, debrief_questions, adaptation_suggestions). "
-            "Each scene must include: order_index, scene_type, purpose, transition_rule, scriptlets. "
-            "Each scriptlet: prompt_text, prompt_type, role_id (nullable). "
-            "student_worksheet, student_slides, and teacher_guide must be ready for teachers and students to use directly. "
-            "CRITICAL: All materials must be SELF-CONTAINED. Do NOT reference external images, charts, figures, or visual materials. "
-            "If the activity involves data visualization or chart analysis, embed sample data as a text table or ASCII representation, "
-            "or describe the chart in enough detail that students can work with it from the text alone."
-        )
-        r = self._qwen_chat_json(system_prompt, input_payload)
+        r = self._qwen_chat_json(_MATERIAL_SYSTEM_PROMPT, input_payload)
         if not r['success']:
             return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'materials': None}
         out = r['output'] or {}
         return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'materials': out}
 
-    def critique_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        system_prompt = (
-            "You are a CSCL activity quality critic. Evaluate whether this is ONE specific collaborative activity (not a full lesson flow). "
-            "Return ONLY JSON with keys: validation {is_valid:boolean, issues:list[str], warnings:list[str]}, "
-            "quality_indicators {scene_count:int, role_count:int, scriptlet_count:int}, roles (list), scenes (list). "
-            "Set is_valid to true if: (1) there is at least one clear task with steps, (2) students know what to do each step, (3) roles/scenes are consistent."
-        )
-        r = self._qwen_chat_json(system_prompt, input_payload)
+    def critique_and_refine(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
+        r = self._qwen_chat_json(_CRITIC_REFINER_SYSTEM_PROMPT, input_payload)
         if not r['success']:
-            return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'critique': None}
+            return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'result': None}
         out = r['output'] or {}
-        return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'critique': out}
+        return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'result': out}
+
+    def critique_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
+        r = self.critique_and_refine(input_payload)
+        return {'success': r['success'], 'error': r.get('error'), 'provider': r['provider'], 'model': r['model'], 'critique': r.get('result')}
 
     def refine_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
-        system_prompt = (
-            "You are a CSCL activity refiner. Fix the issues and return ONLY JSON with keys: "
-            "roles (list), scenes (list), refinements_applied (object). "
-            "If student_worksheet, student_slides, or teacher_guide are present in the input, include them in the output unchanged or improved. "
-            "Ensure at least one scene/step with non-empty scriptlets or prompts."
-        )
-        r = self._qwen_chat_json(system_prompt, input_payload)
-        if not r['success']:
-            return {'success': False, 'error': r['error'], 'provider': r['provider'], 'model': r['model'], 'refined': None}
-        out = r['output'] or {}
-        return {'success': True, 'error': None, 'provider': r['provider'], 'model': r['model'], 'refined': out}
+        r = self.critique_and_refine(input_payload)
+        return {'success': r['success'], 'error': r.get('error'), 'provider': r['provider'], 'model': r['model'], 'refined': r.get('result')}
+
 
 class FallbackLLMProvider(BaseLLMProvider):
     """S2.10: Primary then fallback; fallback only on timeout/429/5xx/connection. Structured logging.
@@ -1093,6 +1098,9 @@ class FallbackLLMProvider(BaseLLMProvider):
 
     def refine_script(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
         return self._call_with_fallback('refine_script', input_payload)
+
+    def critique_and_refine(self, input_payload: Dict[str, Any]) -> Dict[str, Any]:
+        return self._call_with_fallback('critique_and_refine', input_payload)
 
 
 def _get_single_provider(provider_name: str) -> BaseLLMProvider:

@@ -1983,13 +1983,12 @@ function specForScript(s) {
     return s;
 }
 
-var _pipelineStageOrder = ['planner', 'material', 'critic', 'refiner'];
+var _pipelineStageOrder = ['planner', 'material', 'critic_refiner'];
 function _pipelineStageLabel(key) {
     var labels = {
-        planner: t('teacher.pipeline.stage_planner', 'Planner'),
-        material: t('teacher.pipeline.stage_material', 'Material'),
-        critic: t('teacher.pipeline.stage_critic', 'Critic'),
-        refiner: t('teacher.pipeline.stage_refiner', 'Refiner')
+        planner: t('teacher.pipeline.stage_planner', '规划'),
+        material: t('teacher.pipeline.stage_material', '材料生成'),
+        critic_refiner: t('teacher.pipeline.stage_critic_refiner', '评审优化')
     };
     return labels[key] || key;
 }
@@ -2021,48 +2020,58 @@ function _updateProgressBar(stages) {
     if (!bar) return;
 
     var stageMap = {};
-    var backendToSeg = { 'planner': 'planner', 'material_generator': 'material', 'critic': 'critic', 'refiner': 'refiner' };
+    var backendToSeg = { 'planner': 'planner', 'material_generator': 'material', 'critic_refiner': 'critic_refiner', 'critic': 'critic_refiner', 'refiner': 'critic_refiner' };
     (stages || []).forEach(function(s) {
         var seg = backendToSeg[s.stage_name] || s.stage_name;
         stageMap[seg] = s.status;
     });
 
+    var totalStages = 3;
     var doneCount = 0;
     var activeStage = null;
     var failedStage = null;
 
     _pipelineStageOrder.forEach(function(seg) {
-        var el = bar.querySelector('.progress-segment[data-seg="' + seg + '"]');
-        if (!el) return;
-        el.classList.remove('done', 'active', 'failed');
+        var stepEl = bar.querySelector('.stepper-step[data-seg="' + seg + '"]');
+        var connEl = bar.querySelector('.stepper-connector[data-after="' + seg + '"]');
+        if (stepEl) stepEl.classList.remove('done', 'active', 'failed');
+        if (connEl) connEl.classList.remove('done', 'active');
         var status = stageMap[seg];
         if (status === 'success' || status === 'completed') {
-            el.classList.add('done');
+            if (stepEl) stepEl.classList.add('done');
+            if (connEl) connEl.classList.add('done');
             doneCount++;
         } else if (status === 'running') {
-            el.classList.add('active');
+            if (stepEl) stepEl.classList.add('active');
+            if (connEl) connEl.classList.add('active');
             activeStage = seg;
         } else if (status === 'failed') {
-            el.classList.add('failed');
+            if (stepEl) stepEl.classList.add('failed');
             failedStage = seg;
             doneCount++;
         }
     });
 
+    var pct = Math.round((doneCount / totalStages) * 100);
+    if (activeStage) pct = Math.round(((doneCount + 0.5) / totalStages) * 100);
+    var pctEl = document.getElementById('pipelineProgressPercent');
+    if (pctEl) pctEl.textContent = pct + '%';
+
     var label = document.getElementById('pipelineProgressLabel');
     var hint = document.getElementById('pipelineProgressHint');
-    if (doneCount === 4) {
-        if (label) label.textContent = failedStage ? 'Pipeline completed with errors' : 'Pipeline completed successfully!';
+    if (doneCount === totalStages) {
+        if (label) label.textContent = failedStage ? t('teacher.pipeline.completed_errors', '生成完成（部分有误）') : t('teacher.pipeline.completed_success', '生成完成！');
         if (hint) hint.textContent = '';
+        if (pctEl) pctEl.textContent = '100%';
         _stopPipelineTimer();
     } else if (activeStage) {
         var idx = _pipelineStageOrder.indexOf(activeStage) + 1;
-        if (label) label.textContent = t('teacher.pipeline.stage_progress', 'Stage {n}/4 — {name}...').replace('{n}', idx).replace('{name}', _pipelineStageLabel(activeStage));
-        var remaining = (4 - doneCount) * 40;
-        if (hint) hint.textContent = t('teacher.pipeline.time_remaining', '~{n} min remaining').replace('{n}', Math.ceil(remaining / 60));
+        if (label) label.textContent = t('teacher.pipeline.stage_progress', '阶段 {n}/3 — {name}...').replace('{n}', idx).replace('{name}', _pipelineStageLabel(activeStage));
+        var remaining = (totalStages - doneCount) * 35;
+        if (hint) hint.textContent = t('teacher.pipeline.time_remaining', '预计剩余 ~{n} 分钟').replace('{n}', Math.ceil(remaining / 60));
     } else if (doneCount === 0) {
-        if (label) label.textContent = t('teacher.pipeline.starting', 'Starting pipeline...');
-        if (hint) hint.textContent = t('teacher.pipeline.time_estimate', 'Estimated ~3-4 minutes total');
+        if (label) label.textContent = t('teacher.pipeline.starting', '正在启动流水线...');
+        if (hint) hint.textContent = t('teacher.pipeline.time_estimate', '预计总计 ~2 分钟');
     }
 }
 
@@ -2097,11 +2106,12 @@ function resetPipelineStageCards() {
 var _stageNameToDataStage = {
     'planner': 'planner',
     'material_generator': 'material',
-    'critic': 'critic',
-    'refiner': 'refiner'
+    'critic_refiner': 'critic_refiner',
+    'critic': 'critic_refiner',
+    'refiner': 'critic_refiner'
 };
-var _allDataStages = ['planner', 'material', 'critic', 'refiner'];
-var _allStageNames = ['planner', 'material_generator', 'critic', 'refiner'];
+var _allDataStages = ['planner', 'material', 'critic_refiner'];
+var _allStageNames = ['planner', 'material_generator', 'critic_refiner'];
 
 function updateStageCardsFromResult(result) {
     var stages = result.stages || [];
@@ -2729,35 +2739,41 @@ async function retryPipelineWithFallback() {
 }
 
 function simulatePipelineRun() {
-    const stages = ['planner', 'material', 'critic', 'refiner'];
+    const stages = ['planner', 'material', 'critic_refiner'];
     let currentStage = 0;
-    
+    _showProgressBar(true);
+    _startPipelineTimer();
+
     const runStage = () => {
         if (currentStage >= stages.length) {
             document.getElementById('wizardStep3Next').disabled = false;
+            _updateProgressBar([
+                {stage_name: 'planner', status: 'success'},
+                {stage_name: 'material_generator', status: 'success'},
+                {stage_name: 'critic_refiner', status: 'success'}
+            ]);
             showNotification(t('teacher.pipeline.simulation_completed'), 'success');
             return;
         }
-        
         const stage = stages[currentStage];
-        const stageElement = document.querySelector(`[data-stage="${stage}"]`);
+        const stageElement = document.querySelector('[data-stage="' + stage + '"]');
         if (stageElement) {
             const statusEl = stageElement.querySelector('.stage-status');
-            statusEl.textContent = t('teacher.pipeline.stage.running');
+            statusEl.textContent = t('teacher.pipeline.processing');
             statusEl.className = 'stage-status running';
-            
+            stageElement.classList.add('running');
+            _updateProgressBar(stages.slice(0, currentStage).map(function(s){ return {stage_name: s === 'critic_refiner' ? 'critic_refiner' : (s === 'material' ? 'material_generator' : s), status: 'success'}; }).concat([{stage_name: stage === 'material' ? 'material_generator' : stage, status: 'running'}]));
             setTimeout(() => {
-                statusEl.textContent = t('teacher.pipeline.stage.completed');
-                statusEl.className = 'stage-status completed';
+                statusEl.textContent = t('teacher.pipeline.done');
+                statusEl.className = 'stage-status completed success';
+                stageElement.classList.remove('running');
+                stageElement.classList.add('completed');
                 stageElement.querySelector('.stage-duration').textContent = '2.5s';
-                stageElement.querySelector('.input-summary span').textContent = t('teacher.pipeline.spec_validated') + '...';
-                stageElement.querySelector('.output-summary span').textContent = t('teacher.pipeline.generated') + '...';
                 currentStage++;
                 runStage();
             }, 1500);
         }
     };
-    
     runStage();
 }
 

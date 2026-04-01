@@ -17,8 +17,7 @@ from app.models import (
 )
 from app.services.pipeline.planner import PlannerStage
 from app.services.pipeline.material_generator import MaterialGeneratorStage
-from app.services.pipeline.critic import CriticStage
-from app.services.pipeline.refiner import RefinerStage
+from app.services.pipeline.critic_refiner import CriticRefinerStage
 from app.services.cscl_llm_provider import get_cscl_llm_provider, select_runnable_provider, is_provider_runnable
 from app.services.cscl_retriever import CSCLRetriever
 import logging
@@ -132,8 +131,7 @@ class CSCLPipelineService:
         self.provider = get_cscl_llm_provider(force_provider=force_provider)
         self.planner = PlannerStage(self.provider)
         self.material_generator = MaterialGeneratorStage(self.provider)
-        self.critic = CriticStage(self.provider)
-        self.refiner = RefinerStage(self.provider)
+        self.critic_refiner = CriticRefinerStage(self.provider)
         self.retriever = CSCLRetriever(k=5) if enable_rag else None
         
         # B1/B2: AI Enhancement services
@@ -454,8 +452,7 @@ class CSCLPipelineService:
                     self.provider = fallback_provider
                     self.planner = fallback_planner
                     self.material_generator = MaterialGeneratorStage(fallback_provider)
-                    self.critic = CriticStage(fallback_provider)
-                    self.refiner = RefinerStage(fallback_provider)
+                    self.critic_refiner = CriticRefinerStage(fallback_provider)
                 else:
                     # Cannot fallback - return provider not ready error
                     db.session.rollback()
@@ -606,134 +603,70 @@ class CSCLPipelineService:
             except Exception as e:
                 logger.warning(f"[Pipeline] Chart generation skipped: {e}")
             
-            # Stage 3: Critic (with RAG retrieval)
-            evidence_chunks_critic = self._retrieve_evidence(spec, 'critic', script_id) if self.retriever else []
-            critic_options = (options or {}).copy()
-            critic_options['run_id'] = run_id
-            critic_result = self.critic.run(material_result['output_snapshot'], spec, critic_options)
-            critic_result['retrieved_chunks_count'] = len(evidence_chunks_critic)
-            critic_result['retrieved_chunk_ids'] = [c['chunk_id'] for c in evidence_chunks_critic]
-            stages.append(critic_result)
-            self._save_stage_run(run_id, critic_result)
-            
-            # If critic fails, skip refiner and use material output as final
-            # (critic timeout / provider errors should not block the whole pipeline)
-            critic_failed = critic_result.get('status') != 'success'
-            if critic_failed:
+            # Stage 3: CriticRefiner — evaluate AND refine in one call (merged from old Critic + Refiner)
+            evidence_chunks_cr = self._retrieve_evidence(spec, 'critic_refiner', script_id) if self.retriever else []
+            cr_options = (options or {}).copy()
+            cr_options['run_id'] = run_id
+            cr_result = self.critic_refiner.run(material_result['output_snapshot'], spec, cr_options)
+            cr_result['retrieved_chunks_count'] = len(evidence_chunks_cr)
+            cr_result['retrieved_chunk_ids'] = [c['chunk_id'] for c in evidence_chunks_cr]
+            stages.append(cr_result)
+            self._save_stage_run(run_id, cr_result)
+
+            cr_failed = cr_result.get('status') != 'success'
+            if cr_failed:
                 logger.warning(
-                    "pipeline run_id=%s critic failed (%s), skipping refiner, using material output",
-                    run_id, critic_result.get('error', 'unknown')
+                    "pipeline run_id=%s critic_refiner failed (%s), using material output as final",
+                    run_id, cr_result.get('error', 'unknown')
                 )
-                final_output = material_result.get('output_snapshot') or {}
-                evidence_binding_ratio = self._compute_evidence_binding_ratio(
-                    script_id, final_output
-                )
-                quality_report = compute_quality_report(
-                    final_output, spec, evidence_binding_ratio=evidence_binding_ratio
-                )
-                if 'grounding' in quality_report:
-                    quality_report['grounding']['status'] = grounding_status if has_docs else 'no_course_docs'
-                provider_name = planner_result.get('provider', 'unknown')
-                model_name = planner_result.get('model', 'unknown')
-                config_fingerprint = compute_config_fingerprint(options, provider_name, model_name)
-                pipeline_run.status = 'success'
-                pipeline_run.config_fingerprint = config_fingerprint
-                pipeline_run.final_output_json = final_output
-                pipeline_run.finished_at = datetime.now(timezone.utc)
-                db.session.commit()
-                return {
-                    'run_id': run_id,
-                    'status': 'success',
-                    'stages': stages,
-                    'final_output': final_output,
-                    'quality_report': quality_report,
-                    'grounding_status': grounding_status,
-                    'error': None,
-                    'warnings': [f'Critic stage failed ({critic_result.get("error", "timeout")}), refiner skipped. Output is from material stage.']
-                }
-            
-            # Stage 4: Refiner (with RAG retrieval)
-            evidence_chunks_refiner = self._retrieve_evidence(spec, 'refiner', script_id) if self.retriever else []
-            refiner_options = (options or {}).copy()
-            refiner_options['run_id'] = run_id
-            refiner_result = self.refiner.run(critic_result['output_snapshot'], spec, refiner_options)
-            refiner_result['retrieved_chunks_count'] = len(evidence_chunks_refiner)
-            refiner_result['retrieved_chunk_ids'] = [c['chunk_id'] for c in evidence_chunks_refiner]
-            stages.append(refiner_result)
-            self._save_stage_run(run_id, refiner_result)
-            
-            if refiner_result['status'] != 'success':
-                pipeline_run.status = 'partial_failed'
-                pipeline_run.error_message = f"Refiner failed: {refiner_result.get('error')}"
-                pipeline_run.finished_at = datetime.now(timezone.utc)
-                db.session.commit()
-                return {
-                    'run_id': run_id,
-                    'status': 'partial_failed',
-                    'stages': stages,
-                    'final_output': critic_result.get('output_snapshot'),
-                    'quality_report': None,
-                    'grounding_status': grounding_status,
-                    'error': refiner_result.get('error')
-                }
-            
-            # Add evidence refs to refiner output (same id_mapping as material)
-            if evidence_chunks_refiner:
+
+            final_source = cr_result.get('output_snapshot') if not cr_failed else None
+            if not final_source:
+                final_source = material_result.get('output_snapshot') or {}
+
+            # Add evidence refs
+            if evidence_chunks_cr and not cr_failed:
                 self._add_evidence_refs_to_output(
-                    refiner_result['output_snapshot'],
-                    evidence_chunks_refiner,
-                    'refiner',
-                    script_id,
-                    id_mapping=id_mapping,
+                    final_source, evidence_chunks_cr, 'critic_refiner', script_id, id_mapping=id_mapping,
                 )
-            
-            # Compute evidence binding ratio
-            evidence_binding_ratio = self._compute_evidence_binding_ratio(
-                script_id, refiner_result['output_snapshot']
-            )
-            
-            # Compute quality report
-            quality_report = compute_quality_report(
-                refiner_result['output_snapshot'], 
-                spec,
-                evidence_binding_ratio=evidence_binding_ratio
-            )
-            
-            # Update grounding metrics
+
+            evidence_binding_ratio = self._compute_evidence_binding_ratio(script_id, final_source)
+            quality_report = compute_quality_report(final_source, spec, evidence_binding_ratio=evidence_binding_ratio)
             if 'grounding' in quality_report:
                 quality_report['grounding']['status'] = grounding_status if has_docs else 'no_course_docs'
-            
-            # Compute config fingerprint
+
             provider_name = planner_result.get('provider', 'unknown')
             model_name = planner_result.get('model', 'unknown')
             config_fingerprint = compute_config_fingerprint(options, provider_name, model_name)
-            
-            # Commit evidence bindings
+
             db.session.flush()
-            
-            final_output = dict(refiner_result['output_snapshot']) if refiner_result.get('output_snapshot') else {}
-            # Pass through classroom-ready artefacts from material stage if refiner did not include them
+
+            final_output = dict(final_source) if final_source else {}
             mat_snap = material_result.get('output_snapshot') or {}
             for _key in ('student_worksheet', 'student_slides', 'teacher_guide', 'role_cards', 'activity_charts', 'generated_images'):
                 if mat_snap.get(_key) and not final_output.get(_key):
                     final_output[_key] = mat_snap[_key]
 
-            # Update pipeline run and persist final_output
-            pipeline_run.status = 'success'
+            pipeline_run.status = 'success' if not cr_failed else 'partial_failed'
             pipeline_run.config_fingerprint = config_fingerprint
             pipeline_run.final_output_json = final_output
             pipeline_run.finished_at = datetime.now(timezone.utc)
+            if cr_failed:
+                pipeline_run.error_message = f"CriticRefiner failed: {cr_result.get('error')}"
             db.session.commit()
-            
-            return {
+
+            result = {
                 'run_id': run_id,
-                'status': 'success',
+                'status': 'success' if not cr_failed else 'partial_failed',
                 'stages': stages,
                 'final_output': final_output,
                 'quality_report': quality_report,
                 'grounding_status': grounding_status,
-                'error': None
+                'error': cr_result.get('error') if cr_failed else None
             }
+            if cr_failed:
+                result['warnings'] = [f'CriticRefiner stage failed ({cr_result.get("error", "timeout")}). Output is from material stage.']
+            return result
         except Exception as e:
             db.session.rollback()
             try:

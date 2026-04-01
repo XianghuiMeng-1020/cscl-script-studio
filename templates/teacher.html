@@ -645,53 +645,61 @@
                     <div id="wizardStep3" class="wizard-step-content">
                         <div class="wizard-header">
                             <h2 data-i18n="teacher.wizard.step3.title">第 3 步：生成活动包</h2>
-                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step3.subtitle">系统将生成 Student Worksheet、Student Slides、Teacher Facilitation Sheet</p>
+                            <p class="wizard-subtitle" data-i18n="teacher.wizard.step3.subtitle">AI 将基于 CSCL 教学理论和你上传的课程材料，生成完整的协作学习活动方案</p>
                         </div>
                         <div class="wizard-body">
-                            <div class="wizard-help">
-                                <i class="fas fa-info-circle"></i>
-                                <p><strong data-i18n="common.why">为什么要做：</strong><span data-i18n="teacher.wizard.step3.why">流程包含 4 个阶段：规划器（结构）、材料（内容）、审查器（审查）、优化器（润色）。</span></p>
-                            </div>
                             <div id="pipelineVisualization" class="pipeline-visualization">
-                                <div id="pipelineProgressBar" class="pipeline-progress-bar hidden">
-                                    <div class="progress-header">
-                                        <span id="pipelineProgressLabel" class="progress-label">Preparing...</span>
-                                        <span id="pipelineElapsedTime" class="progress-timer">0:00</span>
+                                <!-- Modern 3-stage progress stepper -->
+                                <div id="pipelineProgressBar" class="pipeline-stepper hidden">
+                                    <div class="stepper-header">
+                                        <span id="pipelineProgressLabel" class="stepper-label" data-i18n="teacher.pipeline.ready">点击下方按钮开始生成</span>
+                                        <span id="pipelineElapsedTime" class="stepper-timer">0:00</span>
                                     </div>
-                                    <div class="progress-track">
-                                        <div class="progress-segment" data-seg="planner">
-                                            <div class="seg-fill"></div>
-                                            <span class="seg-label">Plan</span>
+                                    <div class="stepper-track">
+                                        <div class="stepper-step" data-seg="planner">
+                                            <div class="step-circle">
+                                                <i class="fas fa-lightbulb"></i>
+                                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                            </div>
+                                            <span class="step-name" data-i18n="teacher.pipeline.stage_planner">规划</span>
                                         </div>
-                                        <div class="progress-segment" data-seg="material">
-                                            <div class="seg-fill"></div>
-                                            <span class="seg-label">Material</span>
+                                        <div class="stepper-connector" data-after="planner"></div>
+                                        <div class="stepper-step" data-seg="material">
+                                            <div class="step-circle">
+                                                <i class="fas fa-file-alt"></i>
+                                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                            </div>
+                                            <span class="step-name" data-i18n="teacher.pipeline.stage_material">材料生成</span>
                                         </div>
-                                        <div class="progress-segment" data-seg="critic">
-                                            <div class="seg-fill"></div>
-                                            <span class="seg-label">Critic</span>
-                                        </div>
-                                        <div class="progress-segment" data-seg="refiner">
-                                            <div class="seg-fill"></div>
-                                            <span class="seg-label">Refiner</span>
+                                        <div class="stepper-connector" data-after="material"></div>
+                                        <div class="stepper-step" data-seg="critic_refiner">
+                                            <div class="step-circle">
+                                                <i class="fas fa-check-double"></i>
+                                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                            </div>
+                                            <span class="step-name" data-i18n="teacher.pipeline.stage_critic_refiner">评审优化</span>
                                         </div>
                                     </div>
-                                    <div class="progress-hint" id="pipelineProgressHint">Estimated ~3-4 minutes total</div>
+                                    <div class="stepper-detail">
+                                        <span id="pipelineProgressHint" class="stepper-hint" data-i18n="teacher.pipeline.time_estimate">预计总计 ~2 分钟</span>
+                                        <span id="pipelineProgressPercent" class="stepper-percent">0%</span>
+                                    </div>
                                 </div>
+
+                                <!-- Stage detail cards (3 stages) -->
                                 <div class="pipeline-stages">
                                     <div class="pipeline-stage" data-stage="planner">
                                         <div class="stage-header">
-                                            <div class="stage-icon"><i class="fas fa-map"></i></div>
+                                            <div class="stage-icon"><i class="fas fa-lightbulb"></i></div>
                                             <div class="stage-info">
-                                                <h4 data-i18n="teacher.pipeline.stage.planner">规划器</h4>
-                                                <span class="stage-status" data-i18n="teacher.pipeline.stage.pending">等待中</span>
+                                                <h4 data-i18n="teacher.pipeline.stage.planner">活动规划</h4>
+                                                <span class="stage-status" data-i18n="teacher.pipeline.pending">等待中</span>
                                             </div>
                                         </div>
                                         <div class="stage-details">
                                             <div class="stage-duration">--</div>
                                             <div class="stage-summary">
-                                                <p class="input-summary"><span data-i18n="teacher.pipeline.stage.input">输入：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
-                                                <p class="output-summary"><span data-i18n="teacher.pipeline.stage.output">输出：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                                <p class="stage-friendly-msg" data-i18n="teacher.pipeline.planner_msg">分析课程材料，规划活动结构和步骤...</p>
                                             </div>
                                         </div>
                                     </div>
@@ -699,66 +707,48 @@
                                         <div class="stage-header">
                                             <div class="stage-icon"><i class="fas fa-file-alt"></i></div>
                                             <div class="stage-info">
-                                                <h4 data-i18n="teacher.pipeline.stage.material">材料</h4>
-                                                <span class="stage-status" data-i18n="teacher.pipeline.stage.pending">等待中</span>
+                                                <h4 data-i18n="teacher.pipeline.stage.material">材料生成</h4>
+                                                <span class="stage-status" data-i18n="teacher.pipeline.pending">等待中</span>
                                             </div>
                                         </div>
                                         <div class="stage-details">
                                             <div class="stage-duration">--</div>
                                             <div class="stage-summary">
-                                                <p class="input-summary"><span data-i18n="teacher.pipeline.stage.input">输入：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
-                                                <p class="output-summary"><span data-i18n="teacher.pipeline.stage.output">输出：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                                <p class="stage-friendly-msg" data-i18n="teacher.pipeline.material_msg">生成学生工作表、教师指南和幻灯片...</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="pipeline-stage" data-stage="critic">
+                                    <div class="pipeline-stage" data-stage="critic_refiner">
                                         <div class="stage-header">
-                                            <div class="stage-icon"><i class="fas fa-search"></i></div>
+                                            <div class="stage-icon"><i class="fas fa-check-double"></i></div>
                                             <div class="stage-info">
-                                                <h4 data-i18n="teacher.pipeline.stage.critic">审查器</h4>
-                                                <span class="stage-status" data-i18n="teacher.pipeline.stage.pending">等待中</span>
+                                                <h4 data-i18n="teacher.pipeline.stage.critic_refiner">评审与优化</h4>
+                                                <span class="stage-status" data-i18n="teacher.pipeline.pending">等待中</span>
                                             </div>
                                         </div>
                                         <div class="stage-details">
                                             <div class="stage-duration">--</div>
                                             <div class="stage-summary">
-                                                <p class="input-summary"><span data-i18n="teacher.pipeline.stage.input">输入：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
-                                                <p class="output-summary"><span data-i18n="teacher.pipeline.stage.output">输出：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="pipeline-stage" data-stage="refiner">
-                                        <div class="stage-header">
-                                            <div class="stage-icon"><i class="fas fa-magic"></i></div>
-                                            <div class="stage-info">
-                                                <h4 data-i18n="teacher.pipeline.stage.refiner">优化器</h4>
-                                                <span class="stage-status" data-i18n="teacher.pipeline.stage.pending">等待中</span>
-                                            </div>
-                                        </div>
-                                        <div class="stage-details">
-                                            <div class="stage-duration">--</div>
-                                            <div class="stage-summary">
-                                                <p class="input-summary"><span data-i18n="teacher.pipeline.stage.input">输入：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
-                                                <p class="output-summary"><span data-i18n="teacher.pipeline.stage.output">输出：</span><span data-i18n="teacher.pipeline.stage.waiting">等待中...</span></p>
+                                                <p class="stage-friendly-msg" data-i18n="teacher.pipeline.cr_msg">检查教学有效性，优化协作设计...</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="pipeline-tech-info">
                                     <div class="tech-item">
-                                        <label data-i18n="teacher.pipeline.provider">提供商：</label>
+                                        <label data-i18n="teacher.pipeline.provider">提供商</label>
                                         <span id="pipelineProvider">--</span>
                                     </div>
                                     <div class="tech-item">
-                                        <label data-i18n="teacher.pipeline.model">模型：</label>
+                                        <label data-i18n="teacher.pipeline.model">模型</label>
                                         <span id="pipelineModel">--</span>
                                     </div>
                                     <div class="tech-item">
                                         <label data-i18n="teacher.pipeline.spec_hash">教学目标版本</label>
-                                        <span id="pipelineSpecHash" data-i18n-title="teacher.pipeline.spec_hash_title" title="教学目标版本指纹">--</span>
+                                        <span id="pipelineSpecHash">--</span>
                                     </div>
                                     <div class="tech-item">
-                                        <label data-i18n="teacher.pipeline.config_fp">配置指纹：</label>
+                                        <label data-i18n="teacher.pipeline.config_fp">配置指纹</label>
                                         <span id="pipelineConfigFingerprint">--</span>
                                     </div>
                                 </div>
@@ -769,7 +759,7 @@
                                 <p id="pipelineErrorAction" class="pipeline-error-action"></p>
                             </div>
                             <div class="pipeline-actions">
-                                <button class="btn-primary" id="runPipelineBtn" onclick="runPipeline()">
+                                <button class="btn-primary btn-lg" id="runPipelineBtn" onclick="runPipeline()">
                                     <i class="fas fa-play"></i>
                                     <span data-i18n="teacher.pipeline.start">开始生成</span>
                                 </button>

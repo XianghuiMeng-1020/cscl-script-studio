@@ -30,13 +30,16 @@
     --bg-primary: #F5F2EC;
     --bg-surface: #FFFFFF;
     --bg-surface-hover: rgba(91, 117, 83, 0.06);
+    --bg-secondary: #F0EDE6;
     --border-color: #E2DDD4;
+    --border-light: #E8E4DC;
     --border-hover: rgba(45, 45, 45, 0.18);
     
     /* Text */
     --text-primary: #2D2D2D;
     --text-secondary: #6B6B6B;
     --text-muted: #999999;
+    --text-tertiary: #888888;
     --text-inverse: #FFFFFF;
     
     /* Legacy compatibility */

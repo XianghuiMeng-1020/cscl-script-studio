@@ -433,7 +433,7 @@ async function loadFolders() {
         var data = await res.json();
         var folders = data.folders || [];
         if (folders.length === 0) {
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-folder"></i><h4>' + t('teacher.quality.no_scripts', '暂无课程文件夹') + '</h4><p>' + t('teacher.home.title', '创建你的第一个课程文件夹') + '</p><button class="btn-primary" onclick="createNewFolder()"><i class="fas fa-plus"></i> ' + t('teacher.folders.create') + '</button></div>';
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-folder"></i><h4>' + t('teacher.quality.no_scripts', 'No course folders yet') + '</h4><p>' + t('teacher.home.title', 'Create your first course folder') + '</p><button class="btn-primary" onclick="createNewFolder()"><i class="fas fa-plus"></i> ' + t('teacher.folders.create') + '</button></div>';
             return;
         }
         var html = '';
@@ -443,7 +443,7 @@ async function loadFolders() {
             if (f.description) html += '<p class="script-card-meta" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;">' + _esc(f.description) + '</p>';
             var activityCountText = (typeof t === 'function')
                 ? (f.activity_count === 0 ? t('teacher.folder.activity_count_zero') : t('teacher.folder.activity_count').replace('{n}', f.activity_count || 0))
-                : (f.activity_count || 0) + ' ' + t('teacher.folder.activity_count', '个活动');
+                : (f.activity_count || 0) + ' ' + t('teacher.folder.activity_count', 'activities');
             html += '<div class="script-card-footer" onclick="openFolder(\'' + f.id + '\')" style="cursor: pointer;"><span>' + activityCountText + '</span>';
             html += '<span>' + (f.created_at ? new Date(f.created_at).toLocaleDateString() : '') + '</span></div>';
             html += '<div class="folder-card-actions" style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">';
@@ -460,7 +460,7 @@ async function loadFolders() {
 }
 
 async function createNewFolder() {
-    var promptText = (typeof t === 'function') ? t('teacher.folder.prompt_name') : '请输入课程文件夹名称：';
+    var promptText = (typeof t === 'function') ? t('teacher.folder.prompt_name') : 'Enter course folder name:';
     var name = prompt(promptText);
     if (!name || !name.trim()) return;
     try {
@@ -472,15 +472,15 @@ async function createNewFolder() {
         });
         var data = await res.json();
         if (data.success) {
-            showNotification((typeof t === 'function') ? t('teacher.folder.create_success') : '课程文件夹已创建', 'success');
+            showNotification((typeof t === 'function') ? t('teacher.folder.create_success') : 'Course folder created', 'success');
             loadFolders();
             // Auto-set as current folder and course_id for wizard
             currentFolderId = data.folder.id;
         } else {
-            showNotification(data.error || ((typeof t === 'function') ? t('teacher.folder.create_error') : '创建失败'), 'error');
+            showNotification(data.error || ((typeof t === 'function') ? t('teacher.folder.create_error') : 'Creation failed'), 'error');
         }
     } catch (e) {
-        showNotification(((typeof t === 'function') ? t('teacher.folder.create_error') : '创建失败') + ': ' + e.message, 'error');
+        showNotification(((typeof t === 'function') ? t('teacher.folder.create_error') : 'Creation failed') + ': ' + e.message, 'error');
     }
 }
 
@@ -489,7 +489,7 @@ async function deleteFolder(folderId, folderName, activityCount) {
     if (activityCount > 0) {
         var hasActivitiesMsg = (typeof t === 'function') 
             ? t('teacher.folder.delete_has_activities').replace('{n}', activityCount)
-            : '该文件夹下还有 ' + activityCount + ' 个活动，无法删除。请先删除所有活动后再删除文件夹。';
+            : 'This folder has ' + activityCount + ' activities. Please delete all activities before deleting the folder.';
         showNotification(hasActivitiesMsg, 'error');
         return;
     }
@@ -497,7 +497,7 @@ async function deleteFolder(folderId, folderName, activityCount) {
     // Confirm deletion
     var confirmMsg = (typeof t === 'function')
         ? t('teacher.folder.delete_confirm').replace('{name}', folderName)
-        : '确定要删除课程文件夹"' + folderName + '"吗？此操作不可撤销。';
+        : 'Are you sure you want to delete folder "' + folderName + '"? This action cannot be undone.';
     if (!confirm(confirmMsg)) {
         return;
     }
@@ -510,18 +510,18 @@ async function deleteFolder(folderId, folderName, activityCount) {
         });
         
         if (res.ok) {
-            showNotification((typeof t === 'function') ? t('teacher.folder.delete_success') : '课程文件夹已删除', 'success');
+            showNotification((typeof t === 'function') ? t('teacher.folder.delete_success') : 'Course folder deleted', 'success');
             loadFolders();
         } else {
             var data = await res.json();
             if (res.status === 400 && data.error && data.error.includes('activities')) {
-                showNotification((typeof t === 'function') ? t('teacher.folder.delete_has_activities').replace('{n}', activityCount || '若干') : '该文件夹下还有活动，无法删除。请先删除所有活动。', 'error');
+                showNotification((typeof t === 'function') ? t('teacher.folder.delete_has_activities').replace('{n}', activityCount || 'some') : 'This folder still has activities. Please delete all activities first.', 'error');
             } else {
-                showNotification(data.error || ((typeof t === 'function') ? t('teacher.folder.delete_error') : '删除失败'), 'error');
+                showNotification(data.error || ((typeof t === 'function') ? t('teacher.folder.delete_error') : 'Delete failed'), 'error');
             }
         }
     } catch (e) {
-        showNotification(((typeof t === 'function') ? t('teacher.folder.delete_error') : '删除失败') + ': ' + e.message, 'error');
+        showNotification(((typeof t === 'function') ? t('teacher.folder.delete_error') : 'Delete failed') + ': ' + e.message, 'error');
     } finally {
         showLoading(false);
     }
@@ -577,7 +577,7 @@ function renderFolderDocuments(docs) {
 
     var dhtml = '';
     if (docs.length === 0) {
-        var emptyMsg = typeof t === 'function' ? t('teacher.folder.no_docs') : '暂无课程材料，请先上传文件';
+        var emptyMsg = typeof t === 'function' ? t('teacher.folder.no_docs') : 'No course materials yet. Please upload files.';
         dhtml = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>' + emptyMsg + '</p></div>';
     } else if (docsByActivity) {
         // Grouped by activity view
@@ -663,13 +663,13 @@ function renderDocumentItem(d) {
     html += '</div>';
     html += '</div>';
     // Add view content button
-    html += '<button class="btn-secondary btn-sm document-view-btn" onclick="toggleDocumentContent(\'' + docId + '\', event)" title="' + (typeof t === 'function' ? t('teacher.doc.view_content') : '查看') + '">';
-    html += '<i class="fas fa-eye"></i> <span class="btn-text">' + (typeof t === 'function' ? t('teacher.doc.view_content') : '查看') + '</span>';
+    html += '<button class="btn-secondary btn-sm document-view-btn" onclick="toggleDocumentContent(\'' + docId + '\', event)" title="' + (typeof t === 'function' ? t('teacher.doc.view_content') : 'View') + '">';
+    html += '<i class="fas fa-eye"></i> <span class="btn-text">' + (typeof t === 'function' ? t('teacher.doc.view_content') : 'View') + '</span>';
     html += '</button>';
     html += '</div>';
     // Content container (collapsed by default)
     html += '<div class="document-content-panel" id="doc-content-' + docId + '" style="display: none;">';
-    html += '<div class="document-content-loading">' + (typeof t === 'function' ? t('teacher.doc.loading') : '加载中...') + '</div>';
+    html += '<div class="document-content-loading">' + (typeof t === 'function' ? t('teacher.doc.loading') : 'Loading...') + '</div>';
     html += '</div>';
     return html;
 }
@@ -712,12 +712,12 @@ async function toggleDocumentContent(docId, event) {
         // Collapse
         contentPanel.style.display = 'none';
         if (btn) btn.classList.remove('active');
-        if (btnText) btnText.textContent = typeof t === 'function' ? t('teacher.doc.view_content') : '查看';
+        if (btnText) btnText.textContent = typeof t === 'function' ? t('teacher.doc.view_content') : 'View';
     } else {
         // Expand and load content
         contentPanel.style.display = 'block';
         if (btn) btn.classList.add('active');
-        if (btnText) btnText.textContent = typeof t === 'function' ? t('teacher.doc.hide_content') : '隐藏';
+        if (btnText) btnText.textContent = typeof t === 'function' ? t('teacher.doc.hide_content') : 'Hide';
 
         // Load content if not already loaded
         var loadingDiv = contentPanel.querySelector('.document-content-loading');
@@ -730,10 +730,10 @@ async function toggleDocumentContent(docId, event) {
                 if (data.success && data.has_content && data.content_preview) {
                     contentPanel.innerHTML = '<div class="document-content-text">' + escapeHtml(data.content_preview) + '</div>';
                 } else {
-                    contentPanel.innerHTML = '<div class="document-content-empty">' + (typeof t === 'function' ? t('teacher.doc.no_content') : '暂无提取内容') + '</div>';
+                    contentPanel.innerHTML = '<div class="document-content-empty">' + (typeof t === 'function' ? t('teacher.doc.no_content') : 'No extracted content') + '</div>';
                 }
             } catch (e) {
-                contentPanel.innerHTML = '<div class="document-content-error">' + (typeof t === 'function' ? t('teacher.doc.load_error') : '加载失败') + '</div>';
+                contentPanel.innerHTML = '<div class="document-content-error">' + (typeof t === 'function' ? t('teacher.doc.load_error') : 'Failed to load') + '</div>';
             }
         }
     }
@@ -2321,12 +2321,12 @@ async function runPipeline() {
             var code = result.code || '';
             var errMsg = result.error || result.message || 'Request failed.';
             if (code === 'PREFLIGHT_NO_COURSE_DOCS') {
-                errMsg = typeof t === 'function' ? t('teacher.pipeline.no_course_docs') : '当前课程下还没有上传文档。请先在 Step 1 中上传课程文档，再点击运行生成。';
-                showPipelineErrorPanel(errMsg, typeof t === 'function' ? t('teacher.pipeline.no_docs_title') : '请先上传课程文档', false);
+                errMsg = typeof t === 'function' ? t('teacher.pipeline.no_course_docs') : 'No documents uploaded for this course. Please upload documents in Step 1 first.';
+                showPipelineErrorPanel(errMsg, typeof t === 'function' ? t('teacher.pipeline.no_docs_title') : 'Please upload course documents first', false);
                 showNotification(errMsg, 'error');
                 goToStep(1);
             } else if (code === 'PREFLIGHT_MISSING_COURSE_ID') {
-                showNotification(typeof t === 'function' ? t('teacher.pipeline.missing_course_id') : '请填写课程信息（Step 2 中的课程）后再运行。', 'error');
+                showNotification(typeof t === 'function' ? t('teacher.pipeline.missing_course_id') : 'Please fill in the course information in Step 2 before running.', 'error');
                 goToStep(2);
             } else {
                 showNotification(errMsg, 'error');
@@ -3505,7 +3505,7 @@ async function loadDocuments() {
                     }
                 });
                 
-                var uploadedLabel = typeof t === 'function' ? t('teacher.wizard.step1.uploaded_at') : '上传时间';
+                var uploadedLabel = typeof t === 'function' ? t('teacher.wizard.step1.uploaded_at') : 'Uploaded at';
                 var html = '';
                 
                 // Helper function to render a document card
@@ -3596,7 +3596,7 @@ async function applyPrefillFromDoc(docId) {
         };
         if (typeof fillSpecForm === 'function') fillSpecForm(spec);
         if (data.warnings && data.warnings.length) showNotification(data.warnings[0], 'warning');
-        else showNotification(typeof t === 'function' ? t('teacher.doc.prefill_success') : '建议已填充。请确认或编辑，然后验证。', 'success');
+        else showNotification(typeof t === 'function' ? t('teacher.doc.prefill_success') : 'Suggestions filled. Please review, edit, then validate.', 'success');
         if (typeof goToStep === 'function') goToStep(2);
     } catch (e) {
         console.error('Prefill error:', e);
@@ -3636,7 +3636,7 @@ function uploadDocument() {
                 // Backend already filters binary content via safe_preview_or_none
                 // Double-check on frontend for safety
                 if (preview && typeof preview === 'string' && looksLikePdfBinary(preview)) {
-                    showNotification(typeof t === 'function' ? t('teacher.pdf.parse_failed_binary') : '解析失败：检测到二进制PDF内容。请重新上传或使用其他文件。', 'error');
+                    showNotification(typeof t === 'function' ? t('teacher.pdf.parse_failed_binary') : 'Parse failed: binary PDF content detected. Please re-upload or use a different file.', 'error');
                     return;
                 }
                 showNotification(t('teacher.notify.doc_upload_success'), 'success');
@@ -3648,12 +3648,12 @@ function uploadDocument() {
                         : code === 'EMPTY_EXTRACTED_TEXT' ? t('teacher.pdf.parse_failed_empty')
                         : code === 'TEXT_TOO_SHORT' ? t('teacher.pdf.parse_failed_short')
                         : t('teacher.pdf.parse_failed_generic'))
-                    : '提取失败。请重试或使用其他文件。';
+                    : 'Extraction failed. Please retry or use a different file.';
                 showNotification(msg, 'error');
             }
         } catch (error) {
             console.error('Error uploading document:', error);
-            showNotification(typeof t === 'function' ? t('teacher.pdf.parse_failed_generic') : '提取失败。请重试或使用其他文件。', 'error');
+            showNotification(typeof t === 'function' ? t('teacher.pdf.parse_failed_generic') : 'Extraction failed. Please retry or use a different file.', 'error');
         } finally {
             showLoading(false);
         }

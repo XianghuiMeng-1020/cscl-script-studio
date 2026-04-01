@@ -1924,6 +1924,61 @@
     text-align: center;
 }
 
+/* Activity Charts */
+.activity-charts-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border-color);
+}
+.charts-heading {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+.charts-heading i { margin-right: 0.5rem; color: #3b82f6; }
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+.chart-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+}
+.chart-card h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.6rem;
+    color: var(--text-primary);
+}
+.chart-img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border-color);
+}
+.chart-desc {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+    line-height: 1.4;
+}
+.chart-purpose-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+.chart-purpose-badge.example_good { background: #dcfce7; color: #166534; }
+.chart-purpose-badge.example_bad { background: #fef2f2; color: #991b1b; }
+.chart-purpose-badge.activity_data { background: #dbeafe; color: #1e40af; }
+
 /* Pipeline Visualization */
 .pipeline-visualization {
     margin: 2rem 0;

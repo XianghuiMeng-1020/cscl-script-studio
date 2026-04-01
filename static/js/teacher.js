@@ -1270,6 +1270,23 @@ async function loadScriptPreview() {
             } else {
                 html += '<p class="empty-tab">' + (typeof t === 'function' ? t('teacher.preview.no_worksheet') : 'No student worksheet in this run.') + '</p>';
             }
+            var charts = output.activity_charts || [];
+            if (charts.length > 0) {
+                html += '<div class="activity-charts-section">';
+                html += '<h3 class="charts-heading"><i class="fas fa-chart-bar"></i> Activity Charts</h3>';
+                html += '<div class="charts-grid">';
+                charts.forEach(function(chart) {
+                    html += '<div class="chart-card">';
+                    html += '<h4>' + _esc(chart.title || 'Chart') + '</h4>';
+                    if (chart.base64) {
+                        html += '<img src="data:image/png;base64,' + chart.base64 + '" alt="' + _esc(chart.title || 'Chart') + '" class="chart-img" />';
+                    }
+                    if (chart.description) html += '<p class="chart-desc">' + _esc(chart.description) + '</p>';
+                    if (chart.purpose) html += '<span class="chart-purpose-badge ' + (chart.purpose || '') + '">' + _esc(chart.purpose === 'example_good' ? 'Good Example' : chart.purpose === 'example_bad' ? 'Misleading Example' : chart.purpose) + '</span>';
+                    html += '</div>';
+                });
+                html += '</div></div>';
+            }
             html += '</div>';
 
             html += '<div class="preview-tab-panel" id="preview-panel-slides">';
@@ -2391,6 +2408,7 @@ async function runPipeline() {
                 showLoading(false);
                 if (runBtn) { runBtn.disabled = false; runBtn.classList.remove('btn-loading'); runBtn.innerHTML = '<i class="fas fa-play"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.start') : 'Start Generation'); }
             } else {
+                showLoading(false);
                 showNotification(t('teacher.notify.pipeline_started'), 'success');
                 _pipelinePollingActive = true;
                 pollPipelineStatus(result.run_id);

@@ -596,6 +596,16 @@ class CSCLPipelineService:
                 except Exception as e:
                     logger.error(f"[Pipeline] Image generation error: {str(e)}")
             
+            # Chart generation: embed matplotlib-based example charts
+            try:
+                from app.services.chart_generation_service import generate_activity_charts
+                activity_charts = generate_activity_charts(spec, planner_result.get('output_snapshot') or {})
+                if activity_charts:
+                    material_result['output_snapshot']['activity_charts'] = activity_charts
+                    logger.info(f"[Pipeline] Embedded {len(activity_charts)} activity charts for run {run_id}")
+            except Exception as e:
+                logger.warning(f"[Pipeline] Chart generation skipped: {e}")
+            
             # Stage 3: Critic (with RAG retrieval)
             evidence_chunks_critic = self._retrieve_evidence(spec, 'critic', script_id) if self.retriever else []
             critic_options = (options or {}).copy()
@@ -704,7 +714,7 @@ class CSCLPipelineService:
             final_output = dict(refiner_result['output_snapshot']) if refiner_result.get('output_snapshot') else {}
             # Pass through classroom-ready artefacts from material stage if refiner did not include them
             mat_snap = material_result.get('output_snapshot') or {}
-            for _key in ('student_worksheet', 'student_slides', 'teacher_guide', 'role_cards'):
+            for _key in ('student_worksheet', 'student_slides', 'teacher_guide', 'role_cards', 'activity_charts'):
                 if mat_snap.get(_key) and not final_output.get(_key):
                     final_output[_key] = mat_snap[_key]
 

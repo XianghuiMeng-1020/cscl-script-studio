@@ -2506,14 +2506,17 @@ async function restorePipelineState() {
         try { sessionStorage.setItem('cscl_current_run_id', latest.run_id); } catch (e) {}
         if (latest.status === 'running') {
             _pipelinePollingActive = true;
+            pipelineRunInProgress = true;
             var runBtn = document.getElementById('runPipelineBtn');
             if (runBtn) { runBtn.disabled = true; runBtn.classList.add('btn-loading'); runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (typeof t === 'function' ? t('teacher.pipeline.generating') : 'Generating...'); }
-            showLoading(true);
+            _showProgressBar(true);
+            _startPipelineTimer();
             pollPipelineStatus(latest.run_id);
         } else if (latest.status === 'success' || latest.status === 'completed') {
             var detailRes = await fetch(API_BASE + '/pipeline/runs/' + latest.run_id, { credentials: 'include' });
             if (detailRes.ok) {
                 var detailData = await detailRes.json();
+                _showProgressBar(true);
                 updatePipelineVisualization(detailData);
                 var nextBtn = document.getElementById('wizardStep3Next');
                 if (nextBtn) nextBtn.disabled = false;
@@ -2522,6 +2525,7 @@ async function restorePipelineState() {
             var detailRes2 = await fetch(API_BASE + '/pipeline/runs/' + latest.run_id, { credentials: 'include' });
             if (detailRes2.ok) {
                 var detailData2 = await detailRes2.json();
+                _showProgressBar(true);
                 updatePipelineVisualization(detailData2);
             }
         }

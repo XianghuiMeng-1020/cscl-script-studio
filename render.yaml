@@ -11,7 +11,7 @@ services:
     region: singapore
     plan: standard
     buildCommand: pip install -r requirements.txt && python -c "import os; os.makedirs('data/course_documents', exist_ok=True)"
-    startCommand: python -m alembic upgrade head 2>/dev/null; gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 300 --graceful-timeout 120 --keep-alive 5 --max-requests 1000 --max-requests-jitter 50 --preload
+    startCommand: python -m alembic upgrade head 2>/dev/null; gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 300 --graceful-timeout 120 --keep-alive 5 --max-requests 1000 --max-requests-jitter 50
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION

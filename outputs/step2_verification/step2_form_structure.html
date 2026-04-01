@@ -1,0 +1,38 @@
+<form id="standaloneSpecForm" class="spec-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="standaloneSpecCourse" data-i18n="teacher.form.course">Course Name *</label>
+                                <input type="text" id="standaloneSpecCourse" required="" data-i18n-placeholder="teacher.form.course_placeholder" placeholder="e.g., CS101">
+                            </div>
+                            <div class="form-group">
+                                <label for="standaloneSpecTopic" data-i18n="teacher.form.topic">Topic *</label>
+                                <input type="text" id="standaloneSpecTopic" required="" data-i18n-placeholder="teacher.form.topic_placeholder" placeholder="e.g., Algorithmic Fairness">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="standaloneSpecDuration" data-i18n="teacher.form.duration">Activity duration (minutes) *</label>
+                                <input type="number" id="standaloneSpecDuration" required="" min="30" value="90">
+                            </div>
+                            <div class="form-group">
+                                <label for="standaloneSpecMode" data-i18n="teacher.form.mode">Mode *</label>
+                                <select id="standaloneSpecMode" required="">
+                                    <option value="Sync" data-i18n="teacher.form.mode_sync">Synchronous</option>
+                                    <option value="Async" data-i18n="teacher.form.mode_async">Asynchronous</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="standaloneSpecClassSize" data-i18n="teacher.form.class_size">Class Size *</label>
+                                <input type="number" id="standaloneSpecClassSize" required="" min="2" value="30">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="standaloneSpecObjectives" data-i18n="teacher.form.objectives">Learning Objectives * (one per line)</label>
+                            <textarea id="standaloneSpecObjectives" required="" rows="4" data-i18n-placeholder="teacher.form.objectives_placeholder" placeholder="Explain basic fairness metrics
+Compare trade-offs between accuracy and fairness"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="fillStandaloneDemoSpec()"><i class="fas fa-magic" aria-hidden="true"></i> <span data-i18n="teacher.demo.fill">Fill Demo Data</span></button>
+                            <button type="button" class="btn-primary" onclick="validateStandaloneSpec()"><i class="fas fa-check-circle" aria-hidden="true"></i> <span data-i18n="teacher.spec.validate">Validate Teaching Plan</span></button>
+                        </div>
+                    </form>

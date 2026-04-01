@@ -7,23 +7,36 @@ embedded directly in the activity output (student_worksheet / student_slides).
 import base64
 import io
 import logging
+import os
 import random
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-try:
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    import matplotlib.ticker as ticker
-    HAS_MATPLOTLIB = True
-except ImportError:
-    HAS_MATPLOTLIB = False
-    logger.warning("matplotlib not installed – chart generation disabled")
+_plt = None
+HAS_MATPLOTLIB = None
+
+def _get_plt():
+    """Lazy-load matplotlib to avoid startup memory/time cost."""
+    global _plt, HAS_MATPLOTLIB
+    if HAS_MATPLOTLIB is not None:
+        return _plt
+    try:
+        os.environ.setdefault("MPLBACKEND", "Agg")
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        _plt = plt
+        HAS_MATPLOTLIB = True
+    except Exception:
+        _plt = None
+        HAS_MATPLOTLIB = False
+        logger.warning("matplotlib not available – chart generation disabled")
+    return _plt
 
 
 def _fig_to_base64(fig) -> str:
+    plt = _get_plt()
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=130, bbox_inches="tight",
                 facecolor="white", edgecolor="none")
@@ -35,6 +48,7 @@ def _fig_to_base64(fig) -> str:
 def _make_bar_chart(title: str, labels: List[str], values: List[float],
                     ylabel: str = "Value", color: str = "#3b82f6",
                     bad_version: bool = False) -> str:
+    plt = _get_plt()
     fig, ax = plt.subplots(figsize=(6, 3.5))
     bars = ax.bar(labels, values, color=color, edgecolor="white", width=0.6)
     ax.set_title(title, fontsize=12, fontweight="bold", pad=10)
@@ -53,6 +67,7 @@ def _make_bar_chart(title: str, labels: List[str], values: List[float],
 
 def _make_line_chart(title: str, x: List, y_series: Dict[str, List[float]],
                      xlabel: str = "X", ylabel: str = "Y") -> str:
+    plt = _get_plt()
     fig, ax = plt.subplots(figsize=(6, 3.5))
     colors = ["#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#8b5cf6"]
     for i, (name, ys) in enumerate(y_series.items()):
@@ -70,6 +85,7 @@ def _make_line_chart(title: str, x: List, y_series: Dict[str, List[float]],
 
 def _make_pie_chart(title: str, labels: List[str], sizes: List[float],
                     explode_biggest: bool = False) -> str:
+    plt = _get_plt()
     fig, ax = plt.subplots(figsize=(5, 4))
     colors = ["#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#8b5cf6",
               "#ec4899", "#14b8a6", "#f97316"]
@@ -143,6 +159,7 @@ def generate_activity_charts(
     spec: Dict[str, Any],
     planner_output: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
+    _get_plt()
     if not HAS_MATPLOTLIB:
         logger.info("matplotlib unavailable, skipping chart generation")
         return []

@@ -3121,6 +3121,12 @@ function openScript(scriptId) {
     switchView('scripts');
 }
 
+function openScriptProject(scriptId) {
+    currentScriptId = scriptId;
+    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('cscl_current_script_id', scriptId);
+    editScript(scriptId);
+}
+
 /** Open script in wizard at Step 2 to edit and re-run pipeline */
 async function editScript(scriptId) {
     try {

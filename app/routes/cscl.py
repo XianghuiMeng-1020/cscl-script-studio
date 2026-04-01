@@ -204,15 +204,23 @@ def create_script():
 def list_scripts():
     """List all CSCL scripts (teacher/admin only) with folder info"""
     scripts = CSCLScript.query.filter_by(created_by=current_user.id).all()
+    needs_commit = False
     result = []
     for s in scripts:
+        if s.course_id and s.course_id != 'default-course' and s.folder_id and s.course_id == s.folder_id:
+            s.course_id = 'default-course'
+            needs_commit = True
         script_dict = s.to_dict()
-        # Add folder name if folder_id exists
         if s.folder_id:
             folder = CSCLCourseFolder.query.get(s.folder_id)
             if folder:
                 script_dict['folder_name'] = folder.name
         result.append(script_dict)
+    if needs_commit:
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
     return jsonify({
         'success': True,
         'scripts': result

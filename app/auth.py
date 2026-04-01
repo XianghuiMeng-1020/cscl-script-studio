@@ -9,13 +9,8 @@ import secrets
 
 
 def log_audit(event_type, actor_id=None, role=None, target_id=None, status='success', meta=None):
-    """Log audit event"""
+    """Log audit event to the database (always available via SQLite fallback)"""
     try:
-        from flask import current_app
-        # Only log if DB storage is enabled
-        if not current_app.config.get('USE_DB_STORAGE', False):
-            return
-        
         audit = AuditLog(
             event_type=event_type,
             actor_id=actor_id,

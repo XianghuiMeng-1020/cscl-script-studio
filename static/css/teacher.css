@@ -1090,24 +1090,6 @@
 
 /* ==================== Empty State ==================== */
 
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--text-secondary);
-}
-
-.empty-state i {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.3;
-}
-
-.empty-state h4 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-    color: var(--dark-color);
-}
-
 /* ==================== Responsive ==================== */
 
 @media (max-width: 1200px) {
@@ -2921,13 +2903,6 @@
 }
 
 /* ==================== Start Page Section Styles (S2.15 Enhanced) ==================== */
-
-.start-page {
-    max-width: 800px;
-    margin: 3rem auto;
-    text-align: center;
-    padding: 0 1rem;
-}
 
 /* Focused Start Page (per document requirements) */
 .start-page-focused {

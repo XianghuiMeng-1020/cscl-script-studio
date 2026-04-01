@@ -169,8 +169,10 @@ class ImageGenerationService:
             return []
         
         generated_images = []
-        topic = spec.get('topic', 'Learning Activity')
-        task_type = spec.get('task_type', 'general')
+        cc = spec.get('course_context', {})
+        tr = spec.get('task_requirements', {})
+        topic = cc.get('topic') or spec.get('topic', 'Learning Activity')
+        task_type = tr.get('task_type') or spec.get('task_type', 'general')
         
         # Define image generation scenarios based on task type
         generation_tasks = self._get_visual_tasks(spec, planner_output)
@@ -202,9 +204,12 @@ class ImageGenerationService:
     
     def _get_visual_tasks(self, spec: Dict[str, Any], planner_output: Dict[str, Any]) -> List[Dict[str, str]]:
         """Determine what visuals to generate based on activity type"""
-        topic = spec.get('topic', 'Learning Activity')
-        task_type = spec.get('task_type', 'general')
-        learning_objectives = spec.get('learning_objectives', [])
+        cc = spec.get('course_context', {})
+        tr = spec.get('task_requirements', {})
+        topic = cc.get('topic') or spec.get('topic', 'Learning Activity')
+        task_type = tr.get('task_type') or spec.get('task_type', 'general')
+        lo = spec.get('learning_objectives', {})
+        learning_objectives = lo.get('knowledge', []) + lo.get('skills', []) if isinstance(lo, dict) else lo
         
         tasks = []
         

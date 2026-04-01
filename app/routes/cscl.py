@@ -266,6 +266,8 @@ def update_script(script_id):
     
     data = request.get_json()
     
+    before_state = script.to_dict()
+    
     # Update script fields
     if 'title' in data:
         script.title = data['title']
@@ -280,7 +282,6 @@ def update_script(script_id):
     if 'duration_minutes' in data:
         script.duration_minutes = data['duration_minutes']
     
-    before_state = script.to_dict()
     script.updated_at = datetime.utcnow()
     db.session.commit()
     after_state = script.to_dict()
@@ -766,11 +767,8 @@ def export_script(script_id):
 
 def _log_script_revision(script_id: str, editor_id: str, revision_type: str, 
                          before_json: dict, after_json: dict, diff_summary: str):
-    """Helper function to log script revision"""
+    """Helper function to log script revision (always available via SQLite fallback)"""
     try:
-        if not current_app.config.get('USE_DB_STORAGE', False):
-            return None
-        
         revision = CSCLScriptRevision(
             script_id=script_id,
             editor_id=editor_id,
@@ -1363,8 +1361,14 @@ def list_decisions(script_id):
     actor_id = request.args.get('actor_id')
     start_time = request.args.get('start_time')
     end_time = request.args.get('end_time')
-    page = int(request.args.get('page', 1))
-    page_size = int(request.args.get('page_size', 50))
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+        page_size = min(200, max(1, int(request.args.get('page_size', 50))))
+    except (ValueError, TypeError):
+        return jsonify({
+            'error': 'page and page_size must be integers',
+            'code': 'INVALID_PAGINATION'
+        }), 400
     
     # Build query
     query = CSCLTeacherDecision.query.filter_by(script_id=script_id)

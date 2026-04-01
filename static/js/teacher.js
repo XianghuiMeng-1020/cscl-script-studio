@@ -433,7 +433,7 @@ async function loadFolders() {
         var data = await res.json();
         var folders = data.folders || [];
         if (folders.length === 0) {
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-folder"></i><h4>' + t('teacher.quality.no_scripts', 'No course folders yet') + '</h4><p>' + t('teacher.home.title', 'Create your first course folder') + '</p><button class="btn-primary" onclick="createNewFolder()"><i class="fas fa-plus"></i> ' + t('teacher.folders.create') + '</button></div>';
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-folder"></i><h4>' + t('teacher.folders.empty', '暂无课程文件夹') + '</h4><p>' + t('teacher.folders.empty_desc', '创建你的第一个课程文件夹') + '</p><button class="btn-primary" onclick="createNewFolder()"><i class="fas fa-plus"></i> ' + t('teacher.folders.create') + '</button></div>';
             return;
         }
         var html = '';
@@ -817,29 +817,49 @@ async function uploadFilesToFolder(files) {
 
     try {
         var uploadedCount = 0;
+        var failedCount = 0;
+        var lastError = '';
         for (var i = 0; i < files.length; i++) {
-            var formData = new FormData();
-            formData.append('file', files[i]);
-            formData.append('title', files[i].name);
-            formData.append('folder_id', currentFolderId);
+            try {
+                var formData = new FormData();
+                formData.append('file', files[i]);
+                formData.append('title', files[i].name);
+                formData.append('folder_id', currentFolderId);
 
-            var res = await fetch(API_BASE + '/courses/' + DEFAULT_COURSE_ID + '/docs/upload', {
-                method: 'POST',
-                body: formData,
-                credentials: 'include'
-            });
+                var res = await fetch(API_BASE + '/courses/' + DEFAULT_COURSE_ID + '/docs/upload', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
 
-            var data = await res.json();
-            if (data.success || data.document_id) {
-                uploadedCount++;
+                if (!res.ok) {
+                    failedCount++;
+                    try { var errData = await res.json(); lastError = errData.error || errData.message || ('HTTP ' + res.status); } catch (_) { lastError = 'HTTP ' + res.status; }
+                    continue;
+                }
+
+                var data = await res.json();
+                if (data.success || data.doc_id) {
+                    uploadedCount++;
+                } else {
+                    failedCount++;
+                    lastError = data.error || 'Unknown error';
+                }
+            } catch (fileErr) {
+                failedCount++;
+                lastError = fileErr.message;
             }
         }
 
-        showNotification(t('teacher.notify.upload_success').replace('{n}', uploadedCount), 'success');
+        if (uploadedCount > 0 && failedCount === 0) {
+            showNotification(t('teacher.notify.upload_success').replace('{n}', uploadedCount), 'success');
+        } else if (uploadedCount > 0 && failedCount > 0) {
+            showNotification(t('teacher.notify.upload_success').replace('{n}', uploadedCount) + ' (' + failedCount + ' failed: ' + lastError + ')', 'warning');
+        } else {
+            showNotification(t('teacher.notify.upload_failed') + ': ' + lastError, 'error');
+        }
 
-        // Refresh folder data
         if (window.currentFolderData) {
-            // Re-fetch folder data to update the list
             openFolder(currentFolderId);
         }
     } catch (e) {
@@ -1165,7 +1185,7 @@ async function loadScriptPreview() {
     var container = document.getElementById('scriptPreview');
     if (!container) return;
 
-    container.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>Loading script preview...</p></div>';
+    container.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>' + t('teacher.preview.loading', 'Loading script preview...') + '</p></div>';
 
     var runId = currentPipelineRunId;
     if (!runId && currentScriptId) {
@@ -1180,14 +1200,14 @@ async function loadScriptPreview() {
     }
 
     if (!runId) {
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>No pipeline run found. Please go back and run the pipeline first.</p></div>';
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>' + t('teacher.preview.no_run', 'No pipeline run found. Please go back and run the pipeline first.') + '</p></div>';
         return;
     }
 
     try {
         var res = await fetch(API_BASE + '/pipeline/runs/' + runId, { credentials: 'include' });
         if (!res.ok) {
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Failed to load pipeline results (HTTP ' + res.status + ')</p></div>';
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>' + t('teacher.preview.load_http_error', 'Failed to load pipeline results') + ' (HTTP ' + res.status + ')</p></div>';
             return;
         }
         var data = await res.json();
@@ -1212,8 +1232,8 @@ async function loadScriptPreview() {
         }
 
         if (!output) {
-            var errMsg = run.error_message || 'No output was generated';
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Pipeline did not produce output: ' + errMsg + '</p></div>';
+            var errMsg = run.error_message || t('teacher.preview.no_output_detail', 'No output was generated');
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>' + t('teacher.preview.no_output', 'Pipeline did not produce output') + ': ' + _esc(errMsg) + '</p></div>';
             return;
         }
 
@@ -1225,6 +1245,8 @@ async function loadScriptPreview() {
             if (mat.student_slides && !output.student_slides) output.student_slides = mat.student_slides;
             if (mat.teacher_guide && !output.teacher_guide) output.teacher_guide = mat.teacher_guide;
             if (mat.role_cards && !output.role_cards) output.role_cards = mat.role_cards;
+            if (mat.activity_charts && !output.activity_charts) output.activity_charts = mat.activity_charts;
+            if (mat.generated_images && !output.generated_images) output.generated_images = mat.generated_images;
         }
 
         var hasWorksheet = output.student_worksheet && (output.student_worksheet.title || output.student_worksheet.goal);
@@ -1245,13 +1267,13 @@ async function loadScriptPreview() {
             if (hasWorksheet) {
                 var sw = output.student_worksheet;
                 html += '<div class="worksheet-preview">';
-                html += '<h2 class="worksheet-title">' + _esc(sw.title || 'Activity') + '</h2>';
+                html += '<h2 class="worksheet-title">' + _esc(sw.title || t('teacher.preview.activity', 'Activity')) + '</h2>';
                 if (sw.goal) html += '<p class="worksheet-goal"><strong>' + (typeof t === 'function' ? t('teacher.preview.goal') : 'Goal') + ':</strong> ' + _esc(sw.goal) + '</p>';
                 if (sw.roles_summary) html += '<div class="worksheet-roles"><h4>' + (typeof t === 'function' ? t('teacher.preview.roles') : 'Roles') + '</h4><p>' + _esc(sw.roles_summary) + '</p></div>';
                 if (sw.steps && sw.steps.length) {
                     html += '<div class="worksheet-steps"><h4>' + (typeof t === 'function' ? t('teacher.preview.steps') : 'Steps') + '</h4>';
                     sw.steps.forEach(function(step, i) {
-                        html += '<div class="worksheet-step"><strong>Step ' + (step.step_order || i + 1) + ': ' + _esc(step.title || '') + '</strong>';
+                        html += '<div class="worksheet-step"><strong>' + t('teacher.preview.step_prefix', 'Step') + ' ' + (step.step_order || i + 1) + ': ' + _esc(step.title || '') + '</strong>';
                         if (step.duration_minutes) html += ' <span class="step-duration">(' + step.duration_minutes + ' min)</span>';
                         if (step.description) html += '<p>' + _esc(step.description) + '</p>';
                         if (step.prompts && step.prompts.length) {
@@ -1273,16 +1295,16 @@ async function loadScriptPreview() {
             var charts = output.activity_charts || [];
             if (charts.length > 0) {
                 html += '<div class="activity-charts-section">';
-                html += '<h3 class="charts-heading"><i class="fas fa-chart-bar"></i> Activity Charts</h3>';
+                html += '<h3 class="charts-heading"><i class="fas fa-chart-bar"></i> ' + t('teacher.preview.activity_charts', 'Activity Charts') + '</h3>';
                 html += '<div class="charts-grid">';
                 charts.forEach(function(chart) {
                     html += '<div class="chart-card">';
-                    html += '<h4>' + _esc(chart.title || 'Chart') + '</h4>';
+                    html += '<h4>' + _esc(chart.title || t('teacher.preview.chart', 'Chart')) + '</h4>';
                     if (chart.base64) {
                         html += '<img src="data:image/png;base64,' + chart.base64 + '" alt="' + _esc(chart.title || 'Chart') + '" class="chart-img" />';
                     }
                     if (chart.description) html += '<p class="chart-desc">' + _esc(chart.description) + '</p>';
-                    if (chart.purpose) html += '<span class="chart-purpose-badge ' + (chart.purpose || '') + '">' + _esc(chart.purpose === 'example_good' ? 'Good Example' : chart.purpose === 'example_bad' ? 'Misleading Example' : chart.purpose) + '</span>';
+                    if (chart.purpose) html += '<span class="chart-purpose-badge ' + (chart.purpose || '') + '">' + _esc(chart.purpose === 'example_good' ? t('teacher.preview.good_example', 'Good Example') : chart.purpose === 'example_bad' ? t('teacher.preview.bad_example', 'Misleading Example') : chart.purpose) + '</span>';
                     html += '</div>';
                 });
                 html += '</div></div>';
@@ -1293,7 +1315,7 @@ async function loadScriptPreview() {
             if (hasStudentSlides) {
                 var ss = output.student_slides;
                 html += '<div class="student-slides-preview">';
-                html += '<h2 class="slides-title">' + _esc(ss.title || 'Student Slides') + '</h2>';
+                html += '<h2 class="slides-title">' + _esc(ss.title || t('teacher.preview.tab_slides', 'Student Slides')) + '</h2>';
                 var slides = ss.slides || [];
                 slides.forEach(function(slide, i) {
                     html += '<div class="slide-card">';
@@ -1330,9 +1352,9 @@ async function loadScriptPreview() {
 
         var roles = output.roles || [];
         if (roles.length > 0) {
-            html += '<div class="preview-section"><h3><i class="fas fa-users"></i> Roles</h3><div class="roles-grid">';
+            html += '<div class="preview-section"><h3><i class="fas fa-users"></i> ' + t('teacher.preview.roles', 'Roles') + '</h3><div class="roles-grid">';
             roles.forEach(function(r) {
-                html += '<div class="role-card"><strong>' + _esc(r.role_id || r.role_name || r.name || 'Role') + '</strong>';
+                html += '<div class="role-card"><strong>' + _esc(r.role_id || r.role_name || r.name || t('teacher.preview.role', 'Role')) + '</strong>';
                 if (r.description) html += '<p>' + _esc(r.description) + '</p>';
                 html += '</div>';
             });
@@ -1341,10 +1363,10 @@ async function loadScriptPreview() {
 
         var scenes = output.scenes || [];
         if (scenes.length > 0) {
-            html += '<div class="preview-section"><h3><i class="fas fa-film"></i> Scenes (' + scenes.length + ')</h3>';
+            html += '<div class="preview-section"><h3><i class="fas fa-film"></i> ' + t('teacher.preview.scenes', 'Scenes') + ' (' + scenes.length + ')</h3>';
             scenes.forEach(function(scene, idx) {
                 html += '<div class="scene-card">';
-                html += '<div class="scene-header"><span class="scene-number">Scene ' + (scene.order_index || idx + 1) + '</span>';
+                html += '<div class="scene-header"><span class="scene-number">' + t('teacher.preview.scene_prefix', 'Scene') + ' ' + (scene.order_index || idx + 1) + '</span>';
                 if (scene.scene_type) html += '<span class="scene-type badge">' + _esc(scene.scene_type) + '</span>';
                 html += '</div>';
                 if (scene.purpose) html += '<p class="scene-purpose">' + _esc(scene.purpose) + '</p>';
@@ -1360,7 +1382,7 @@ async function loadScriptPreview() {
                     });
                     html += '</div>';
                 }
-                if (scene.transition_rule) html += '<p class="scene-transition"><em>Transition: ' + _esc(scene.transition_rule) + '</em></p>';
+                if (scene.transition_rule) html += '<p class="scene-transition"><em>' + t('teacher.preview.transition', 'Transition') + ': ' + _esc(scene.transition_rule) + '</em></p>';
                 html += '</div>';
             });
             html += '</div>';
@@ -1368,10 +1390,10 @@ async function loadScriptPreview() {
 
         if (output.refinements_applied) {
             var ref = output.refinements_applied;
-            html += '<div class="preview-section"><h3><i class="fas fa-magic"></i> Refinements Applied</h3><ul>';
-            if (ref.scenes_added) html += '<li>Scenes added: ' + ref.scenes_added + '</li>';
-            if (ref.roles_added) html += '<li>Roles added: ' + ref.roles_added + '</li>';
-            if (ref.scriptlets_fixed) html += '<li>Scriptlets fixed: ' + ref.scriptlets_fixed + '</li>';
+            html += '<div class="preview-section"><h3><i class="fas fa-magic"></i> ' + t('teacher.preview.refinements', 'Refinements Applied') + '</h3><ul>';
+            if (ref.scenes_added) html += '<li>' + t('teacher.preview.scenes_added', 'Scenes added') + ': ' + ref.scenes_added + '</li>';
+            if (ref.roles_added) html += '<li>' + t('teacher.preview.roles_added', 'Roles added') + ': ' + ref.roles_added + '</li>';
+            if (ref.scriptlets_fixed) html += '<li>' + t('teacher.preview.scriptlets_fixed', 'Scriptlets fixed') + ': ' + ref.scriptlets_fixed + '</li>';
             html += '</ul></div>';
         }
 
@@ -1407,7 +1429,7 @@ async function loadScriptPreview() {
 
     } catch (e) {
         console.error('[teacher] loadScriptPreview error:', e);
-        container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading preview: ' + e.message + '</p></div>';
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>' + t('teacher.preview.error_loading', 'Error loading preview') + ': ' + _esc(e.message) + '</p></div>';
     }
 }
 
@@ -1420,6 +1442,7 @@ function _esc(str) {
 
 /** Step 4: Edit & Regenerate — go back to Step 2 so teacher can modify spec and run pipeline again */
 function editAndRegenerate() {
+    if (!confirm(t('teacher.confirm.edit_regenerate', '返回编辑将需要重新运行生成流水线，确定继续吗？'))) return;
     if (currentSpec && typeof fillSpecForm === 'function') {
         var flat = currentSpec;
         if (currentSpec.course_context && !currentSpec.course) {
@@ -1961,7 +1984,15 @@ function specForScript(s) {
 }
 
 var _pipelineStageOrder = ['planner', 'material', 'critic', 'refiner'];
-var _pipelineStageLabels = { planner: 'Planner', material: 'Material', critic: 'Critic', refiner: 'Refiner' };
+function _pipelineStageLabel(key) {
+    var labels = {
+        planner: t('teacher.pipeline.stage_planner', 'Planner'),
+        material: t('teacher.pipeline.stage_material', 'Material'),
+        critic: t('teacher.pipeline.stage_critic', 'Critic'),
+        refiner: t('teacher.pipeline.stage_refiner', 'Refiner')
+    };
+    return labels[key] || key;
+}
 
 function _startPipelineTimer() {
     _pipelineStartTime = Date.now();
@@ -2026,12 +2057,12 @@ function _updateProgressBar(stages) {
         _stopPipelineTimer();
     } else if (activeStage) {
         var idx = _pipelineStageOrder.indexOf(activeStage) + 1;
-        if (label) label.textContent = 'Stage ' + idx + '/4 — ' + (_pipelineStageLabels[activeStage] || activeStage) + '...';
+        if (label) label.textContent = t('teacher.pipeline.stage_progress', 'Stage {n}/4 — {name}...').replace('{n}', idx).replace('{name}', _pipelineStageLabel(activeStage));
         var remaining = (4 - doneCount) * 40;
-        if (hint) hint.textContent = '~' + Math.ceil(remaining / 60) + ' min remaining';
+        if (hint) hint.textContent = t('teacher.pipeline.time_remaining', '~{n} min remaining').replace('{n}', Math.ceil(remaining / 60));
     } else if (doneCount === 0) {
-        if (label) label.textContent = 'Starting pipeline...';
-        if (hint) hint.textContent = 'Estimated ~3-4 minutes total';
+        if (label) label.textContent = t('teacher.pipeline.starting', 'Starting pipeline...');
+        if (hint) hint.textContent = t('teacher.pipeline.time_estimate', 'Estimated ~3-4 minutes total');
     }
 }
 
@@ -2111,7 +2142,8 @@ function updateStageCardsFromResult(result) {
             var card = document.querySelector('[data-stage="' + ds + '"]');
             if (card) {
                 var statusEl = card.querySelector('.stage-status');
-                if (statusEl && statusEl.textContent === 'Pending') {
+                var isPending = statusEl && !statusEl.classList.contains('running') && !statusEl.classList.contains('success') && !statusEl.classList.contains('failed');
+                if (isPending) {
                     statusEl.textContent = t('teacher.pipeline.skipped');
                     statusEl.className = 'stage-status skipped';
                 }
@@ -2735,6 +2767,7 @@ async function finalizeScript() {
         showNotification(t('teacher.notify.finalize_failed'), 'error');
         return;
     }
+    if (!confirm(t('teacher.confirm.finalize', '确认方案后将标记为最终版本，确定继续吗？'))) return;
     
     try {
         showLoading(true);

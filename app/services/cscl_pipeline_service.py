@@ -714,7 +714,7 @@ class CSCLPipelineService:
             final_output = dict(refiner_result['output_snapshot']) if refiner_result.get('output_snapshot') else {}
             # Pass through classroom-ready artefacts from material stage if refiner did not include them
             mat_snap = material_result.get('output_snapshot') or {}
-            for _key in ('student_worksheet', 'student_slides', 'teacher_guide', 'role_cards', 'activity_charts'):
+            for _key in ('student_worksheet', 'student_slides', 'teacher_guide', 'role_cards', 'activity_charts', 'generated_images'):
                 if mat_snap.get(_key) and not final_output.get(_key):
                     final_output[_key] = mat_snap[_key]
 

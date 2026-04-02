@@ -59,7 +59,7 @@ services:
       - key: PDF_EXTRACTION_TIMEOUT_SECONDS
         value: "120"
       - key: STATIC_VERSION
-        value: "33"
+        value: "42"
       # AI Enhancement Features - Enabled by default
       - key: IMAGE_GENERATION_ENABLED
         value: "true"

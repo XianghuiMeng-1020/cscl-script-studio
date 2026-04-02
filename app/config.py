@@ -72,7 +72,7 @@ class Config:
     SPEC_VALIDATE_PUBLIC = os.getenv('SPEC_VALIDATE_PUBLIC', 'false').lower() == 'true'
 
     # S2.14 static cache busting — hardcoded to guarantee cache refresh
-    STATIC_VERSION = '42'
+    STATIC_VERSION = '50'
 
     # Pipeline: require critic success for overall success (default conservative)
     PIPELINE_REQUIRE_CRITIC_SUCCESS = os.getenv('PIPELINE_REQUIRE_CRITIC_SUCCESS', 'true').lower() == 'true'

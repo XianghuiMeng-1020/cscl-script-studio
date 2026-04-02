@@ -4,7 +4,7 @@
 @import url('teacher_cscl_additions.css');
 
 .teacher-page {
-    background: var(--light-color);
+    background: #F1F5F9;
 }
 
 .app-container {
@@ -16,7 +16,7 @@
 
 .sidebar {
     width: 260px;
-    background: var(--gradient-dark);
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -24,7 +24,7 @@
     left: 0;
     height: 100vh;
     z-index: 100;
-    box-shadow: 6px 0 24px rgba(19, 24, 20, 0.18);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
 }
 
 .sidebar-header {
@@ -76,8 +76,8 @@
 
 .nav-item.active {
     color: white;
-    background: linear-gradient(90deg, rgba(91, 117, 83, 0.4) 0%, rgba(91, 117, 83, 0.14) 100%);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    background: linear-gradient(90deg, rgba(107, 143, 99, 0.35) 0%, rgba(107, 143, 99, 0.1) 100%);
+    box-shadow: none;
 }
 
 .nav-item.active::before {
@@ -171,8 +171,7 @@
     flex: 1;
     margin-left: 260px;
     padding: 2.5rem 3rem;
-    background: var(--bg-primary);
-    max-width: 1400px;
+    background: #F1F5F9;
 }
 
 .view {
@@ -184,41 +183,45 @@
 }
 
 .view-header {
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
 }
 
 .view-header h2 {
-    font-size: 1.75rem;
+    font-size: 1.85rem;
     font-weight: 700;
-    color: var(--dark-color);
+    color: var(--ink);
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    letter-spacing: -0.02em;
 }
 
 .view-header h2 i {
     color: var(--primary-color);
+    font-size: 1.5rem;
 }
 
 .view-subtitle {
-    color: var(--text-secondary);
-    margin-top: 0.25rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
 }
 
 .back-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--light-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    color: var(--text-secondary);
+    padding: 0.6rem 1.25rem;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: var(--radius-lg);
+    color: var(--muted);
     cursor: pointer;
     transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .back-btn:hover {
@@ -510,7 +513,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem;
-    background: var(--light-secondary);
+    background: #F1F5F9;
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 0.3s ease;
@@ -722,7 +725,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem;
-    background: var(--light-secondary);
+    background: #F1F5F9;
     border-radius: var(--radius-sm);
     font-size: 0.9rem;
 }
@@ -779,7 +782,7 @@
 .student-info-badge {
     font-size: 0.85rem;
     color: var(--text-secondary);
-    background: var(--light-secondary);
+    background: #F1F5F9;
     padding: 0.35rem 0.75rem;
     border-radius: var(--radius-full);
 }
@@ -825,7 +828,7 @@
 }
 
 .score-item {
-    background: var(--light-secondary);
+    background: #F1F5F9;
     border-radius: var(--radius-md);
     padding: 1rem;
 }
@@ -906,7 +909,7 @@
     align-items: center;
     gap: 0.35rem;
     padding: 0.5rem 0.75rem;
-    background: var(--light-secondary);
+    background: #F1F5F9;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     font-size: 0.85rem;
@@ -1027,7 +1030,7 @@
 .quality-score {
     text-align: center;
     padding: 0.5rem;
-    background: var(--light-secondary);
+    background: #F1F5F9;
     border-radius: var(--radius-sm);
 }
 
@@ -1062,7 +1065,7 @@
 }
 
 .improved-feedback {
-    background: var(--light-secondary);
+    background: #F1F5F9;
     padding: 1rem;
     border-radius: var(--radius-sm);
     font-size: 0.9rem;
@@ -1163,7 +1166,7 @@
 .structure-item {
     text-align: center;
     padding: 1rem;
-    background: var(--light-secondary);
+    background: #F1F5F9;
     border-radius: var(--radius-md);
 }
 
@@ -1245,7 +1248,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem;
-    background: var(--light-secondary);
+    background: #F1F5F9;
     border-radius: var(--radius-sm);
 }
 
@@ -1268,7 +1271,7 @@
 }
 
 .suggestion-item {
-    background: var(--light-secondary);
+    background: #F1F5F9;
     border-radius: var(--radius-md);
     padding: 1rem;
     border-left: 4px solid var(--primary-color);
@@ -1362,7 +1365,7 @@
 }
 
 .coverage-item {
-    background: var(--light-secondary);
+    background: #F1F5F9;
     border-radius: var(--radius-md);
     padding: 1rem;
 }
@@ -1453,7 +1456,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem;
-    background: var(--light-secondary);
+    background: #F1F5F9;
     border-radius: var(--radius-md);
 }
 
@@ -1844,11 +1847,11 @@
 /* Pipeline Stepper Progress (3-stage modern design) */
 .pipeline-stepper {
     margin-bottom: 1.5rem;
-    background: linear-gradient(180deg, #ffffff 0%, #fbfaf7 100%);
-    border: 1px solid #e6e0d5;
-    border-radius: 16px;
-    padding: 1.25rem 1.5rem;
-    box-shadow: 0 8px 20px rgba(45, 45, 45, 0.06);
+    background: #FFFFFF;
+    border: none;
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
 }
 .pipeline-stepper.hidden { display: none; }
 
@@ -2106,16 +2109,16 @@
 }
 
 .stage-icon {
-    width: 48px;
-    height: 48px;
-    background: var(--primary-color);
-    border-radius: var(--radius-md);
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #6B8F63, #4A7044);
+    border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 1.25rem;
-    box-shadow: 0 8px 18px rgba(91, 117, 83, 0.22);
+    font-size: 1.3rem;
+    box-shadow: 0 6px 16px rgba(74, 112, 68, 0.2);
     transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
 
@@ -2925,8 +2928,8 @@
 .document-preview {
     margin-top: 1rem;
     padding: 0.75rem;
-    background: var(--light-color);
-    border: 1px solid var(--border-color);
+    background: #F1F5F9;
+    border: 1px solid #E2E8F0;
     border-radius: var(--radius-sm);
     max-height: 200px;
     overflow-y: auto;
@@ -3889,7 +3892,7 @@
 @media (prefers-color-scheme: dark) {
     .teacher-page,
     .main-content {
-        background: #141816;
+        background: #0f172a;
     }
 
     .pipeline-stepper,
@@ -3899,13 +3902,9 @@
     .output-preview-section,
     .wizard-body,
     .why-note {
-        background: #1d2320;
-        border-color: #2d3531;
-        color: #d7e0da;
-    }
-
-    .pipeline-stage::before {
-        background: #46514b;
+        background: #1e293b;
+        border-color: #334155;
+        color: #e2e8f0;
     }
 
     .stage-info h4,

@@ -1988,7 +1988,7 @@ function _pipelineStageLabel(key) {
     var labels = {
         planner: t('teacher.pipeline.stage_planner', '规划'),
         material: t('teacher.pipeline.stage_material', '材料生成'),
-        critic_refiner: t('teacher.pipeline.stage_critic_refiner', '评审优化')
+        critic_refiner: t('teacher.pipeline.stage.critic_refiner', '评审优化')
     };
     return labels[key] || key;
 }
@@ -2045,7 +2045,7 @@ function _updateProgressBar(stages) {
             if (stepEl) stepEl.classList.add('active');
             if (connEl) connEl.classList.add('active');
             activeStage = seg;
-        } else if (status === 'failed') {
+        } else if (status === 'failed' || status === 'partial_failed') {
             if (stepEl) stepEl.classList.add('failed');
             failedStage = seg;
             doneCount++;
@@ -2077,23 +2077,17 @@ function _updateProgressBar(stages) {
 
 function resetPipelineStageCards() {
     document.querySelectorAll('.pipeline-stage').forEach(function(stage) {
+        stage.classList.remove('running', 'completed', 'failed');
         var status = stage.querySelector('.stage-status');
         if (status) {
             status.removeAttribute('data-i18n');
             status.textContent = t('teacher.pipeline.pending');
-            status.className = 'stage-status';
+            status.className = 'stage-status pending';
         }
-        var inputEl = stage.querySelector('.input-summary');
-        if (inputEl) {
-            var spans = inputEl.querySelectorAll('span');
-            var target = spans.length > 1 ? spans[1] : spans[0];
-            if (target) { target.removeAttribute('data-i18n'); target.textContent = t('teacher.pipeline.waiting'); }
-        }
-        var outputEl = stage.querySelector('.output-summary');
-        if (outputEl) {
-            var spans = outputEl.querySelectorAll('span');
-            var target = spans.length > 1 ? spans[1] : spans[0];
-            if (target) { target.removeAttribute('data-i18n'); target.textContent = t('teacher.pipeline.waiting'); }
+        var msg = stage.querySelector('.stage-friendly-msg');
+        if (msg) {
+            msg.setAttribute('data-i18n', 'teacher.pipeline.waiting');
+            msg.textContent = t('teacher.pipeline.waiting');
         }
         var dur = stage.querySelector('.stage-duration');
         if (dur) dur.textContent = '--';
@@ -2618,34 +2612,48 @@ function _setStageStatus(stageElement, status) {
     var statusEl = stageElement.querySelector('.stage-status');
     if (!statusEl) return;
     statusEl.removeAttribute('data-i18n');
-    var label = status ? status.charAt(0).toUpperCase() + status.slice(1) : '--';
-    statusEl.textContent = label;
-    statusEl.className = 'stage-status ' + (status || '');
+    stageElement.classList.remove('running', 'completed', 'failed');
+
+    var normalized = status || 'pending';
+    var labelMap = {
+        pending: t('teacher.pipeline.pending'),
+        running: t('teacher.pipeline.processing'),
+        success: t('teacher.pipeline.done'),
+        completed: t('teacher.pipeline.done'),
+        failed: t('teacher.pipeline.failed_label'),
+        partial_failed: t('teacher.pipeline.completed_errors'),
+        skipped: t('teacher.pipeline.skipped')
+    };
+    var classMap = {
+        pending: 'pending',
+        running: 'running',
+        success: 'success',
+        completed: 'completed success',
+        failed: 'failed',
+        partial_failed: 'failed',
+        skipped: 'skipped'
+    };
+    statusEl.textContent = labelMap[normalized] || normalized;
+    statusEl.className = 'stage-status ' + (classMap[normalized] || '');
+
+    if (normalized === 'running') stageElement.classList.add('running');
+    else if (normalized === 'success' || normalized === 'completed') stageElement.classList.add('completed');
+    else if (normalized === 'failed' || normalized === 'partial_failed') stageElement.classList.add('failed');
 }
 
 function _setStageIO(stageElement, stage) {
-    var inputEl = stageElement.querySelector('.input-summary');
-    var outputEl = stageElement.querySelector('.output-summary');
-    if (inputEl) {
-        var inputSpans = inputEl.querySelectorAll('span');
-        var target = inputSpans.length > 1 ? inputSpans[1] : inputSpans[0];
-        if (target) {
-            target.removeAttribute('data-i18n');
-            if (stage.status === 'success') target.textContent = t('teacher.pipeline.done');
-            else if (stage.status === 'running') target.textContent = t('teacher.pipeline.processing');
-            else if (stage.status === 'failed') target.textContent = t('teacher.pipeline.error_label');
-            else if (stage.status === 'skipped') target.textContent = t('teacher.pipeline.skipped');
-        }
-    }
-    if (outputEl) {
-        var outputSpans = outputEl.querySelectorAll('span');
-        var target = outputSpans.length > 1 ? outputSpans[1] : outputSpans[0];
-        if (target) {
-            target.removeAttribute('data-i18n');
-            if (stage.status === 'success') target.textContent = stage.output_json ? t('teacher.pipeline.generated') : t('teacher.pipeline.done');
-            else if (stage.status === 'running') target.textContent = t('teacher.pipeline.waiting');
-            else if (stage.status === 'failed') target.textContent = stage.error_message ? stage.error_message.substring(0, 60) : t('teacher.pipeline.failed_label');
-            else if (stage.status === 'skipped') target.textContent = t('teacher.pipeline.skipped');
+    var friendlyMsgEl = stageElement.querySelector('.stage-friendly-msg');
+    if (friendlyMsgEl) {
+        friendlyMsgEl.removeAttribute('data-i18n');
+        if (stage.status === 'running') {
+            friendlyMsgEl.textContent = t('teacher.pipeline.processing');
+        } else if (stage.status === 'success' || stage.status === 'completed') {
+            friendlyMsgEl.textContent = t('teacher.pipeline.generated');
+        } else if (stage.status === 'failed' || stage.status === 'partial_failed') {
+            var errMsg = stage.error_message || stage.error;
+            friendlyMsgEl.textContent = errMsg ? errMsg.substring(0, 120) : t('teacher.pipeline.failed_label');
+        } else if (stage.status === 'skipped') {
+            friendlyMsgEl.textContent = t('teacher.pipeline.skipped');
         }
     }
 }

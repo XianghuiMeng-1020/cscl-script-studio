@@ -80,6 +80,49 @@ def _get_config_value(key: str, default: Any = None) -> Any:
     return getattr(Config, key, default)
 
 
+def _should_retry_status(status_code: int) -> bool:
+    return status_code in (408, 429, 500, 502, 503, 504)
+
+
+def _post_json_with_retry(
+    url: str,
+    headers: Dict[str, str],
+    payload: Dict[str, Any],
+    timeout_s: int,
+    max_retries: int = 1
+):
+    """
+    HTTP POST with bounded retry for transient failures.
+    max_retries means additional attempts after the first call.
+    """
+    retries = max(0, int(max_retries))
+    last_error = None
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=max(10, int(timeout_s)),
+            )
+            if resp.status_code < 400:
+                return resp, None
+            if _should_retry_status(resp.status_code) and attempt < retries:
+                time.sleep(min(1.5 * (attempt + 1), 4))
+                continue
+            return resp, None
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
+            last_error = f"{type(exc).__name__}: {exc}"
+            if attempt < retries:
+                time.sleep(min(1.5 * (attempt + 1), 4))
+                continue
+            return None, last_error
+        except requests.RequestException as exc:
+            last_error = f"{type(exc).__name__}: {exc}"
+            return None, last_error
+    return None, last_error or "unknown request error"
+
+
 def _resolve_provider_env() -> Dict[str, str]:
     """
     Resolve provider env vars with backward compatibility.
@@ -600,6 +643,7 @@ class OpenAIProvider(BaseLLMProvider):
         model = str(_get_config_value('OPENAI_MODEL', 'gpt-4o-mini'))
         base_url = (str(_get_config_value('OPENAI_BASE_URL', 'https://api.openai.com/v1')).strip() or 'https://api.openai.com/v1').rstrip('/')
         timeout_s = int(_as_int(_get_config_value('OPENAI_TIMEOUT_SECONDS', 120), 120))
+        max_retries = int(_as_int(_get_config_value('OPENAI_MAX_RETRIES', 1), 1))
 
         if not self.is_ready():
             return {
@@ -625,20 +669,29 @@ class OpenAIProvider(BaseLLMProvider):
                 {"role": "user", "content": f"Design one CSCL group activity from this specification. Return JSON with key 'activity' only.\n\n{user_text}"}
             ]
 
-            resp = requests.post(
-                f"{base_url}/chat/completions",
+            resp, req_error = _post_json_with_retry(
+                url=f"{base_url}/chat/completions",
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 },
-                json={
+                payload={
                     "model": model,
                     "messages": messages,
                     "temperature": 0.3,
                     "max_tokens": 4096
                 },
-                timeout=60
+                timeout_s=timeout_s,
+                max_retries=max_retries,
             )
+            if req_error:
+                return {
+                    'success': False,
+                    'plan': None,
+                    'error': f"OpenAI request failed: {req_error}",
+                    'provider': 'openai',
+                    'model': model
+                }
 
             if resp.status_code >= 400:
                 return {
@@ -697,6 +750,7 @@ class OpenAIProvider(BaseLLMProvider):
         model = str(_get_config_value('OPENAI_MODEL', 'gpt-4o-mini'))
         base_url = (str(_get_config_value('OPENAI_BASE_URL', 'https://api.openai.com/v1')).strip() or 'https://api.openai.com/v1').rstrip('/')
         timeout_s = int(_as_int(_get_config_value('OPENAI_TIMEOUT_SECONDS', 120), 120))
+        max_retries = int(_as_int(_get_config_value('OPENAI_MAX_RETRIES', 1), 1))
 
         if not api_key:
             return {
@@ -710,12 +764,21 @@ class OpenAIProvider(BaseLLMProvider):
                 {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)}
             ]
 
-            resp = requests.post(
-                f"{base_url}/chat/completions",
+            resp, req_error = _post_json_with_retry(
+                url=f"{base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": model, "messages": messages, "temperature": 0, "max_tokens": 4096},
-                timeout=60
+                payload={"model": model, "messages": messages, "temperature": 0, "max_tokens": 4096},
+                timeout_s=timeout_s,
+                max_retries=max_retries,
             )
+            if req_error:
+                return {
+                    'success': False,
+                    'error': f"OpenAI request failed: {req_error}",
+                    'provider': 'openai',
+                    'model': model,
+                    'output': None
+                }
 
             if resp.status_code >= 400:
                 return {
@@ -811,6 +874,7 @@ class QwenProvider(BaseLLMProvider):
         model = str(_get_config_value('QWEN_MODEL', 'qwen-plus'))
         base_url = str(_get_config_value('QWEN_BASE_URL', 'https://dashscope.aliyuncs.com/compatible-mode/v1')).rstrip('/')
         timeout_s = int(_as_int(_get_config_value('QWEN_TIMEOUT_SECONDS', 120), 120))
+        max_retries = int(_as_int(_get_config_value('QWEN_MAX_RETRIES', 1), 1))
 
         if not self.is_ready():
             return {
@@ -836,19 +900,28 @@ class QwenProvider(BaseLLMProvider):
                 {"role": "user", "content": f"Design one CSCL group activity from this specification. Return JSON with key 'activity' only.\n\n{user_text}"}
             ]
 
-            resp = requests.post(
-                f"{base_url}/chat/completions",
+            resp, req_error = _post_json_with_retry(
+                url=f"{base_url}/chat/completions",
                 headers={
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 },
-                json={
+                payload={
                     "model": model,
                     "messages": messages,
                     "temperature": 0.3
                 },
-                timeout=timeout_s
+                timeout_s=timeout_s,
+                max_retries=max_retries,
             )
+            if req_error:
+                return {
+                    'success': False,
+                    'plan': None,
+                    'error': f"Qwen request failed: {req_error}",
+                    'provider': 'qwen',
+                    'model': model
+                }
 
             if resp.status_code >= 400:
                 err_text = (resp.text or '')[:400]
@@ -913,6 +986,7 @@ class QwenProvider(BaseLLMProvider):
         model = str(_get_config_value('QWEN_MODEL', 'qwen-plus'))
         base_url = str(_get_config_value('QWEN_BASE_URL', 'https://dashscope.aliyuncs.com/compatible-mode/v1')).rstrip('/')
         timeout_s = int(_as_int(_get_config_value('QWEN_TIMEOUT_SECONDS', 120), 120))
+        max_retries = int(_as_int(_get_config_value('QWEN_MAX_RETRIES', 1), 1))
         api_key = (
             os.getenv('QWEN_API_KEY', '') or str(_get_config_value('QWEN_API_KEY', '')) or
             os.getenv('DASHSCOPE_API_KEY', '') or str(_get_config_value('DASHSCOPE_API_KEY', ''))
@@ -924,12 +998,15 @@ class QwenProvider(BaseLLMProvider):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)}
             ]
-            resp = requests.post(
-                f"{base_url}/chat/completions",
+            resp, req_error = _post_json_with_retry(
+                url=f"{base_url}/chat/completions",
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": model, "messages": messages, "temperature": 0, "max_tokens": 4096},
-                timeout=timeout_s
+                payload={"model": model, "messages": messages, "temperature": 0, "max_tokens": 4096},
+                timeout_s=timeout_s,
+                max_retries=max_retries,
             )
+            if req_error:
+                return {'success': False, 'error': f"Qwen request failed: {req_error}", 'provider': 'qwen', 'model': model, 'output': None}
             if resp.status_code >= 400:
                 return {'success': False, 'error': f"Qwen API HTTP {resp.status_code}: {(resp.text or '')[:500]}", 'provider': 'qwen', 'model': model, 'output': None}
             data = resp.json()

@@ -44,19 +44,19 @@
 }
 
 .stat-card {
-    background: white;
+    background: linear-gradient(180deg, #ffffff 0%, #fcfbf8 100%);
     border-radius: 12px;
     padding: 1.5rem;
     display: flex;
     align-items: center;
     gap: 1.5rem;
     box-shadow: var(--shadow-md);
-    transition: all 0.3s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: var(--shadow-xl);
+    box-shadow: 0 14px 26px rgba(45, 45, 45, 0.16);
 }
 
 .stat-icon {
@@ -98,7 +98,7 @@
 }
 
 .filters-section {
-    background: white;
+    background: linear-gradient(180deg, #ffffff 0%, #fefdfb 100%);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 2rem;
@@ -193,8 +193,9 @@
     border: 2px solid var(--border-color);
     border-radius: 12px;
     padding: 1.5rem;
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
+    background: linear-gradient(180deg, #ffffff 0%, #fcfbf8 100%);
 }
 
 .feedback-item:hover {
@@ -574,5 +575,50 @@
 
     .modal-content {
         width: 95%;
+    }
+
+    .admin-content {
+        padding: 1rem;
+    }
+
+    .stat-card {
+        gap: 1rem;
+        padding: 1rem;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .admin-content {
+        background: #141816;
+    }
+
+    .stat-card,
+    .filters-section,
+    .feedbacks-section,
+    .feedback-item,
+    .modal-content {
+        background: #1d2320;
+        border-color: #2d3531;
+        color: #dde7e0;
+    }
+
+    .stat-info h3,
+    .feedbacks-section h3,
+    .filter-group label {
+        color: #e8f2eb;
+    }
+
+    .stat-info p,
+    .empty-state,
+    .feedback-content,
+    .feedback-meta {
+        color: #aebbb2;
+    }
+
+    .filter-group select,
+    .search-group input {
+        background: #222a26;
+        color: #dde7e0;
+        border-color: #3b4741;
     }
 }

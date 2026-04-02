@@ -272,18 +272,21 @@ body {
 
 .btn-primary {
     min-height: 40px;
-    background: var(--primary-dark);
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
     color: var(--text-inverse);
     border: none;
     min-height: 40px;
     padding: 0.5rem 1.25rem;
     cursor: pointer;
+    border-radius: var(--radius-md);
+    box-shadow: 0 6px 16px rgba(70, 89, 63, 0.22);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .btn-primary:hover {
-    background: var(--primary-hover);
+    filter: brightness(1.03);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 10px 20px rgba(70, 89, 63, 0.26);
 }
 
 .btn-primary:focus-visible {
@@ -305,6 +308,8 @@ body {
     background: var(--bg-surface);
     color: var(--text-primary);
     border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
@@ -337,7 +342,7 @@ body {
 
 .role-card {
     position: relative;
-    background: var(--bg-surface);
+    background: linear-gradient(180deg, #ffffff 0%, #fcfbf8 100%);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: 2rem;
@@ -351,7 +356,7 @@ body {
 .role-card:hover {
     transform: translateY(-3px);
     border-color: var(--primary-color);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 14px 26px rgba(45, 45, 45, 0.12);
 }
 
 .card-glow {
@@ -925,5 +930,41 @@ body {
         right: 1rem;
         left: 1rem;
         min-width: auto;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-hero {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    body,
+    .landing-page {
+        background: #121615;
+        color: #dbe5df;
+    }
+
+    .landing-header,
+    .role-card,
+    .feature-card,
+    .modal-content {
+        background: #1b211f;
+        border-color: #2e3834;
+    }
+
+    .logo-text h1,
+    .hero-title,
+    .section-title,
+    .card-title {
+        color: #ecf5ee;
+    }
+
+    .hero-subtitle,
+    .card-subtitle,
+    .logo-text span {
+        color: #aebbb2;
     }
 }

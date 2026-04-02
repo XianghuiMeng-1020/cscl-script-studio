@@ -43,5 +43,4 @@ def test_pipeline_service_initialization():
     service = CSCLPipelineService()
     assert service.planner is not None
     assert service.material_generator is not None
-    assert service.critic is not None
-    assert service.refiner is not None
+    assert service.critic_refiner is not None

@@ -72,7 +72,7 @@ class Config:
     SPEC_VALIDATE_PUBLIC = os.getenv('SPEC_VALIDATE_PUBLIC', 'false').lower() == 'true'
 
     # S2.14 static cache busting — append build marker to force refresh on each deploy
-    _STATIC_BASE = os.getenv('STATIC_VERSION', '30')
+    _STATIC_BASE = os.getenv('STATIC_VERSION', '31')
     STATIC_VERSION = _STATIC_BASE + '.1'
 
     # Pipeline: require critic success for overall success (default conservative)

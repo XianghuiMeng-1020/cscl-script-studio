@@ -38,6 +38,7 @@
     top: 0;
     z-index: 100;
     border-bottom: 1px solid var(--student-border);
+    backdrop-filter: blur(6px);
 }
 
 .topnav-left .logo-link {
@@ -135,12 +136,18 @@
 }
 
 .join-card {
-    background: var(--student-card-bg);
+    background: linear-gradient(180deg, #ffffff 0%, #fff8f6 100%);
     border-radius: var(--student-radius);
     padding: 2rem;
     box-shadow: var(--student-shadow);
     border: 1px solid var(--student-border);
     text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.join-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(45, 74, 122, 0.12);
 }
 
 .join-card i {
@@ -187,17 +194,21 @@
 }
 
 .join-input-row .btn-primary {
-    background: var(--student-coral);
+    background: linear-gradient(135deg, var(--student-coral) 0%, #d85a44 100%);
     color: white;
     border: none;
     padding: 0.6rem 1.25rem;
     border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
+    box-shadow: 0 8px 18px rgba(232, 112, 90, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .join-input-row .btn-primary:hover {
-    background: #d85a44;
+    filter: brightness(1.03);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(232, 112, 90, 0.35);
 }
 
 .join-error {
@@ -526,3 +537,59 @@
 .student-page .notification.success { background: #27ae60; color: white; }
 .student-page .notification.error { background: #c0392b; color: white; }
 .student-page .notification.info { background: var(--student-blue); color: white; }
+
+/* ==================== Mobile refinements ==================== */
+@media (max-width: 640px) {
+    .student-topnav {
+        padding: 0.65rem 0.8rem;
+    }
+
+    .topnav-left .logo-link span {
+        display: none;
+    }
+
+    .topnav-right {
+        gap: 0.5rem;
+    }
+
+    .student-activity-panel,
+    .student-chat-panel {
+        padding: 0.9rem;
+    }
+
+    .join-card {
+        padding: 1.2rem;
+    }
+}
+
+/* ==================== Dark mode ==================== */
+@media (prefers-color-scheme: dark) {
+    .student-page {
+        background: #151a1f;
+        color: #dbe5f2;
+    }
+
+    .student-topnav,
+    .join-card,
+    .activity-header-card,
+    .activity-body-card,
+    .student-chat-panel,
+    .chat-message,
+    .chat-input-area textarea {
+        background: #1c232b;
+        border-color: rgba(164, 186, 219, 0.25);
+        color: #dbe5f2;
+    }
+
+    .topnav-user {
+        background: rgba(164, 186, 219, 0.12);
+        color: #dbe5f2;
+    }
+
+    .topnav-lang,
+    .topnav-logout {
+        background: #202833;
+        border-color: rgba(164, 186, 219, 0.25);
+        color: #dbe5f2;
+    }
+}

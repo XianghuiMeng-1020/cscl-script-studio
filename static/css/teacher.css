@@ -24,6 +24,7 @@
     left: 0;
     height: 100vh;
     z-index: 100;
+    box-shadow: 6px 0 24px rgba(19, 24, 20, 0.18);
 }
 
 .sidebar-header {
@@ -61,18 +62,22 @@
     padding: 0.875rem 1.5rem;
     color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     position: relative;
+    border-radius: 0 999px 999px 0;
+    margin-right: 0.75rem;
 }
 
 .nav-item:hover {
     color: white;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.09);
+    transform: translateX(4px);
 }
 
 .nav-item.active {
     color: white;
-    background: rgba(91, 117, 83, 0.25);
+    background: linear-gradient(90deg, rgba(91, 117, 83, 0.4) 0%, rgba(91, 117, 83, 0.14) 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .nav-item.active::before {
@@ -137,6 +142,27 @@
 .user-role {
     color: rgba(255, 255, 255, 0.5);
     font-size: 0.8rem;
+}
+
+.sidebar-language-switcher {
+    margin-top: 0.75rem;
+}
+
+.sidebar-language-select {
+    width: 100%;
+    padding: 0.42rem 0.55rem;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.85rem;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.sidebar-language-select:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.14);
 }
 
 /* ==================== Main Content ==================== */
@@ -1817,10 +1843,11 @@
 /* Pipeline Stepper Progress (3-stage modern design) */
 .pipeline-stepper {
     margin-bottom: 1.5rem;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfaf7 100%);
+    border: 1px solid #e6e0d5;
     border-radius: 16px;
     padding: 1.25rem 1.5rem;
+    box-shadow: 0 8px 20px rgba(45, 45, 45, 0.06);
 }
 .pipeline-stepper.hidden { display: none; }
 
@@ -1965,6 +1992,7 @@
     color: var(--primary-color);
     min-width: 3rem;
     text-align: right;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .btn-lg {
@@ -2039,26 +2067,49 @@
 }
 
 .pipeline-stage {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(180deg, #ffffff 0%, #fcfbf8 100%);
+    border: 1px solid #e7e2d8;
     border-radius: var(--radius-lg);
     padding: 1.5rem;
-    transition: all var(--transition-base);
+    transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base), background var(--transition-base);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(45, 45, 45, 0.04);
+}
+
+.pipeline-stage::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #d8d2c8;
+    transition: background 0.25s ease;
+}
+
+.pipeline-stage:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(45, 45, 45, 0.08);
 }
 
 .pipeline-stage.running {
-    border-color: var(--info-color);
-    background: var(--info-bg);
+    border-color: #7e9bb8;
+    background: linear-gradient(180deg, #f8fbff 0%, #f2f8ff 100%);
 }
+.pipeline-stage.running::before { background: #6b89a7; }
 
 .pipeline-stage.completed {
-    border-color: var(--success-color);
+    border-color: #7ca07a;
+    background: linear-gradient(180deg, #f9fff7 0%, #f1f9ef 100%);
 }
+.pipeline-stage.completed::before { background: #5b8c5a; }
 
 .pipeline-stage.failed {
-    border-color: var(--error-color);
-    background: var(--error-bg);
+    border-color: #d48c8a;
+    background: linear-gradient(180deg, #fff7f7 0%, #fef1f1 100%);
 }
+.pipeline-stage.failed::before { background: #c0504d; }
 
 .stage-header {
     display: flex;
@@ -2077,6 +2128,30 @@
     justify-content: center;
     color: white;
     font-size: 1.25rem;
+    box-shadow: 0 8px 18px rgba(91, 117, 83, 0.22);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.pipeline-stage.running .stage-icon {
+    background: linear-gradient(135deg, #6b89a7 0%, #4e6a86 100%);
+    box-shadow: 0 8px 20px rgba(107, 137, 167, 0.35);
+}
+
+.pipeline-stage.running .stage-icon i {
+    animation: pipelineIconSpin 1.8s linear infinite;
+}
+
+.pipeline-stage.completed .stage-icon {
+    background: linear-gradient(135deg, #5b8c5a 0%, #3e7240 100%);
+}
+
+.pipeline-stage.failed .stage-icon {
+    background: linear-gradient(135deg, #c0504d 0%, #a93f3c 100%);
+}
+
+@keyframes pipelineIconSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .stage-info {
@@ -2090,6 +2165,13 @@
     color: var(--text-primary);
 }
 
+.stage-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
 .stage-status {
     display: inline-block;
     padding: 0.25rem 0.75rem;
@@ -2098,6 +2180,7 @@
     font-weight: 600;
     background: var(--bg-primary);
     color: var(--text-secondary);
+    border: 1px solid transparent;
 }
 
 .stage-status.pending {
@@ -2108,21 +2191,25 @@
 .stage-status.running {
     background: var(--info-bg);
     color: var(--info-color);
+    border-color: rgba(107, 137, 167, 0.35);
 }
 
 .stage-status.completed {
     background: var(--success-bg);
     color: var(--success-color);
+    border-color: rgba(91, 140, 90, 0.35);
 }
 
 .stage-status.failed {
     background: var(--error-bg);
     color: var(--error-color);
+    border-color: rgba(192, 80, 77, 0.35);
 }
 
 .stage-status.success {
     background: var(--success-bg);
     color: var(--success-color);
+    border-color: rgba(91, 140, 90, 0.35);
 }
 
 .stage-status.skipped {
@@ -2139,9 +2226,18 @@
 }
 
 .stage-duration {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.9rem;
+    font-weight: 700;
+    color: #2f3d30;
+    font-size: 0.85rem;
+    background: #eef3ea;
+    border: 1px solid #d7e2d1;
+    border-radius: 999px;
+    height: 28px;
+    min-width: 56px;
+    padding: 0 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .stage-summary {
@@ -3646,4 +3742,105 @@
 
 .setting-notice i {
     color: var(--info-color);
+}
+
+/* ==================== Responsive refinements ==================== */
+@media (max-width: 980px) {
+    .sidebar {
+        width: 78px;
+    }
+
+    .sidebar .logo-link span,
+    .sidebar .nav-item span,
+    .sidebar .user-details,
+    .sidebar .sidebar-language-switcher {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 78px;
+        padding: 1.25rem;
+    }
+
+    .pipeline-stepper {
+        padding: 1rem;
+    }
+
+    .step-name {
+        font-size: 0.72rem;
+    }
+}
+
+@media (max-width: 680px) {
+    .sidebar {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 1rem;
+    }
+
+    .stage-header {
+        gap: 0.75rem;
+    }
+
+    .stage-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .stage-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+    }
+
+    .stepper-track {
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding-bottom: 0.4rem;
+    }
+}
+
+/* ==================== Dark mode ==================== */
+@media (prefers-color-scheme: dark) {
+    .teacher-page,
+    .main-content {
+        background: #141816;
+    }
+
+    .pipeline-stepper,
+    .pipeline-stage,
+    .pipeline-tech-info,
+    .folder-section,
+    .output-preview-section,
+    .wizard-body,
+    .why-note {
+        background: #1d2320;
+        border-color: #2d3531;
+        color: #d7e0da;
+    }
+
+    .pipeline-stage::before {
+        background: #46514b;
+    }
+
+    .stage-info h4,
+    .view-header h2,
+    .stepper-label,
+    .stepper-percent,
+    .output-label {
+        color: #e5eee8;
+    }
+
+    .stage-summary p,
+    .view-subtitle,
+    .step-name,
+    .stepper-hint,
+    .tech-item label,
+    .why-note-text {
+        color: #aebbb2;
+    }
 }

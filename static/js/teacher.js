@@ -59,6 +59,29 @@ let _pipelineTimerInterval = null;
 let _pipelineStartTime = null;
 let wizardFolderId = null;  // Track current folder context when creating activities from within a folder
 
+function buildCardSkeleton(count) {
+    var total = Math.max(1, Number(count) || 3);
+    var blocks = '';
+    for (var i = 0; i < total; i++) {
+        blocks += '<div class="skeleton-card">';
+        blocks += '<div class="skeleton-line w-65"></div>';
+        blocks += '<div class="skeleton-line w-90"></div>';
+        blocks += '<div class="skeleton-line w-50"></div>';
+        blocks += '</div>';
+    }
+    return '<div class="skeleton-grid" aria-hidden="true">' + blocks + '</div>';
+}
+
+function buildPreviewSkeleton() {
+    return '<div class="preview-skeleton" aria-hidden="true">' +
+        '<div class="skeleton-line w-45"></div>' +
+        '<div class="skeleton-line w-95"></div>' +
+        '<div class="skeleton-line w-88"></div>' +
+        '<div class="skeleton-line w-92"></div>' +
+        '<div class="skeleton-line w-65"></div>' +
+        '</div>';
+}
+
 // Initialize - S2.14.2: phased init, full stack on error, event delegation
 document.addEventListener('DOMContentLoaded', function() {
     try {
@@ -427,7 +450,7 @@ var currentFolderId = null;
 async function loadFolders() {
     var container = document.getElementById('foldersList');
     if (!container) return;
-    container.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>' + t('common.loading') + '</p></div>';
+    container.innerHTML = buildCardSkeleton(4);
     try {
         var res = await fetch(API_BASE + '/folders', { credentials: 'include' });
         var data = await res.json();
@@ -543,7 +566,7 @@ async function openFolder(folderId) {
     var matsEl = document.getElementById('folderMaterialsList');
 
     // Show loading state
-    var loadingHtml = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>' + t('common.loading') + '</p></div>';
+    var loadingHtml = buildCardSkeleton(3);
     if (overviewDocsEl) overviewDocsEl.innerHTML = loadingHtml;
     if (overviewActsEl) overviewActsEl.innerHTML = loadingHtml;
     if (actsEl) actsEl.innerHTML = loadingHtml;
@@ -1185,7 +1208,7 @@ async function loadScriptPreview() {
     var container = document.getElementById('scriptPreview');
     if (!container) return;
 
-    container.innerHTML = '<div class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i><p>' + t('teacher.preview.loading', 'Loading script preview...') + '</p></div>';
+    container.innerHTML = buildPreviewSkeleton();
 
     var runId = currentPipelineRunId;
     if (!runId && currentScriptId) {

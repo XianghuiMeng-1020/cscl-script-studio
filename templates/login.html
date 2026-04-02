@@ -18,11 +18,13 @@
             justify-content: center;
             padding: 2rem;
             background: var(--bg-primary);
+            background-image: radial-gradient(circle at 15% 20%, rgba(91, 117, 83, 0.08), transparent 42%),
+                              radial-gradient(circle at 85% 80%, rgba(196, 154, 108, 0.1), transparent 45%);
         }
         .login-card {
-            background: var(--bg-surface);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfaf7 100%);
             border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 14px 34px rgba(45, 45, 45, 0.12);
             padding: 2.5rem;
             width: 100%;
             max-width: 420px;
@@ -129,12 +131,15 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            background: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
             color: var(--text-inverse);
-            transition: background 0.2s;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            box-shadow: 0 9px 22px rgba(70, 89, 63, 0.24);
         }
         .btn-signin:hover {
-            background: var(--primary-dark);
+            filter: brightness(1.03);
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px rgba(70, 89, 63, 0.28);
         }
         .btn-signin:focus {
             outline: 2px solid var(--primary-color);
@@ -201,6 +206,36 @@
         .login-welcome i.fa-magic {
             margin-right: 0.5rem;
             color: var(--primary-color);
+        }
+        @media (max-width: 640px) {
+            .login-page { padding: 1rem; }
+            .login-card { padding: 1.25rem; }
+            .login-header h1 { font-size: 1.25rem; }
+            .login-role-tabs { flex-wrap: wrap; }
+            .login-role-tabs label { flex: 1 1 45%; }
+        }
+        @media (prefers-color-scheme: dark) {
+            .login-page { background: #121615; }
+            .login-card {
+                background: #1c2220;
+                border-color: #323d37;
+                box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+            }
+            .login-header h1,
+            .login-welcome,
+            .login-back a { color: #dde7e0; }
+            .login-form label { color: #b4c1b9; }
+            .login-form input[type="text"],
+            .login-form input[type="password"],
+            .login-lang select,
+            .btn-demo-secondary {
+                background: #232c28;
+                border-color: #3a4740;
+                color: #dde7e0;
+            }
+            .login-role-tabs label { border-color: #3a4740; color: #b4c1b9; }
+            .login-role-tabs input:checked + label { background: rgba(91, 117, 83, 0.24); color: #d9e6db; }
+            .btn-demo-secondary:hover { border-color: #7c9774; color: #d9e6db; }
         }
     </style>
 </head>

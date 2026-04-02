@@ -108,6 +108,45 @@
     color: var(--primary-color);
 }
 
+/* Skeleton loading blocks */
+.teacher-page .skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+}
+.teacher-page .skeleton-card {
+    background: linear-gradient(180deg, #ffffff 0%, #fbfaf7 100%);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+.teacher-page .skeleton-line {
+    height: 10px;
+    border-radius: 999px;
+    margin-bottom: 0.7rem;
+    background: linear-gradient(90deg, #ece7dc 20%, #f6f2ea 40%, #ece7dc 60%);
+    background-size: 240% 100%;
+    animation: teacherSkeletonPulse 1.4s ease-in-out infinite;
+}
+.teacher-page .skeleton-line:last-child { margin-bottom: 0; }
+.teacher-page .skeleton-line.w-95 { width: 95%; }
+.teacher-page .skeleton-line.w-92 { width: 92%; }
+.teacher-page .skeleton-line.w-90 { width: 90%; }
+.teacher-page .skeleton-line.w-88 { width: 88%; }
+.teacher-page .skeleton-line.w-65 { width: 65%; }
+.teacher-page .skeleton-line.w-50 { width: 50%; }
+.teacher-page .skeleton-line.w-45 { width: 45%; }
+.teacher-page .preview-skeleton {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+@keyframes teacherSkeletonPulse {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
 /* Key button feedback: active, focus, loading */
 .teacher-page .btn-primary:active,
 .teacher-page .step-action-btn:active {
@@ -355,15 +394,21 @@
 }
 .worksheet-steps .worksheet-step {
     margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-light, #eee);
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border-light, #eee);
+    border-radius: 10px;
+    background: linear-gradient(180deg, #fff 0%, #fbfaf7 100%);
 }
 .worksheet-step .step-duration {
     font-size: 0.9rem;
     color: var(--text-muted);
+    font-weight: 600;
 }
 .worksheet-step .step-prompts {
     margin: 0.35rem 0 0 1rem;
+}
+.worksheet-step .step-prompts li {
+    margin-bottom: 0.35rem;
 }
 .teacher-guide-preview h3 {
     font-size: 1rem;
@@ -374,6 +419,18 @@
     color: var(--text-muted);
     font-style: italic;
     padding: 1rem 0;
+}
+.worksheet-preview,
+.teacher-guide-preview,
+.scene-card,
+.role-card {
+    box-shadow: 0 4px 14px rgba(45, 45, 45, 0.06);
+}
+.preview-tab-panels {
+    border: 1px solid var(--border-light, #e6e6e6);
+    border-radius: 12px;
+    background: #fff;
+    padding: 1rem;
 }
 
 /* ===== Step 4 Publish Actions: Primary and Advanced Actions ===== */
@@ -449,5 +506,21 @@
     .advanced-actions-panel button {
         flex: 1 1 auto;
         min-width: 140px;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .teacher-page .skeleton-card,
+    .teacher-page .preview-skeleton,
+    .teacher-page .preview-tab-panels,
+    .teacher-page .worksheet-step,
+    .teacher-page .scene-card,
+    .teacher-page .role-card {
+        background: #1f2623;
+        border-color: #34403a;
+    }
+    .teacher-page .skeleton-line {
+        background: linear-gradient(90deg, #2e3934 20%, #3c4943 40%, #2e3934 60%);
+        background-size: 240% 100%;
     }
 }

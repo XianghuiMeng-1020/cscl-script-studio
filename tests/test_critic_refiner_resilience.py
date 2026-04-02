@@ -78,6 +78,66 @@ def test_provider_exception_falls_back_to_material_output():
     assert result["output_snapshot"]["roles"][0]["role_name"] == "analyst"
 
 
+def test_positive_interdependence_worksheet_null_not_blocking():
+    """Reproduce the exact production failure: LLM says is_valid=False because
+    student_worksheet is null, but material stage already produced it."""
+    class _ProviderPositiveInterdependence:
+        def critique_and_refine(self, input_payload):
+            return {
+                "success": True,
+                "provider": "qwen",
+                "model": "qwen-plus",
+                "result": {
+                    "validation": {
+                        "is_valid": False,
+                        "issues": [
+                            "Positive Interdependence: student_worksheet is null -> one student can complete this alone (or no activity exists).",
+                            "Specificity: prompts are generic."
+                        ],
+                        "warnings": [],
+                    },
+                    "quality_indicators": {"scene_count": 2, "role_count": 2, "scriptlet_count": 3},
+                    "roles": [
+                        {"role_name": "advocate", "responsibilities": ["present position"]},
+                        {"role_name": "challenger", "responsibilities": ["counter-argue"]}
+                    ],
+                    "scenes": [
+                        {
+                            "order_index": 1,
+                            "scene_type": "opening",
+                            "purpose": "introduce topic",
+                            "transition_rule": "next",
+                            "scriptlets": [{"prompt_text": "State your position", "prompt_type": "claim", "role_id": None}],
+                        }
+                    ],
+                },
+            }
+
+    material = {
+        "roles": [{"role_name": "analyst", "responsibilities": ["analyze"]}],
+        "scenes": [
+            {
+                "order_index": 1,
+                "scene_type": "opening",
+                "purpose": "kickoff",
+                "transition_rule": "continue",
+                "scriptlets": [{"prompt_text": "Read and discuss", "prompt_type": "claim", "role_id": None}],
+            }
+        ],
+        "student_worksheet": {"title": "Algorithmic Fairness Worksheet", "goal": "Explore fairness"},
+        "teacher_guide": {"overview": "A collaborative activity"},
+    }
+
+    stage = CriticRefinerStage(provider=_ProviderPositiveInterdependence())
+    result = stage.run(material, {"course_context": {"topic": "Fairness"}}, {"run_id": "test-prod-repro"})
+
+    assert result["status"] == "success", f"Expected success but got {result['status']}: {result.get('error')}"
+    assert result["error"] is None
+    assert result["output_snapshot"]["student_worksheet"]["title"] == "Algorithmic Fairness Worksheet"
+    assert len(result["output_snapshot"]["validation"]["issues"]) == 0
+    assert len(result["output_snapshot"]["validation"]["warnings"]) > 0
+
+
 def test_provider_failure_without_material_output_returns_failed():
     stage = CriticRefinerStage(provider=_ProviderFailed())
     result = stage.run({}, {"course_context": {"topic": "X"}}, {"run_id": "test-4"})

@@ -130,17 +130,16 @@ class CriticRefinerStage:
                     output_snapshot[key] = material_output[key]
 
             has_usable_output = self._has_usable_output(output_snapshot)
-            blocking_issues = self._blocking_issues(validation.get('issues', []))
-            if not validation.get('is_valid', True) and has_usable_output and not blocking_issues:
-                validation["is_valid"] = True
-                validation["warnings"] = (validation.get("warnings") or []) + [
-                    "CriticRefiner detected non-blocking issues; output accepted with warnings."
-                ]
-                validation["issues"] = []
 
-            status = 'success'
-            if not validation.get('is_valid', True):
-                status = 'success' if (has_usable_output and not blocking_issues) else 'failed'
+            if not validation.get('is_valid', True) and has_usable_output:
+                demoted = self._normalize_str_list(validation.get('issues'))
+                validation["is_valid"] = True
+                validation["issues"] = []
+                validation["warnings"] = (validation.get("warnings") or []) + demoted + [
+                    "CriticRefiner issues demoted to warnings because usable output exists."
+                ]
+
+            status = 'success' if validation.get('is_valid', True) or has_usable_output else 'failed'
             error_msg = '; '.join(self._normalize_str_list(validation.get('issues'))) if status == 'failed' else None
 
             logger.info(

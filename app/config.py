@@ -94,14 +94,14 @@ class Config:
     REQUIRE_LOGIN_FOR_TEACHER = os.getenv('REQUIRE_LOGIN_FOR_TEACHER', 'true').lower() == 'true'
     REQUIRE_LOGIN_FOR_STUDENT = os.getenv('REQUIRE_LOGIN_FOR_STUDENT', 'true').lower() == 'true'
     
-    # B1: Image Generation (DALL-E) Configuration
-    IMAGE_GENERATION_ENABLED = os.getenv('IMAGE_GENERATION_ENABLED', 'false').lower() == 'true'
+    # B1: Image Generation (DALL-E) Configuration - Default enabled for enhanced activities
+    IMAGE_GENERATION_ENABLED = os.getenv('IMAGE_GENERATION_ENABLED', 'true').lower() == 'true'
     OPENAI_IMAGE_MODEL = os.getenv('OPENAI_IMAGE_MODEL', 'dall-e-3')
     IMAGE_GENERATION_DEFAULT_SIZE = os.getenv('IMAGE_GENERATION_DEFAULT_SIZE', '1024x1024')
     IMAGE_GENERATION_DEFAULT_QUALITY = os.getenv('IMAGE_GENERATION_DEFAULT_QUALITY', 'standard')
     
-    # B2: Web Retrieval Configuration
-    WEB_RETRIEVAL_ENABLED = os.getenv('WEB_RETRIEVAL_ENABLED', 'false').lower() == 'true'
+    # B2: Web Retrieval Configuration - Default enabled for enriched content
+    WEB_RETRIEVAL_ENABLED = os.getenv('WEB_RETRIEVAL_ENABLED', 'true').lower() == 'true'
     WEB_RETRIEVAL_PROVIDER = os.getenv('WEB_RETRIEVAL_PROVIDER', 'tavily').lower()
     TAVILY_API_KEY = os.getenv('TAVILY_API_KEY', '')
     TAVILY_MAX_RESULTS = int(os.getenv('TAVILY_MAX_RESULTS', '5'))

@@ -59,4 +59,15 @@ services:
       - key: PDF_EXTRACTION_TIMEOUT_SECONDS
         value: "120"
       - key: STATIC_VERSION
-        value: "32"
+        value: "33"
+      # AI Enhancement Features - Enabled by default
+      - key: IMAGE_GENERATION_ENABLED
+        value: "true"
+      - key: WEB_RETRIEVAL_ENABLED
+        value: "true"
+      - key: TAVILY_API_KEY
+        value: "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"
+      - key: TAVILY_MAX_RESULTS
+        value: "8"
+      - key: WEB_RETRIEVAL_TIMEOUT
+        value: "45"

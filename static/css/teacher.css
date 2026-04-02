@@ -170,8 +170,9 @@
 .main-content {
     flex: 1;
     margin-left: 260px;
-    padding: 2rem;
-    background: var(--light-color);
+    padding: 2.5rem 3rem;
+    background: var(--bg-primary);
+    max-width: 1400px;
 }
 
 .view {
@@ -2067,51 +2068,35 @@
 }
 
 .pipeline-stage {
-    background: linear-gradient(180deg, #ffffff 0%, #faf8f4 100%);
-    border: 1px solid rgba(231, 226, 216, 0.8);
+    background: var(--bg-surface);
+    border: none;
     border-radius: var(--radius-xl);
-    padding: 1.75rem;
+    padding: 2rem;
     transition: all var(--transition-slow) var(--ease-out);
     position: relative;
     overflow: hidden;
     box-shadow: var(--shadow-md);
 }
 
-.pipeline-stage::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 5px;
-    background: linear-gradient(180deg, #d8d2c8, #e7e2d8);
-    transition: all var(--transition-base) ease;
-    border-radius: var(--radius-xl) 0 0 var(--radius-xl);
-}
-
 .pipeline-stage:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-xl);
-    border-color: rgba(91, 117, 83, 0.15);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
 }
 
 .pipeline-stage.running {
-    border-color: #7e9bb8;
-    background: linear-gradient(180deg, #f8fbff 0%, #f2f8ff 100%);
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-md), 0 0 0 2px rgba(107, 137, 167, 0.2);
 }
-.pipeline-stage.running::before { background: #6b89a7; }
 
 .pipeline-stage.completed {
-    border-color: #7ca07a;
-    background: linear-gradient(180deg, #f9fff7 0%, #f1f9ef 100%);
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-md), 0 0 0 2px rgba(91, 117, 83, 0.2);
 }
-.pipeline-stage.completed::before { background: #5b8c5a; }
 
 .pipeline-stage.failed {
-    border-color: #d48c8a;
-    background: linear-gradient(180deg, #fff7f7 0%, #fef1f1 100%);
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-md), 0 0 0 2px rgba(192, 80, 77, 0.2);
 }
-.pipeline-stage.failed::before { background: #c0504d; }
 
 .stage-header {
     display: flex;
@@ -2691,37 +2676,20 @@
 }
 
 .script-card {
-    background: linear-gradient(180deg, #ffffff 0%, #faf8f4 100%);
-    border: 1px solid rgba(226, 221, 212, 0.8);
+    background: var(--bg-surface);
+    border: none;
     border-radius: var(--radius-xl);
     padding: 1.75rem;
     cursor: pointer;
     transition: all var(--transition-slow) var(--ease-out);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
     position: relative;
     overflow: hidden;
 }
 
-.script-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-    opacity: 0;
-    transition: opacity var(--transition-base) ease;
-}
-
 .script-card:hover {
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: var(--shadow-xl);
-    border-color: rgba(91, 117, 83, 0.2);
-}
-
-.script-card:hover::before {
-    opacity: 1;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
 }
 
 .script-card-header {
@@ -3458,10 +3426,11 @@
 /* Layout spacing improvements */
 .folder-section {
     margin-bottom: 2rem;
-    padding: 1.5rem;
+    padding: 2rem;
     background: var(--bg-surface);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    border: none;
+    box-shadow: var(--shadow-md);
 }
 
 .folder-section .section-header {
@@ -3655,16 +3624,16 @@
 /* AI Enhancement Settings - Premium Panel Design */
 .ai-enhancement-settings {
     margin-top: 1.5rem;
-    background: linear-gradient(180deg, #ffffff 0%, #faf8f4 100%);
-    border: 1px solid rgba(226, 221, 212, 0.8);
+    background: var(--bg-surface);
+    border: none;
     border-radius: var(--radius-xl);
-    padding: 1.75rem;
-    box-shadow: var(--shadow-sm);
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
 }
 
 .ai-enhancement-settings .section-description {
     color: var(--text-secondary);
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
     font-size: 0.95rem;
     line-height: 1.5;
 }
@@ -3673,9 +3642,9 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid var(--border-light);
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-light);
 }
 
 .ai-enhancement-header i {

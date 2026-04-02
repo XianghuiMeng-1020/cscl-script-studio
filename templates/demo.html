@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSCL Script Studio - Quick Demo</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ static_version }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}?v={{ static_version }}">
     <style>
         .demo-page { min-height: 100vh; padding: 2rem; background: var(--bg-primary, #f5f6f8); }
@@ -45,7 +45,7 @@
             <li class="empty"><span data-i18n="common.loading">加载中...</span></li>
         </ul>
     </div>
-    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}?v={{ static_version }}"></script>
     <script>
         function switchLanguage(locale) { if (typeof setLocale === 'function') setLocale(locale); }
         (function() {

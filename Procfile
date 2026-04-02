@@ -1,1 +1,1 @@
-web: python -c "import os; os.makedirs('data/course_documents', exist_ok=True); print('DATA DIR READY')" && gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --access-logfile - --error-logfile -
+web: python -c "import os; os.makedirs('data/course_documents', exist_ok=True); print('BUILD v40 READY')" && gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 300 --graceful-timeout 120 --access-logfile - --error-logfile -
